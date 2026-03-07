@@ -1,0 +1,8 @@
+{
+  "rewrites": [
+    {
+      "source": "/webhook",
+      "destination": "https://wvlbdjpllcnmndkujzpy.supabase.co/functions/v1/notify"
+    }
+  ]
+}

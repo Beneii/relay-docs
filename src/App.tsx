@@ -218,14 +218,7 @@ export default function App() {
         {/* Hero Section */}
         <section className="relative pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
           {/* Dot grid background */}
-          <div
-            className="pointer-events-none absolute inset-0 -z-10"
-            style={{
-              backgroundImage: 'radial-gradient(circle, var(--color-text-muted) 1.2px, transparent 1.2px)',
-              backgroundSize: '28px 28px',
-              opacity: 0.25,
-            }}
-          />
+          <div className="pointer-events-none absolute inset-0 -z-10 dot-grid" />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

@@ -56,3 +56,12 @@ body {
   -ms-overflow-style: none;
   scrollbar-width: none;
 }
+
+/* Dot grid pattern */
+.dot-grid {
+  background-image: radial-gradient(circle, #c4c4c8 1.2px, transparent 1.2px);
+  background-size: 28px 28px;
+}
+.dark .dot-grid {
+  background-image: radial-gradient(circle, #3f3f46 1.2px, transparent 1.2px);
+}

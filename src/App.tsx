@@ -336,7 +336,7 @@ export default function App() {
                 transition={{ duration: 0.5, delay: i * 0.15 }}
                 className="relative"
               >
-                <div className="text-5xl font-bold text-accent/10 mb-4">{item.step}</div>
+                <div className="text-5xl font-bold text-accent/25 mb-4">{item.step}</div>
                 <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
                 <p className="text-text-muted leading-relaxed">{item.desc}</p>
               </motion.div>

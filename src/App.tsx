@@ -215,10 +215,11 @@ export default function App() {
       </nav>
 
       <main>
+        {/* Dot grid background — spans full page */}
+        <div className="pointer-events-none fixed inset-0 z-0 dot-grid" />
+
         {/* Hero Section */}
         <section className="relative pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
-          {/* Dot grid background */}
-          <div className="pointer-events-none absolute inset-0 z-0 dot-grid" />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

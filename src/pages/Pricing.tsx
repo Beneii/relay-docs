@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CheckCircle2, Zap } from 'lucide-react';
+import { CheckCircle2 } from 'lucide-react';
+import { RelayIcon } from '../components/RelayLogo';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 export default function Pricing() {
   const [user, setUser] = useState<any>(null);
@@ -29,7 +31,6 @@ export default function Pricing() {
   const handleUpgrade = async () => {
     setUpgradeError(null);
 
-    // If no profile loaded, check if there's a session directly
     const { data: { session } } = await supabase.auth.getSession();
     if (!session) {
       navigate('/login');
@@ -65,30 +66,36 @@ export default function Pricing() {
   };
 
   if (loading) {
-    return <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">
+        <div className="flex items-center gap-3 text-text-muted">
+          <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+          Loading...
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
-      <nav className="border-b border-border bg-surface/80 backdrop-blur-xl sticky top-0 z-50">
+      <nav className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-surface border border-border flex items-center justify-center">
-              <Zap className="w-4 h-4 text-accent" />
-            </div>
+            <RelayIcon size={24} className="text-text-main" />
             <span className="font-semibold tracking-tight">Relay</span>
           </Link>
-          <div className="flex items-center gap-4">
+          <div className="flex items-center gap-3">
+            <ThemeToggle />
             {user ? (
-              <Link to="/dashboard" className="text-sm font-medium text-text-muted hover:text-text-main">
+              <Link to="/dashboard" className="text-sm font-medium text-text-muted hover:text-text-main transition-colors">
                 Dashboard
               </Link>
             ) : (
               <>
-                <Link to="/login" className="text-sm font-medium text-text-muted hover:text-text-main">
+                <Link to="/login" className="text-sm font-medium text-text-muted hover:text-text-main transition-colors">
                   Sign in
                 </Link>
-                <Link to="/signup" className="h-9 px-4 rounded-md bg-text-main text-bg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center">
+                <Link to="/signup" className="h-9 px-4 rounded-lg bg-text-main text-bg text-sm font-medium hover:opacity-90 transition-all flex items-center">
                   Get Started
                 </Link>
               </>
@@ -103,7 +110,7 @@ export default function Pricing() {
           <p className="text-xl text-text-muted">Start for free, upgrade when you need more power.</p>
         </div>
 
-        <div className="grid md:grid-cols-2 gap-8 max-w-5xl mx-auto">
+        <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
           {/* Free Plan */}
           <div className="bg-surface border border-border rounded-2xl p-8 flex flex-col">
             <h3 className="text-2xl font-semibold mb-2">Free</h3>
@@ -112,7 +119,7 @@ export default function Pricing() {
               <span className="text-text-muted">/month</span>
             </div>
             <p className="text-text-muted mb-8">Perfect for personal projects and testing.</p>
-            
+
             <ul className="space-y-4 mb-8 flex-1">
               {[
                 '1 dashboard',
@@ -122,22 +129,22 @@ export default function Pricing() {
                 'Community support'
               ].map((feature, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
-                  <span>{feature}</span>
+                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <span className="text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
 
-            <Link 
+            <Link
               to={user ? "/dashboard" : "/signup"}
-              className="w-full flex justify-center items-center h-12 rounded-lg bg-bg border border-border text-text-main font-medium hover:bg-surface-hover transition-colors"
+              className="w-full flex justify-center items-center h-12 rounded-lg border border-border text-text-main font-medium hover:bg-surface-hover transition-all"
             >
               {user ? 'Go to Dashboard' : 'Get Started'}
             </Link>
           </div>
 
           {/* Pro Plan */}
-          <div className="bg-surface border-2 border-accent rounded-2xl p-8 flex flex-col relative shadow-[0_0_40px_rgba(59,130,246,0.1)]">
+          <div className="bg-surface border-2 border-accent rounded-2xl p-8 flex flex-col relative">
             <div className="absolute top-0 right-8 -translate-y-1/2 bg-accent text-white text-xs font-bold px-3 py-1 rounded-full uppercase tracking-wider">
               Most Popular
             </div>
@@ -147,7 +154,7 @@ export default function Pricing() {
               <span className="text-text-muted">/month</span>
             </div>
             <p className="text-text-muted mb-8">For power users and professional teams.</p>
-            
+
             <ul className="space-y-4 mb-8 flex-1">
               {[
                 'Unlimited dashboards',
@@ -158,27 +165,41 @@ export default function Pricing() {
                 'Priority support'
               ].map((feature, i) => (
                 <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0" />
-                  <span>{feature}</span>
+                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  <span className="text-sm">{feature}</span>
                 </li>
               ))}
             </ul>
 
             {upgradeError && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-md text-sm mb-4">
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-lg text-sm mb-4">
                 {upgradeError}
               </div>
             )}
             <button
               onClick={handleUpgrade}
               disabled={user?.plan === 'pro'}
-              className="w-full flex justify-center items-center h-12 rounded-lg bg-accent text-white font-medium hover:bg-blue-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center items-center h-12 rounded-lg bg-accent text-white font-medium hover:bg-blue-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {user?.plan === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
             </button>
           </div>
         </div>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-border mt-12">
+        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
+          <div className="flex items-center gap-2">
+            <RelayIcon size={18} className="text-text-muted" />
+            <span className="text-text-muted text-sm">Relay — Real-time webhook notifications</span>
+          </div>
+          <div className="flex items-center gap-6 text-sm text-text-muted">
+            <Link to="/" className="hover:text-text-main transition-colors">Home</Link>
+            <Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 }

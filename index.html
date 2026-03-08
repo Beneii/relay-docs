@@ -4,8 +4,29 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Relay — Your dashboards, one tap away</title>
-    <meta name="description" content="Save your dashboards. Get push alerts. One tap to open." />
+    <meta name="description" content="Save any web dashboard as a native app. Send push notifications via webhook. Tap to open instantly." />
     <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="website" />
+    <meta property="og:title" content="Relay — Your dashboards, one tap away" />
+    <meta property="og:description" content="Save any web dashboard as a native app. Send push notifications via webhook. Tap to open instantly." />
+    <meta property="og:url" content="https://relayapp.dev" />
+    <meta property="og:site_name" content="Relay" />
+
+    <!-- Twitter -->
+    <meta name="twitter:card" content="summary" />
+    <meta name="twitter:title" content="Relay — Your dashboards, one tap away" />
+    <meta name="twitter:description" content="Save any web dashboard as a native app. Send push notifications via webhook. Tap to open instantly." />
+
+    <!-- Theme Color -->
+    <meta name="theme-color" content="#fafafa" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#09090b" media="(prefers-color-scheme: dark)" />
+    <script>
+      if (localStorage.theme === 'dark' || (!('theme' in localStorage) && window.matchMedia('(prefers-color-scheme: dark)').matches)) {
+        document.documentElement.classList.add('dark');
+      }
+    </script>
   </head>
   <body>
     <div id="root"></div>

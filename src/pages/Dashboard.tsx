@@ -1,7 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { LayoutDashboard, Trash2, Plus, Zap, Settings, CreditCard, AlertCircle } from 'lucide-react';
+import { LayoutDashboard, Trash2, Plus, Settings, CreditCard, AlertCircle, Copy, Check, ExternalLink } from 'lucide-react';
+import { RelayIcon } from '../components/RelayLogo';
+import { ThemeToggle } from '../components/ThemeToggle';
 
 interface UserData {
   id: string;
@@ -27,6 +29,7 @@ export default function DashboardPage() {
   const [newDashName, setNewDashName] = useState('');
   const [newDashUrl, setNewDashUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -37,11 +40,30 @@ export default function DashboardPage() {
         return;
       }
 
-      const { data: userData } = await supabase
+      let { data: userData } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
         .single();
+
+      // Auto-create profile for OAuth users (they skip the Signup page)
+      if (!userData) {
+        const { data: newProfile } = await supabase
+          .from('profiles')
+          .upsert([{ id: session.user.id, email: session.user.email }], { onConflict: 'id' })
+          .select()
+          .single();
+        userData = newProfile;
+
+        // Send welcome email for new OAuth users (fire-and-forget)
+        if (session.user.email) {
+          fetch('/api/send-welcome', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ email: session.user.email, userId: session.user.id }),
+          }).catch(() => {});
+        }
+      }
 
       if (userData) {
         setUser(userData);
@@ -56,13 +78,12 @@ export default function DashboardPage() {
         setDashboards(dashData);
       }
 
-      // Mock notification usage for now, or fetch if table exists
       const { count } = await supabase
         .from('notifications')
         .select('*', { count: 'exact', head: true })
         .eq('user_id', session.user.id)
         .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
-        
+
       setNotificationsUsed(count || 0);
       setLoading(false);
     };
@@ -73,6 +94,12 @@ export default function DashboardPage() {
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
+  };
+
+  const handleCopyToken = async (token: string) => {
+    await navigator.clipboard.writeText(token);
+    setCopiedToken(token);
+    setTimeout(() => setCopiedToken(null), 2000);
   };
 
   const handleAddDashboard = async (e: React.FormEvent) => {
@@ -135,23 +162,32 @@ export default function DashboardPage() {
     }
   };
 
+  const notificationLimit = user?.plan === 'pro' ? 10000 : 200;
+  const notificationPercent = Math.min((notificationsUsed / notificationLimit) * 100, 100);
+
   if (loading) {
-    return <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">Loading...</div>;
+    return (
+      <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">
+        <div className="flex items-center gap-3 text-text-muted">
+          <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+          Loading...
+        </div>
+      </div>
+    );
   }
 
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
-      <nav className="border-b border-border bg-surface">
+      <nav className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <div className="w-8 h-8 rounded-lg bg-bg border border-border flex items-center justify-center">
-              <Zap className="w-4 h-4 text-accent" />
-            </div>
+            <RelayIcon size={24} className="text-text-main" />
             <span className="font-semibold tracking-tight">Relay</span>
           </Link>
           <div className="flex items-center gap-4">
-            <span className="text-sm text-text-muted">{user?.email}</span>
-            <button onClick={handleSignOut} className="text-sm font-medium text-text-muted hover:text-text-main">
+            <span className="text-sm text-text-muted hidden sm:block">{user?.email}</span>
+            <ThemeToggle />
+            <button onClick={handleSignOut} className="text-sm font-medium text-text-muted hover:text-text-main transition-colors cursor-pointer">
               Sign out
             </button>
           </div>
@@ -160,10 +196,10 @@ export default function DashboardPage() {
 
       <main className="max-w-7xl mx-auto px-6 py-12">
         <div className="grid md:grid-cols-3 gap-8">
-          
-          {/* Sidebar / Account Info */}
+
+          {/* Sidebar */}
           <div className="space-y-6">
-            <div className="bg-surface border border-border rounded-xl p-6">
+            <div className="bg-surface border border-border rounded-2xl p-6">
               <h2 className="text-lg font-semibold mb-4 flex items-center gap-2">
                 <Settings className="w-5 h-5 text-text-muted" />
                 Account
@@ -171,29 +207,44 @@ export default function DashboardPage() {
               <div className="space-y-4">
                 <div>
                   <p className="text-sm text-text-muted mb-1">Email</p>
-                  <p className="font-medium">{user?.email}</p>
+                  <p className="font-medium text-sm">{user?.email}</p>
                 </div>
                 <div>
                   <p className="text-sm text-text-muted mb-1">Plan</p>
                   <div className="flex items-center gap-2">
-                    <span className="font-medium capitalize">{user?.plan}</span>
+                    <span className={`text-xs font-semibold px-2.5 py-1 rounded-full uppercase tracking-wide ${
+                      user?.plan === 'pro'
+                        ? 'bg-accent/10 text-accent'
+                        : 'bg-surface-hover text-text-muted'
+                    }`}>
+                      {user?.plan}
+                    </span>
                     {user?.plan === 'free' && (
-                      <Link to="/pricing" className="text-xs bg-accent text-white px-2 py-0.5 rounded-full font-medium">
+                      <Link to="/pricing" className="text-xs text-accent hover:text-blue-600 font-medium transition-colors">
                         Upgrade
                       </Link>
                     )}
                   </div>
                 </div>
                 <div>
-                  <p className="text-sm text-text-muted mb-1">Notifications (this month)</p>
-                  <p className="font-medium">{notificationsUsed} / {user?.plan === 'pro' ? '10,000' : '200'}</p>
+                  <p className="text-sm text-text-muted mb-2">Notifications this month</p>
+                  <div className="flex items-center justify-between text-sm mb-1.5">
+                    <span className="font-medium">{notificationsUsed.toLocaleString()}</span>
+                    <span className="text-text-muted">{notificationLimit.toLocaleString()}</span>
+                  </div>
+                  <div className="h-1.5 bg-surface-hover rounded-full overflow-hidden">
+                    <div
+                      className="h-full bg-accent rounded-full transition-all"
+                      style={{ width: `${notificationPercent}%` }}
+                    />
+                  </div>
                 </div>
               </div>
-              
+
               <div className="mt-6 pt-6 border-t border-border">
-                <button 
+                <button
                   onClick={handleManageBilling}
-                  className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-bg border border-border text-sm font-medium hover:bg-surface-hover transition-colors"
+                  className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-surface-hover border border-border text-sm font-medium hover:bg-bg transition-all cursor-pointer"
                 >
                   <CreditCard className="w-4 h-4" />
                   Manage Billing
@@ -202,13 +253,13 @@ export default function DashboardPage() {
             </div>
           </div>
 
-          {/* Main Content / Dashboards */}
+          {/* Main Content */}
           <div className="md:col-span-2 space-y-6">
             <div className="flex items-center justify-between">
               <h1 className="text-2xl font-bold tracking-tight">Your Dashboards</h1>
-              <button 
+              <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 h-10 px-4 rounded-lg bg-text-main text-bg text-sm font-medium hover:bg-gray-200 transition-colors"
+                className="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Add Dashboard
@@ -216,13 +267,13 @@ export default function DashboardPage() {
             </div>
 
             {dashboards.length === 0 ? (
-              <div className="bg-surface border border-border border-dashed rounded-xl p-12 text-center">
-                <LayoutDashboard className="w-12 h-12 text-text-muted mx-auto mb-4 opacity-50" />
+              <div className="bg-surface border border-dashed border-border rounded-2xl p-12 text-center">
+                <LayoutDashboard className="w-12 h-12 text-text-muted mx-auto mb-4 opacity-40" />
                 <h3 className="text-lg font-medium mb-2">No dashboards yet</h3>
-                <p className="text-text-muted mb-6">Add your first dashboard to get a webhook token.</p>
-                <button 
+                <p className="text-text-muted mb-6 text-sm">Add your first dashboard to get a webhook token.</p>
+                <button
                   onClick={() => setShowAddModal(true)}
-                  className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-surface border border-border text-sm font-medium hover:bg-surface-hover transition-colors"
+                  className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-surface-hover border border-border text-sm font-medium hover:bg-bg transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
                   Add Dashboard
@@ -231,27 +282,32 @@ export default function DashboardPage() {
             ) : (
               <div className="space-y-4">
                 {dashboards.map((dash) => (
-                  <div key={dash.id} className="bg-surface border border-border rounded-xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
-                    <div>
+                  <div key={dash.id} className="bg-surface border border-border rounded-2xl p-6 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+                    <div className="min-w-0 flex-1">
                       <h3 className="font-semibold text-lg mb-1">{dash.name}</h3>
-                      <a href={dash.url} target="_blank" rel="noreferrer" className="text-sm text-accent hover:underline mb-3 block">
+                      <a href={dash.url} target="_blank" rel="noreferrer" className="text-sm text-accent hover:underline mb-3 inline-flex items-center gap-1">
                         {dash.url}
+                        <ExternalLink className="w-3 h-3" />
                       </a>
-                      <div className="flex items-center gap-2">
-                        <span className="text-xs text-text-muted font-mono bg-bg px-2 py-1 rounded border border-border">
+                      <div className="flex items-center gap-2 mt-2">
+                        <code className="text-xs text-text-muted font-mono bg-bg px-2.5 py-1.5 rounded-lg border border-border truncate max-w-[240px]">
                           {dash.webhook_token}
-                        </span>
-                        <button 
-                          onClick={() => navigator.clipboard.writeText(dash.webhook_token)}
-                          className="text-xs text-text-muted hover:text-text-main"
+                        </code>
+                        <button
+                          onClick={() => handleCopyToken(dash.webhook_token)}
+                          className="flex items-center gap-1 text-xs text-text-muted hover:text-text-main transition-colors cursor-pointer shrink-0"
                         >
-                          Copy
+                          {copiedToken === dash.webhook_token ? (
+                            <><Check className="w-3.5 h-3.5 text-green-500" /> Copied</>
+                          ) : (
+                            <><Copy className="w-3.5 h-3.5" /> Copy</>
+                          )}
                         </button>
                       </div>
                     </div>
-                    <button 
+                    <button
                       onClick={() => handleDeleteDashboard(dash.id)}
-                      className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-colors self-start sm:self-center"
+                      className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all self-start sm:self-center cursor-pointer"
                     >
                       <Trash2 className="w-5 h-5" />
                     </button>
@@ -273,30 +329,30 @@ export default function DashboardPage() {
             <form onSubmit={handleAddDashboard} className="p-6 space-y-4">
               {error && (
                 <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm flex items-start gap-2">
-                  <AlertCircle className="w-5 h-5 shrink-0" />
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
                   <p>{error}</p>
                 </div>
               )}
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">Name</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">Name</label>
                 <input
                   type="text"
                   required
                   value={newDashName}
                   onChange={(e) => setNewDashName(e.target.value)}
                   placeholder="e.g. Production Grafana"
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
               <div>
-                <label className="block text-sm font-medium text-text-muted mb-1">URL</label>
+                <label className="block text-sm font-medium text-text-muted mb-1.5">URL</label>
                 <input
                   type="url"
                   required
                   value={newDashUrl}
                   onChange={(e) => setNewDashUrl(e.target.value)}
                   placeholder="https://grafana.example.com"
-                  className="w-full bg-bg border border-border rounded-lg px-3 py-2 text-sm focus:outline-none focus:border-accent"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-accent transition-colors"
                 />
               </div>
               <div className="pt-4 flex justify-end gap-3">
@@ -306,13 +362,13 @@ export default function DashboardPage() {
                     setShowAddModal(false);
                     setError(null);
                   }}
-                  className="px-4 py-2 rounded-lg text-sm font-medium text-text-muted hover:text-text-main transition-colors"
+                  className="px-4 py-2.5 rounded-lg text-sm font-medium text-text-muted hover:text-text-main transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2 rounded-lg bg-text-main text-bg text-sm font-medium hover:bg-gray-200 transition-colors"
+                  className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
                 >
                   Save Dashboard
                 </button>

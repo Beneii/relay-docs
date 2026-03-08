@@ -1,7 +1,27 @@
 import React, { useState } from 'react';
 import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Zap, Check } from 'lucide-react';
+import { Check } from 'lucide-react';
+import { RelayIcon } from '../components/RelayLogo';
+
+function GitHubIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+      <path d="M12 0C5.37 0 0 5.37 0 12c0 5.31 3.435 9.795 8.205 11.385.6.105.825-.255.825-.57 0-.285-.015-1.23-.015-2.235-3.015.555-3.795-.735-4.035-1.41-.135-.345-.72-1.41-1.23-1.695-.42-.225-1.02-.78-.015-.795.945-.015 1.62.87 1.845 1.23 1.08 1.815 2.805 1.305 3.495.99.105-.78.42-1.305.765-1.605-2.67-.3-5.46-1.335-5.46-5.925 0-1.305.465-2.385 1.23-3.225-.12-.3-.54-1.53.12-3.18 0 0 1.005-.315 3.3 1.23.96-.27 1.98-.405 3-.405s2.04.135 3 .405c2.295-1.56 3.3-1.23 3.3-1.23.66 1.65.24 2.88.12 3.18.765.84 1.23 1.905 1.23 3.225 0 4.605-2.805 5.625-5.475 5.925.435.375.81 1.095.81 2.22 0 1.605-.015 2.895-.015 3.3 0 .315.225.69.825.57A12.02 12.02 0 0 0 24 12c0-6.63-5.37-12-12-12z"/>
+    </svg>
+  );
+}
+
+function GoogleIcon() {
+  return (
+    <svg width="20" height="20" viewBox="0 0 24 24">
+      <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 0 1-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z"/>
+      <path fill="#34A853" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/>
+      <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18A11.96 11.96 0 0 0 0 12c0 1.94.46 3.77 1.28 5.4l3.56-2.77.01-.54z"/>
+      <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
+    </svg>
+  );
+}
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -34,100 +54,123 @@ export default function Login() {
     }
   };
 
+  const handleOAuth = async (provider: 'github' | 'google') => {
+    const { error } = await supabase.auth.signInWithOAuth({
+      provider,
+      options: {
+        redirectTo: `${window.location.origin}/auth/callback`,
+      },
+    });
+    if (error) {
+      setError(error.message);
+    }
+  };
+
   return (
-    <div className="min-h-screen bg-bg text-text-main font-sans flex flex-col justify-center py-12 sm:px-6 lg:px-8">
-      <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <Link to="/" className="flex justify-center mb-6">
-          <div className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center">
-            <Zap className="w-5 h-5 text-accent" />
-          </div>
+    <div className="min-h-screen bg-bg text-text-main font-sans flex flex-col justify-center py-12 px-4">
+      <div className="mx-auto w-full max-w-md">
+        <Link to="/" className="flex justify-center mb-8">
+          <RelayIcon size={40} className="text-text-main" />
         </Link>
-        <h2 className="text-center text-3xl font-bold tracking-tight text-text-main">
-          Sign in to your account
+        <h2 className="text-center text-2xl font-bold tracking-tight mb-1">
+          Sign in to Relay
         </h2>
-        <p className="mt-2 text-center text-sm text-text-muted">
-          <Link to="/" className="text-accent hover:text-blue-400 transition-colors">
+        <p className="text-center text-sm text-text-muted mb-8">
+          <Link to="/" className="text-accent hover:text-blue-600 transition-colors">
             Back to home
           </Link>
         </p>
-      </div>
 
-      <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="bg-surface py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border">
+        <div className="bg-surface rounded-2xl border border-border p-8">
           {justConfirmed && (
-            <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-md text-sm mb-6 flex items-center gap-2">
+            <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-lg text-sm mb-6 flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0" />
               Email confirmed! You can now sign in.
             </div>
           )}
-          <form className="space-y-6" onSubmit={handleLogin}>
-            {error && (
-              <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-md text-sm">
-                {error}
-              </div>
-            )}
+
+          {error && (
+            <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm mb-6">
+              {error}
+            </div>
+          )}
+
+          {/* OAuth */}
+          <div className="space-y-3">
+            <button
+              type="button"
+              onClick={() => handleOAuth('google')}
+              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer"
+            >
+              <GoogleIcon />
+              Continue with Google
+            </button>
+            <button
+              type="button"
+              onClick={() => handleOAuth('github')}
+              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer"
+            >
+              <GitHubIcon />
+              Continue with GitHub
+            </button>
+          </div>
+
+          {/* Divider */}
+          <div className="relative my-6">
+            <div className="absolute inset-0 flex items-center">
+              <div className="w-full border-t border-border" />
+            </div>
+            <div className="relative flex justify-center text-sm">
+              <span className="bg-surface px-3 text-text-muted">or</span>
+            </div>
+          </div>
+
+          {/* Form */}
+          <form className="space-y-4" onSubmit={handleLogin}>
             <div>
-              <label className="block text-sm font-medium text-text-muted">
-                Email address
+              <label className="block text-sm font-medium text-text-muted mb-1.5">
+                Email
               </label>
-              <div className="mt-1">
-                <input
-                  type="email"
-                  required
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="you@example.com"
-                  className="block w-full appearance-none rounded-md border border-border bg-bg px-3 py-2 placeholder-text-muted/50 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
-                />
-              </div>
+              <input
+                type="email"
+                required
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@example.com"
+                className="block w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm placeholder-text-muted/50 focus:border-accent focus:outline-none transition-colors"
+              />
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-muted">
+              <label className="block text-sm font-medium text-text-muted mb-1.5">
                 Password
               </label>
-              <div className="mt-1">
-                <input
-                  type="password"
-                  required
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full appearance-none rounded-md border border-border bg-bg px-3 py-2 placeholder-text-muted/50 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
-                />
-              </div>
+              <input
+                type="password"
+                required
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="block w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm placeholder-text-muted/50 focus:border-accent focus:outline-none transition-colors"
+              />
             </div>
 
-            <div>
-              <button
-                type="submit"
-                disabled={loading}
-                className="flex w-full justify-center rounded-md border border-transparent bg-text-main py-2 px-4 text-sm font-medium text-bg shadow-sm hover:bg-gray-200 focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg disabled:opacity-50"
-              >
-                {loading ? 'Signing in...' : 'Sign in'}
-              </button>
-            </div>
+            <button
+              type="submit"
+              disabled={loading}
+              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-blue-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+            >
+              {loading ? 'Signing in...' : 'Sign in'}
+            </button>
           </form>
 
-          <div className="mt-6">
-            <div className="relative">
-              <div className="absolute inset-0 flex items-center">
-                <div className="w-full border-t border-border" />
-              </div>
-              <div className="relative flex justify-center text-sm">
-                <span className="bg-surface px-2 text-text-muted">
-                  Don't have an account?
-                </span>
-              </div>
-            </div>
-
-            <div className="mt-6">
-              <Link
-                to="/signup"
-                className="flex w-full justify-center rounded-md border border-border bg-bg py-2 px-4 text-sm font-medium text-text-main shadow-sm hover:bg-surface focus:outline-none focus:ring-2 focus:ring-accent focus:ring-offset-2 focus:ring-offset-bg"
-              >
+          {/* Sign up link */}
+          <div className="mt-6 pt-6 border-t border-border text-center">
+            <p className="text-sm text-text-muted">
+              Don't have an account?{' '}
+              <Link to="/signup" className="text-accent hover:text-blue-600 font-medium transition-colors">
                 Sign up
               </Link>
-            </div>
+            </p>
           </div>
         </div>
       </div>

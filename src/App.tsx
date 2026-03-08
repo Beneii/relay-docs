@@ -221,12 +221,11 @@ export default function App() {
           <div
             className="pointer-events-none absolute inset-0 -z-10"
             style={{
-              backgroundImage: 'radial-gradient(circle, var(--color-border) 1px, transparent 1px)',
-              backgroundSize: '24px 24px',
+              backgroundImage: 'radial-gradient(circle, var(--color-text-muted) 1.2px, transparent 1.2px)',
+              backgroundSize: '28px 28px',
+              opacity: 0.25,
             }}
           />
-          {/* Radial fade overlay */}
-          <div className="pointer-events-none absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--color-bg)_65%)]" />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

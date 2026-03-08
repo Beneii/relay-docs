@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { Zap } from 'lucide-react';
+import { Zap, Check } from 'lucide-react';
 
 export default function Login() {
   const [email, setEmail] = useState('');
@@ -9,6 +9,8 @@ export default function Login() {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const justConfirmed = searchParams.get('confirmed') === 'true';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -21,7 +23,11 @@ export default function Login() {
     });
 
     if (error) {
-      setError(error.message);
+      if (error.message === 'Email not confirmed') {
+        setError('Please check your email and click the confirmation link before signing in.');
+      } else {
+        setError(error.message);
+      }
       setLoading(false);
     } else {
       navigate('/dashboard');
@@ -31,18 +37,29 @@ export default function Login() {
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans flex flex-col justify-center py-12 sm:px-6 lg:px-8">
       <div className="sm:mx-auto sm:w-full sm:max-w-md">
-        <div className="flex justify-center">
+        <Link to="/" className="flex justify-center mb-6">
           <div className="w-10 h-10 rounded-xl bg-surface border border-border flex items-center justify-center">
             <Zap className="w-5 h-5 text-accent" />
           </div>
-        </div>
-        <h2 className="mt-6 text-center text-3xl font-bold tracking-tight text-text-main">
+        </Link>
+        <h2 className="text-center text-3xl font-bold tracking-tight text-text-main">
           Sign in to your account
         </h2>
+        <p className="mt-2 text-center text-sm text-text-muted">
+          <Link to="/" className="text-accent hover:text-blue-400 transition-colors">
+            Back to home
+          </Link>
+        </p>
       </div>
 
       <div className="mt-8 sm:mx-auto sm:w-full sm:max-w-md">
         <div className="bg-surface py-8 px-4 shadow sm:rounded-lg sm:px-10 border border-border">
+          {justConfirmed && (
+            <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-md text-sm mb-6 flex items-center gap-2">
+              <Check className="w-4 h-4 shrink-0" />
+              Email confirmed! You can now sign in.
+            </div>
+          )}
           <form className="space-y-6" onSubmit={handleLogin}>
             {error && (
               <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-md text-sm">
@@ -59,7 +76,8 @@ export default function Login() {
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
-                  className="block w-full appearance-none rounded-md border border-border bg-bg px-3 py-2 placeholder-text-muted shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
+                  placeholder="you@example.com"
+                  className="block w-full appearance-none rounded-md border border-border bg-bg px-3 py-2 placeholder-text-muted/50 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
                 />
               </div>
             </div>
@@ -74,7 +92,7 @@ export default function Login() {
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
-                  className="block w-full appearance-none rounded-md border border-border bg-bg px-3 py-2 placeholder-text-muted shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
+                  className="block w-full appearance-none rounded-md border border-border bg-bg px-3 py-2 placeholder-text-muted/50 shadow-sm focus:border-accent focus:outline-none focus:ring-accent sm:text-sm"
                 />
               </div>
             </div>

@@ -422,22 +422,22 @@ export default function App() {
           <div className="grid md:grid-cols-3 gap-6">
             {[
               {
+                icon: <Wrench className="w-6 h-6 text-accent" />,
+                title: "Self-Hosted & Open Source",
+                desc: "Monitor OpenClaw, Uptime Kuma, Gitea, and any self-hosted tool. Get push alerts from your own infrastructure without relying on third-party notification services.",
+                tools: ["OpenClaw", "Uptime Kuma", "Gitea"]
+              },
+              {
                 icon: <Gauge className="w-6 h-6 text-accent" />,
-                title: "DevOps & SREs",
-                desc: "Monitor Grafana, Uptime Kuma, and CI/CD pipelines. Get alerted on deploy failures, downtime, or anomalies — all from your pocket.",
-                tools: ["Grafana", "Jenkins", "Uptime Kuma"]
+                title: "DevOps & Homelab",
+                desc: "Keep tabs on Grafana dashboards, n8n automations, Home Assistant, and CI/CD pipelines. Know instantly when a deploy fails or a sensor triggers.",
+                tools: ["Grafana", "n8n", "Home Assistant"]
               },
               {
                 icon: <Rocket className="w-6 h-6 text-accent" />,
                 title: "Founders & Indie Hackers",
                 desc: "Track new signups, payments, and errors in real time. Connect Stripe webhooks, monitor your SaaS metrics — no dashboard tab-hopping.",
                 tools: ["Stripe", "Vercel", "Supabase"]
-              },
-              {
-                icon: <Wrench className="w-6 h-6 text-accent" />,
-                title: "Homelab & IoT",
-                desc: "Keep tabs on Home Assistant, n8n automations, and self-hosted services. Get notified when your 3D print finishes or a sensor triggers.",
-                tools: ["Home Assistant", "n8n", "Portainer"]
               },
             ].map((item, i) => (
               <motion.div

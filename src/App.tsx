@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { motion } from 'motion/react';
+import { motion, useScroll, useTransform } from 'motion/react';
 import { Link } from 'react-router-dom';
 import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User } from 'lucide-react';
 import { supabase } from './lib/supabase';
@@ -58,6 +58,10 @@ export default function App() {
   const [showNotification, setShowNotification] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
 
+  // Scroll-linked rotation for nav logo
+  const { scrollY } = useScroll();
+  const navLogoRotate = useTransform(scrollY, [0, 3000], [0, 720]);
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setIsSignedIn(!!session);
@@ -83,7 +87,9 @@ export default function App() {
       <nav className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl">
         <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
           <Link to="/" className="flex items-center gap-3">
-            <RelayIcon size={24} className="text-text-main" />
+            <motion.div style={{ rotate: navLogoRotate }}>
+              <RelayIcon size={24} className="text-text-main" />
+            </motion.div>
             <span className="font-semibold tracking-tight">Relay</span>
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-text-muted">
@@ -128,10 +134,10 @@ export default function App() {
                 y:       [0, 0, -12, -12, 0, 0],
               }}
               transition={{
-                duration: 5,
-                repeat: Infinity,
+                duration: 3,
+                delay: 0.5,
                 ease: [0.4, 0, 0.2, 1],
-                times:  [0, 0.35, 0.42, 0.58, 0.65, 1],
+                times:  [0, 0.2, 0.35, 0.65, 0.8, 1],
               }}
               className="mx-auto mb-10 w-fit"
             >
@@ -160,32 +166,32 @@ export default function App() {
         <section className="py-12 px-6 max-w-6xl mx-auto overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12">
 
-            {/* Left: Terminal — always dark */}
+            {/* Left: Terminal — theme-aware */}
             <motion.div
               initial={{ opacity: 0, x: -20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.2 }}
-              className="w-full max-w-[340px] bg-[#111113] border border-white/[0.08] rounded-xl overflow-hidden shadow-2xl"
+              className="w-full max-w-[340px] bg-surface border border-border rounded-xl overflow-hidden shadow-2xl"
             >
-              <div className="h-10 border-b border-white/[0.08] flex items-center px-4 gap-2 bg-[#0c0c0e]">
+              <div className="h-10 border-b border-border flex items-center px-4 gap-2 bg-surface-hover">
                 <div className="w-3 h-3 rounded-full bg-[#ff5f57]"></div>
                 <div className="w-3 h-3 rounded-full bg-[#febc2e]"></div>
                 <div className="w-3 h-3 rounded-full bg-[#28c840]"></div>
-                <div className="ml-2 text-xs font-mono text-[#a1a1aa]">deploy.sh</div>
+                <div className="ml-2 text-xs font-mono text-text-muted">deploy.sh</div>
               </div>
-              <div className="p-5 font-mono text-xs text-[#a1a1aa] space-y-2">
+              <div className="p-5 font-mono text-xs text-text-muted space-y-2">
                 <p><span className="text-accent">➜</span> <span className="text-blue-400">~</span> ./deploy.sh</p>
                 <p>Building project...</p>
                 <p>Running tests...</p>
-                <p className="text-[#22c55e]">✓ All tests passed</p>
-                <div className="mt-4 pt-4 border-t border-white/[0.08]">
-                  <p className="text-[#fafafa]">curl -X POST relayapp.dev/webhook \</p>
-                  <p className="text-[#fafafa]">  -d '&#123;"title": "Build passed"&#125;'</p>
+                <p className="text-emerald-500">✓ All tests passed</p>
+                <div className="mt-4 pt-4 border-t border-border">
+                  <p className="text-text-main">curl -X POST relayapp.dev/webhook \</p>
+                  <p className="text-text-main">  -d '&#123;"title": "Build passed"&#125;'</p>
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: [0, 1, 1, 0] }}
                     transition={{ duration: 6, repeat: Infinity, times: [0, 0.1, 0.8, 1] }}
-                    className="text-[#22c55e] mt-2"
+                    className="text-emerald-500 mt-2"
                   >
                     {"{"}"success": true{"}"}
                   </motion.p>
@@ -203,22 +209,22 @@ export default function App() {
               <div className="absolute top-4 text-[10px] font-mono text-text-muted uppercase tracking-widest">Webhook</div>
             </div>
 
-            {/* Right: Phone — always dark */}
+            {/* Right: Phone — theme-aware */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ duration: 0.6, delay: 0.4 }}
-              className="w-[280px] h-[560px] bg-[#000000] border-[6px] border-[#2a2a2e] rounded-[2.5rem] relative overflow-hidden shadow-2xl"
+              className="w-[280px] h-[560px] bg-bg border-[6px] border-border rounded-[2.5rem] relative overflow-hidden shadow-2xl"
             >
               {/* Dynamic Island */}
-              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-[#1a1a1e] rounded-b-2xl z-20"></div>
+              <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-6 bg-surface-hover rounded-b-2xl z-20"></div>
 
               {/* Screen */}
-              <div className="absolute inset-0 bg-gradient-to-b from-[#111113] to-[#000000] p-4 pt-12">
+              <div className="absolute inset-0 bg-bg p-4 pt-12">
                 {/* App Grid */}
                 <div className="grid grid-cols-4 gap-4 opacity-30 mt-8">
                   {[...Array(16)].map((_, i) => (
-                    <div key={i} className="aspect-square rounded-xl bg-[#1a1a1e] border border-white/[0.05]"></div>
+                    <div key={i} className="aspect-square rounded-xl bg-surface border border-border"></div>
                   ))}
                 </div>
 
@@ -231,7 +237,7 @@ export default function App() {
                     scale: showNotification ? 1 : 0.9
                   }}
                   transition={{ type: "spring", stiffness: 400, damping: 30 }}
-                  className="absolute top-12 left-3 right-3 bg-[#1a1a1e]/95 backdrop-blur-xl border border-white/[0.1] rounded-2xl p-3 shadow-2xl z-30"
+                  className="absolute top-12 left-3 right-3 bg-surface/95 backdrop-blur-xl border border-border rounded-2xl p-3 shadow-2xl z-30"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-10 h-10 rounded-xl bg-accent flex items-center justify-center shrink-0">
@@ -239,11 +245,11 @@ export default function App() {
                     </div>
                     <div className="flex-1 pt-0.5">
                       <div className="flex justify-between items-center mb-0.5">
-                        <p className="text-[#fafafa] text-sm font-semibold">Relay</p>
-                        <p className="text-[#71717a] text-[10px]">now</p>
+                        <p className="text-text-main text-sm font-semibold">Relay</p>
+                        <p className="text-text-muted text-[10px]">now</p>
                       </div>
-                      <p className="text-[#fafafa] text-sm font-medium leading-snug">Build passed</p>
-                      <p className="text-[#a1a1aa] text-xs mt-0.5 leading-snug">All tests passed. Tap to open Grafana.</p>
+                      <p className="text-text-main text-sm font-medium leading-snug">Build passed</p>
+                      <p className="text-text-muted text-xs mt-0.5 leading-snug">All tests passed. Tap to open Grafana.</p>
                     </div>
                   </div>
                 </motion.div>
@@ -374,31 +380,31 @@ export default function App() {
               </div>
             </motion.div>
 
-            {/* Code tabs — always dark */}
+            {/* Code tabs — theme-aware */}
             <motion.div
               initial={{ opacity: 0, x: 20 }}
               whileInView={{ opacity: 1, x: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.5, delay: 0.2 }}
-              className="bg-[#111113] border border-white/[0.08] rounded-2xl overflow-hidden shadow-xl"
+              className="bg-surface border border-border rounded-2xl overflow-hidden shadow-xl"
             >
-              <div className="flex border-b border-white/[0.08] overflow-x-auto hide-scrollbar bg-[#0c0c0e]">
+              <div className="flex border-b border-border overflow-x-auto hide-scrollbar bg-surface-hover">
                 {(Object.keys(INTEGRATIONS) as Array<keyof typeof INTEGRATIONS>).map((key) => (
                   <button
                     key={key}
                     onClick={() => setActiveTab(key)}
                     className={`px-5 py-3.5 text-sm font-medium whitespace-nowrap transition-colors border-b-2 cursor-pointer ${
                       activeTab === key
-                        ? 'border-accent text-[#fafafa] bg-[#111113]'
-                        : 'border-transparent text-[#71717a] hover:text-[#a1a1aa] hover:bg-[#111113]/50'
+                        ? 'border-accent text-text-main bg-surface'
+                        : 'border-transparent text-text-muted hover:text-text-main hover:bg-surface/50'
                     }`}
                   >
                     {INTEGRATIONS[key].name}
                   </button>
                 ))}
               </div>
-              <div className="p-6 overflow-x-auto bg-[#09090b]">
-                <pre className="font-mono text-sm text-[#a1a1aa] leading-relaxed">
+              <div className="p-6 overflow-x-auto bg-bg">
+                <pre className="font-mono text-sm text-text-muted leading-relaxed">
                   <code>{INTEGRATIONS[activeTab].code}</code>
                 </pre>
               </div>

@@ -145,7 +145,7 @@ export default function App() {
               Save any web dashboard as a native app. Send push notifications via webhook. Tap to open instantly. The missing bridge between your infrastructure and your pocket.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/signup" className="h-12 px-6 rounded-lg bg-accent text-white font-medium flex items-center gap-2 hover:bg-blue-600 transition-all w-full sm:w-auto justify-center cursor-pointer">
+              <Link to="/signup" className="h-12 px-6 rounded-lg bg-accent text-white font-medium flex items-center gap-2 hover:bg-emerald-600 transition-all w-full sm:w-auto justify-center cursor-pointer">
                 <ArrowRight className="w-4 h-4" />
                 Get Started Free
               </Link>
@@ -198,7 +198,7 @@ export default function App() {
               <motion.div
                 animate={{ x: [0, 128] }}
                 transition={{ duration: 1.5, repeat: Infinity, repeatDelay: 4.5, ease: "easeInOut" }}
-                className="absolute left-0 w-4 h-4 -ml-2 rounded-full bg-accent shadow-[0_0_15px_rgba(59,130,246,0.5)] z-10"
+                className="absolute left-0 w-4 h-4 -ml-2 rounded-full bg-accent shadow-[0_0_15px_rgba(16,185,129,0.5)] z-10"
               />
               <div className="absolute top-4 text-[10px] font-mono text-text-muted uppercase tracking-widest">Webhook</div>
             </div>
@@ -417,7 +417,7 @@ export default function App() {
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Ready to get started?</h2>
             <p className="text-text-muted text-lg mb-8">Create a free account and start receiving push notifications from your infrastructure in minutes.</p>
-            <Link to="/signup" className="inline-flex h-12 px-8 rounded-lg bg-accent text-white font-medium items-center gap-2 hover:bg-blue-600 transition-all cursor-pointer">
+            <Link to="/signup" className="inline-flex h-12 px-8 rounded-lg bg-accent text-white font-medium items-center gap-2 hover:bg-emerald-600 transition-all cursor-pointer">
               <ArrowRight className="w-4 h-4" />
               Get Started Free
             </Link>

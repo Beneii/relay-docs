@@ -140,7 +140,7 @@ export default function Signup() {
           </p>
           <Link
             to="/login"
-            className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-blue-600 transition-colors"
+            className="inline-flex items-center gap-2 text-sm font-medium text-accent hover:text-emerald-600 transition-colors"
           >
             <ArrowLeft className="w-4 h-4" />
             Go to sign in
@@ -160,7 +160,7 @@ export default function Signup() {
           Create your account
         </h2>
         <p className="text-center text-sm text-text-muted mb-8">
-          <Link to="/" className="text-accent hover:text-blue-600 transition-colors">
+          <Link to="/" className="text-accent hover:text-emerald-600 transition-colors">
             Back to home
           </Link>
         </p>
@@ -284,7 +284,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={loading || !allChecksMet || !passwordsMatch}
-              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>
@@ -294,7 +294,7 @@ export default function Signup() {
           <div className="mt-6 pt-6 border-t border-border text-center">
             <p className="text-sm text-text-muted">
               Already have an account?{' '}
-              <Link to="/login" className="text-accent hover:text-blue-600 font-medium transition-colors">
+              <Link to="/login" className="text-accent hover:text-emerald-600 font-medium transition-colors">
                 Sign in
               </Link>
             </p>

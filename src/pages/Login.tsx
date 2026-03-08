@@ -76,7 +76,7 @@ export default function Login() {
           Sign in to Relay
         </h2>
         <p className="text-center text-sm text-text-muted mb-8">
-          <Link to="/" className="text-accent hover:text-blue-600 transition-colors">
+          <Link to="/" className="text-accent hover:text-emerald-600 transition-colors">
             Back to home
           </Link>
         </p>
@@ -157,7 +157,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-blue-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-emerald-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>
@@ -167,7 +167,7 @@ export default function Login() {
           <div className="mt-6 pt-6 border-t border-border text-center">
             <p className="text-sm text-text-muted">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-accent hover:text-blue-600 font-medium transition-colors">
+              <Link to="/signup" className="text-accent hover:text-emerald-600 font-medium transition-colors">
                 Sign up
               </Link>
             </p>

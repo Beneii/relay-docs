@@ -220,7 +220,7 @@ export default function DashboardPage() {
                       {user?.plan}
                     </span>
                     {user?.plan === 'free' && (
-                      <Link to="/pricing" className="text-xs text-accent hover:text-blue-600 font-medium transition-colors">
+                      <Link to="/pricing" className="text-xs text-accent hover:text-emerald-600 font-medium transition-colors">
                         Upgrade
                       </Link>
                     )}
@@ -259,7 +259,7 @@ export default function DashboardPage() {
               <h1 className="text-2xl font-bold tracking-tight">Your Dashboards</h1>
               <button
                 onClick={() => setShowAddModal(true)}
-                className="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
+                className="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
               >
                 <Plus className="w-4 h-4" />
                 Add Dashboard
@@ -368,7 +368,7 @@ export default function DashboardPage() {
                 </button>
                 <button
                   type="submit"
-                  className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
+                  className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
                 >
                   Save Dashboard
                 </button>

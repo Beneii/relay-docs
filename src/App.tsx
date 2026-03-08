@@ -218,12 +218,13 @@ export default function App() {
         {/* Hero Section */}
         <section className="relative pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
           {/* Dot grid background */}
-          <div className="pointer-events-none absolute inset-0 -z-10 dot-grid" />
+          <div className="pointer-events-none absolute inset-0 z-0 dot-grid" />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, ease: [0.25, 0.1, 0.25, 1] }}
+            className="relative z-10"
           >
             <motion.div
               animate={{

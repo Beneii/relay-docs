@@ -6,6 +6,7 @@ import Login from './pages/Login.tsx';
 import Signup from './pages/Signup.tsx';
 import Dashboard from './pages/Dashboard.tsx';
 import Pricing from './pages/Pricing.tsx';
+import AuthCallback from './pages/AuthCallback.tsx';
 import './index.css';
 
 createRoot(document.getElementById('root')!).render(
@@ -17,6 +18,7 @@ createRoot(document.getElementById('root')!).render(
         <Route path="/signup" element={<Signup />} />
         <Route path="/dashboard" element={<Dashboard />} />
         <Route path="/pricing" element={<Pricing />} />
+        <Route path="/auth/callback" element={<AuthCallback />} />
       </Routes>
     </BrowserRouter>
   </StrictMode>,

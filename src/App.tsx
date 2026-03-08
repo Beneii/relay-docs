@@ -215,15 +215,13 @@ export default function App() {
       </nav>
 
       <main>
-        {/* Dot grid — full width, hero height, fades at page edges + dims around logo */}
+        {/* Dot grid — full width, hero height, organic fade from edges inward */}
         <div
           className="pointer-events-none absolute left-0 right-0 top-16 z-0 dot-grid"
           style={{
-            height: '700px',
-            maskImage: 'radial-gradient(ellipse 50% 40% at 50% 35%, transparent 0%, black 40%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%), linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 50% 40% at 50% 35%, transparent 0%, black 40%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%), linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
-            maskComposite: 'intersect',
-            WebkitMaskComposite: 'source-in',
+            height: '750px',
+            maskImage: 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, black 80%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, black 80%)',
           }}
         />
 

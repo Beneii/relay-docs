@@ -1,7 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Terminal, Smartphone, Bell, LayoutDashboard, Code, Github, BookOpen, ArrowRight, Zap, Server, CheckCircle2 } from 'lucide-react';
+import { Terminal, Smartphone, Bell, LayoutDashboard, Code, Github, BookOpen, ArrowRight, Zap, Server, CheckCircle2, User } from 'lucide-react';
+import { supabase } from './lib/supabase';
 
 const INTEGRATIONS = {
   bash: {
@@ -53,6 +54,17 @@ requests.post("https://relayapp.dev/webhook", json={
 export default function App() {
   const [activeTab, setActiveTab] = useState<keyof typeof INTEGRATIONS>('bash');
   const [showNotification, setShowNotification] = useState(false);
+  const [isSignedIn, setIsSignedIn] = useState(false);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setIsSignedIn(!!session);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setIsSignedIn(!!session);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
 
   // Simple animation loop for the hero visual
   useEffect(() => {
@@ -82,12 +94,21 @@ export default function App() {
             <Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link>
           </div>
           <div className="flex items-center gap-4">
-            <Link to="/login" className="hidden md:flex items-center gap-2 text-sm font-medium text-text-muted hover:text-text-main transition-colors">
-              <span>Sign in</span>
-            </Link>
-            <Link to="/signup" className="h-9 px-4 rounded-md bg-text-main text-bg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center">
-              Get Started
-            </Link>
+            {isSignedIn ? (
+              <Link to="/dashboard" className="h-9 px-4 rounded-md bg-text-main text-bg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center gap-2">
+                <User className="w-4 h-4" />
+                Dashboard
+              </Link>
+            ) : (
+              <>
+                <Link to="/login" className="hidden md:flex items-center gap-2 text-sm font-medium text-text-muted hover:text-text-main transition-colors">
+                  <span>Sign in</span>
+                </Link>
+                <Link to="/signup" className="h-9 px-4 rounded-md bg-text-main text-bg text-sm font-medium hover:bg-gray-200 transition-colors flex items-center">
+                  Get Started
+                </Link>
+              </>
+            )}
           </div>
         </div>
       </nav>

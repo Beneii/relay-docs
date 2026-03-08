@@ -167,7 +167,7 @@ export default function Pricing() {
             <button
               onClick={handleUpgrade}
               disabled={user?.plan === 'pro'}
-              className="w-full flex justify-center items-center h-12 rounded-lg bg-accent text-white font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center items-center h-12 rounded-lg bg-accent text-white font-medium hover:bg-blue-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {user?.plan === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
             </button>

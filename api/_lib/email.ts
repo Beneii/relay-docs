@@ -187,7 +187,7 @@ export async function sendProUpgradeEmail(to: string) {
     </table>
     ${divider()}
     ${paragraph('Your plan: ' + planBadge('pro'))}
-    ${paragraph('Billed at <strong class="email-strong" style="color:' + L.text + ';">$6/month</strong>. Manage your subscription anytime from the dashboard.')}
+    ${paragraph('Billed at <strong class="email-strong" style="color:' + L.text + ';">$7.99/month</strong>. Manage your subscription anytime from the dashboard.')}
     ${button('Go to Dashboard', 'https://relayapp.dev/dashboard')}
   `);
 

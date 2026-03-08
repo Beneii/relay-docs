@@ -8,6 +8,7 @@ import { ThemeToggle } from '../components/ThemeToggle';
 export default function Pricing() {
   const [user, setUser] = useState<any>(null);
   const [loading, setLoading] = useState(true);
+  const [annual, setAnnual] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -46,7 +47,7 @@ export default function Pricing() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({ userId, email }),
+        body: JSON.stringify({ userId, email, annual }),
       });
 
       if (!response.ok) {
@@ -76,6 +77,10 @@ export default function Pricing() {
     );
   }
 
+  const monthlyPrice = '$7.99';
+  const annualPrice = '$79';
+  const annualMonthly = '$6.58';
+
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
       <nav className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl">
@@ -95,7 +100,7 @@ export default function Pricing() {
                 <Link to="/login" className="text-sm font-medium text-text-muted hover:text-text-main transition-colors">
                   Sign in
                 </Link>
-                <Link to="/signup" className="h-9 px-4 rounded-lg bg-text-main text-bg text-sm font-medium hover:opacity-90 transition-all flex items-center">
+                <Link to="/signup" className="h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center">
                   Get Started
                 </Link>
               </>
@@ -105,9 +110,24 @@ export default function Pricing() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-24">
-        <div className="text-center max-w-3xl mx-auto mb-16">
+        <div className="text-center max-w-3xl mx-auto mb-12">
           <h1 className="text-4xl md:text-5xl font-bold tracking-tight mb-6">Simple, transparent pricing</h1>
-          <p className="text-xl text-text-muted">Start for free, upgrade when you need more power.</p>
+          <p className="text-xl text-text-muted mb-8">Start for free, upgrade when you need more power.</p>
+
+          {/* Annual/Monthly Toggle */}
+          <div className="flex items-center justify-center gap-3">
+            <span className={`text-sm font-medium ${!annual ? 'text-text-main' : 'text-text-muted'}`}>Monthly</span>
+            <button
+              onClick={() => setAnnual(!annual)}
+              className={`relative w-12 h-7 rounded-full transition-colors cursor-pointer ${annual ? 'bg-accent' : 'bg-border'}`}
+            >
+              <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${annual ? 'left-6' : 'left-1'}`} />
+            </button>
+            <span className={`text-sm font-medium ${annual ? 'text-text-main' : 'text-text-muted'}`}>
+              Annual
+              <span className="ml-1.5 text-xs font-semibold text-accent">Save 17%</span>
+            </span>
+          </div>
         </div>
 
         <div className="grid md:grid-cols-2 gap-8 max-w-4xl mx-auto">
@@ -149,10 +169,16 @@ export default function Pricing() {
               Most Popular
             </div>
             <h3 className="text-2xl font-semibold mb-2">Pro</h3>
-            <div className="flex items-baseline gap-2 mb-6">
-              <span className="text-4xl font-bold">$6</span>
+            <div className="flex items-baseline gap-2 mb-2">
+              <span className="text-4xl font-bold">{annual ? annualMonthly : monthlyPrice}</span>
               <span className="text-text-muted">/month</span>
             </div>
+            {annual && (
+              <p className="text-sm text-text-muted mb-6">Billed as {annualPrice}/year</p>
+            )}
+            {!annual && (
+              <p className="text-sm text-text-muted mb-6">Billed monthly</p>
+            )}
             <p className="text-text-muted mb-8">For power users and professional teams.</p>
 
             <ul className="space-y-4 mb-8 flex-1">

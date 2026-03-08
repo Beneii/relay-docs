@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { motion, useScroll, useTransform } from 'motion/react';
+import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User } from 'lucide-react';
+import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User, Menu, X, ChevronDown, Gauge, Wrench, Rocket } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { RelayIcon } from './components/RelayLogo';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -53,10 +53,62 @@ requests.post("https://relayapp.dev/webhook", json={
   }
 };
 
+const FAQ_ITEMS = [
+  {
+    q: "What is Relay?",
+    a: "Relay lets you save any web dashboard (Grafana, Home Assistant, n8n, CI/CD tools, etc.) as a native app on your phone. Each dashboard gets a unique webhook URL — send a POST request to trigger an instant push notification that opens the dashboard directly."
+  },
+  {
+    q: "How do push notifications work?",
+    a: "Each dashboard you save gets a unique webhook token. Send a simple HTTP POST request with a title and body to our endpoint, and Relay delivers an instant push notification to your phone. Tap the notification to open the associated dashboard."
+  },
+  {
+    q: "What can I use as a dashboard?",
+    a: "Anything with a URL — Grafana, Home Assistant, n8n, Uptime Kuma, Portainer, Jenkins, your own internal tools. If it renders in a browser, you can save it in Relay."
+  },
+  {
+    q: "Is there a free plan?",
+    a: "Yes! The free plan includes 1 dashboard, 1 device, and 200 notifications per month. It's perfect for personal projects and testing. Upgrade to Pro for unlimited dashboards and 10,000 notifications/month."
+  },
+  {
+    q: "Do I need to install an SDK?",
+    a: "No. Relay uses a simple REST API — just send an HTTP POST request from any language, script, or CI/CD pipeline. If your system can make an HTTP request, it works with Relay."
+  },
+];
+
+function FAQItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
+  return (
+    <div className="border-b border-border">
+      <button
+        onClick={onToggle}
+        className="w-full flex items-center justify-between py-5 text-left cursor-pointer group"
+      >
+        <span className="text-base font-medium pr-4 group-hover:text-accent transition-colors">{item.q}</span>
+        <ChevronDown className={`w-5 h-5 text-text-muted shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
+      </button>
+      <AnimatePresence initial={false}>
+        {isOpen && (
+          <motion.div
+            initial={{ height: 0, opacity: 0 }}
+            animate={{ height: 'auto', opacity: 1 }}
+            exit={{ height: 0, opacity: 0 }}
+            transition={{ duration: 0.2, ease: 'easeInOut' }}
+            className="overflow-hidden"
+          >
+            <p className="pb-5 text-text-muted leading-relaxed text-sm">{item.a}</p>
+          </motion.div>
+        )}
+      </AnimatePresence>
+    </div>
+  );
+}
+
 export default function App() {
   const [activeTab, setActiveTab] = useState<keyof typeof INTEGRATIONS>('bash');
   const [showNotification, setShowNotification] = useState(false);
   const [isSignedIn, setIsSignedIn] = useState(false);
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
 
   // Scroll-linked rotation for nav logo
   const { scrollY } = useScroll();
@@ -80,6 +132,15 @@ export default function App() {
     return () => clearInterval(interval);
   }, []);
 
+  // Close mobile menu on route change or resize
+  useEffect(() => {
+    const handleResize = () => {
+      if (window.innerWidth >= 768) setMobileMenuOpen(false);
+    };
+    window.addEventListener('resize', handleResize);
+    return () => window.removeEventListener('resize', handleResize);
+  }, []);
+
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
 
@@ -101,7 +162,7 @@ export default function App() {
           <div className="flex items-center gap-3">
             <ThemeToggle />
             {isSignedIn ? (
-              <Link to="/dashboard" className="h-9 px-4 rounded-lg bg-text-main text-bg text-sm font-medium hover:opacity-90 transition-all flex items-center gap-2">
+              <Link to="/dashboard" className="h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center gap-2">
                 <User className="w-4 h-4" />
                 Dashboard
               </Link>
@@ -110,18 +171,63 @@ export default function App() {
                 <Link to="/login" className="hidden md:flex items-center text-sm font-medium text-text-muted hover:text-text-main transition-colors">
                   Sign in
                 </Link>
-                <Link to="/signup" className="h-9 px-4 rounded-lg bg-text-main text-bg text-sm font-medium hover:opacity-90 transition-all flex items-center">
+                <Link to="/signup" className="hidden md:flex h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all items-center">
                   Get Started
                 </Link>
               </>
             )}
+            {/* Mobile hamburger */}
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors cursor-pointer"
+              aria-label="Toggle menu"
+            >
+              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
+            </button>
           </div>
         </div>
+
+        {/* Mobile menu */}
+        <AnimatePresence>
+          {mobileMenuOpen && (
+            <motion.div
+              initial={{ height: 0, opacity: 0 }}
+              animate={{ height: 'auto', opacity: 1 }}
+              exit={{ height: 0, opacity: 0 }}
+              transition={{ duration: 0.2 }}
+              className="md:hidden border-t border-border bg-bg overflow-hidden"
+            >
+              <div className="px-6 py-4 space-y-1">
+                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Features</a>
+                <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">How it works</a>
+                <a href="#api" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">API</a>
+                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Pricing</Link>
+                {!isSignedIn && (
+                  <div className="pt-3 space-y-2 border-t border-border mt-2">
+                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Sign in</Link>
+                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-accent hover:text-emerald-600 transition-colors">Get Started Free</Link>
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </nav>
 
       <main>
         {/* Hero Section */}
-        <section className="pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
+        <section className="relative pt-32 pb-20 px-6 text-center max-w-5xl mx-auto overflow-hidden">
+          {/* Dot grid background */}
+          <div
+            className="absolute inset-0 -z-10 opacity-[0.4] dark:opacity-[0.15]"
+            style={{
+              backgroundImage: 'radial-gradient(circle, var(--color-text-muted) 1px, transparent 1px)',
+              backgroundSize: '24px 24px',
+            }}
+          />
+          {/* Radial fade overlay */}
+          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--color-bg)_70%)]" />
+
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -147,8 +253,8 @@ export default function App() {
               Your dashboards,<br />
               one tap away.
             </h1>
-            <p className="text-lg md:text-xl text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed">
-              Save any web dashboard as a native app. Send push notifications via webhook. Tap to open instantly. The missing bridge between your infrastructure and your pocket.
+            <p className="text-lg md:text-xl text-text-muted max-w-xl mx-auto mb-10 leading-relaxed font-normal">
+              Save any web dashboard as a native app. Send push notifications via webhook. Tap to open instantly.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/signup" className="h-12 px-6 rounded-lg bg-accent text-white font-medium flex items-center gap-2 hover:bg-emerald-600 transition-all w-full sm:w-auto justify-center cursor-pointer">
@@ -297,6 +403,65 @@ export default function App() {
           </div>
         </section>
 
+        {/* Use Cases */}
+        <section className="py-24 px-6 max-w-6xl mx-auto border-t border-border">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-16"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Built for builders.</h2>
+            <p className="text-text-muted text-lg max-w-2xl mx-auto">Whether you're managing servers, shipping products, or tinkering at home — Relay keeps you in the loop.</p>
+          </motion.div>
+
+          <div className="grid md:grid-cols-3 gap-6">
+            {[
+              {
+                icon: <Gauge className="w-6 h-6 text-accent" />,
+                title: "DevOps & SREs",
+                desc: "Monitor Grafana, Uptime Kuma, and CI/CD pipelines. Get alerted on deploy failures, downtime, or anomalies — all from your pocket.",
+                tools: ["Grafana", "Jenkins", "Uptime Kuma"]
+              },
+              {
+                icon: <Rocket className="w-6 h-6 text-accent" />,
+                title: "Founders & Indie Hackers",
+                desc: "Track new signups, payments, and errors in real time. Connect Stripe webhooks, monitor your SaaS metrics — no dashboard tab-hopping.",
+                tools: ["Stripe", "Vercel", "Supabase"]
+              },
+              {
+                icon: <Wrench className="w-6 h-6 text-accent" />,
+                title: "Homelab & IoT",
+                desc: "Keep tabs on Home Assistant, n8n automations, and self-hosted services. Get notified when your 3D print finishes or a sensor triggers.",
+                tools: ["Home Assistant", "n8n", "Portainer"]
+              },
+            ].map((item, i) => (
+              <motion.div
+                key={i}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.4, delay: i * 0.1 }}
+                className="bg-surface border border-border rounded-2xl p-8"
+              >
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                  {item.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
+                <p className="text-text-muted leading-relaxed text-sm mb-6">{item.desc}</p>
+                <div className="flex flex-wrap gap-2">
+                  {item.tools.map(tool => (
+                    <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">
+                      {tool}
+                    </span>
+                  ))}
+                </div>
+              </motion.div>
+            ))}
+          </div>
+        </section>
+
         {/* How It Works */}
         <section id="how-it-works" className="py-24 px-6 max-w-5xl mx-auto border-t border-border">
           <motion.div
@@ -412,6 +577,37 @@ export default function App() {
           </div>
         </section>
 
+        {/* FAQ */}
+        <section id="faq" className="py-24 px-6 max-w-3xl mx-auto border-t border-border">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-100px" }}
+            transition={{ duration: 0.5 }}
+            className="text-center mb-12"
+          >
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Frequently asked questions</h2>
+            <p className="text-text-muted text-lg">Everything you need to know about Relay.</p>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-50px" }}
+            transition={{ duration: 0.5, delay: 0.1 }}
+            className="border-t border-border"
+          >
+            {FAQ_ITEMS.map((item, i) => (
+              <FAQItem
+                key={i}
+                item={item}
+                isOpen={openFAQ === i}
+                onToggle={() => setOpenFAQ(openFAQ === i ? null : i)}
+              />
+            ))}
+          </motion.div>
+        </section>
+
         {/* CTA */}
         <section className="py-24 px-6 border-t border-border">
           <motion.div
@@ -433,15 +629,52 @@ export default function App() {
 
       {/* Footer */}
       <footer className="border-t border-border">
-        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <RelayIcon size={18} className="text-text-muted" />
-            <span className="text-text-muted text-sm">Relay — Real-time webhook notifications</span>
+        <div className="max-w-7xl mx-auto px-6 py-16">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+            {/* Brand */}
+            <div className="col-span-2 md:col-span-1">
+              <div className="flex items-center gap-2 mb-4">
+                <RelayIcon size={20} className="text-text-main" />
+                <span className="font-semibold">Relay</span>
+              </div>
+              <p className="text-sm text-text-muted leading-relaxed">
+                Real-time webhook notifications for your dashboards, straight to your phone.
+              </p>
+            </div>
+
+            {/* Product */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Product</h4>
+              <ul className="space-y-2.5 text-sm text-text-muted">
+                <li><a href="#features" className="hover:text-text-main transition-colors">Features</a></li>
+                <li><a href="#how-it-works" className="hover:text-text-main transition-colors">How it works</a></li>
+                <li><Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link></li>
+                <li><a href="#api" className="hover:text-text-main transition-colors">API</a></li>
+              </ul>
+            </div>
+
+            {/* Resources */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Resources</h4>
+              <ul className="space-y-2.5 text-sm text-text-muted">
+                <li><a href="#faq" className="hover:text-text-main transition-colors">FAQ</a></li>
+                <li><Link to="/login" className="hover:text-text-main transition-colors">Sign in</Link></li>
+                <li><Link to="/signup" className="hover:text-text-main transition-colors">Sign up</Link></li>
+              </ul>
+            </div>
+
+            {/* Legal */}
+            <div>
+              <h4 className="text-sm font-semibold mb-4">Legal</h4>
+              <ul className="space-y-2.5 text-sm text-text-muted">
+                <li><a href="#" className="hover:text-text-main transition-colors">Privacy Policy</a></li>
+                <li><a href="#" className="hover:text-text-main transition-colors">Terms of Service</a></li>
+              </ul>
+            </div>
           </div>
-          <div className="flex items-center gap-6 text-sm text-text-muted">
-            <a href="#api" className="hover:text-text-main transition-colors">API Docs</a>
-            <Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link>
-            <a href="#" className="hover:text-text-main transition-colors">Privacy</a>
+
+          <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
+            <p className="text-sm text-text-muted">&copy; {new Date().getFullYear()} Relay. All rights reserved.</p>
           </div>
         </div>
       </footer>

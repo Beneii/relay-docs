@@ -215,10 +215,20 @@ export default function App() {
       </nav>
 
       <main>
+        {/* Dot grid — full width, hero height, fades at page edges + dims around logo */}
+        <div
+          className="pointer-events-none absolute left-0 right-0 top-16 z-0 dot-grid"
+          style={{
+            height: '700px',
+            maskImage: 'radial-gradient(ellipse 50% 40% at 50% 35%, transparent 0%, black 40%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%), linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 50% 40% at 50% 35%, transparent 0%, black 40%), linear-gradient(to right, transparent 0%, black 10%, black 90%, transparent 100%), linear-gradient(to bottom, black 0%, black 70%, transparent 100%)',
+            maskComposite: 'intersect',
+            WebkitMaskComposite: 'source-in',
+          }}
+        />
+
         {/* Hero Section */}
         <section className="relative pt-32 pb-20 px-6 text-center max-w-5xl mx-auto">
-          {/* Dot grid with edge fade */}
-          <div className="pointer-events-none absolute inset-0 z-0 dot-grid" style={{ maskImage: 'radial-gradient(ellipse at center, black 20%, transparent 70%)', WebkitMaskImage: 'radial-gradient(ellipse at center, black 20%, transparent 70%)' }} />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}

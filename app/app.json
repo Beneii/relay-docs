@@ -1,0 +1,69 @@
+{
+  "expo": {
+    "name": "Relay",
+    "slug": "relay",
+    "version": "1.0.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "automatic",
+    "scheme": "relay",
+    "splash": {
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#09090b"
+    },
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.relay.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "Relay does not use the camera.",
+        "UIBackgroundModes": [
+          "remote-notification"
+        ],
+        "NSAppTransportSecurity": {
+          "NSAllowsArbitraryLoads": true,
+          "NSAllowsLocalNetworking": true,
+          "NSAllowsArbitraryLoadsInWebContent": true
+        }
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#09090b"
+      },
+      "package": "com.relay.app",
+      "permissions": [
+        "RECEIVE_BOOT_COMPLETED",
+        "VIBRATE"
+      ],
+      "googleServicesFile": "./google-services.json"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#10B981"
+        }
+      ]
+    ],
+    "extra": {
+      "eas": {
+        "projectId": "9bf57379-4be3-4fa6-ae80-55feb35eab5c"
+      },
+      "supabaseUrl": "https://wvlbdjpllcnmndkujzpy.supabase.co",
+      "supabaseAnonKey": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Ind2bGJkanBsbGNubW5ka3VqenB5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzI4NjA1MTcsImV4cCI6MjA4ODQzNjUxN30.QDzfYJN8UCE12hR3qjqps4QUfE7u6B4n779awNSb4Fo",
+      "router": {}
+    },
+    "updates": {
+      "url": "https://u.expo.dev/9bf57379-4be3-4fa6-ae80-55feb35eab5c"
+    },
+    "runtimeVersion": {
+      "policy": "appVersion"
+    },
+    "owner": "benei"
+  }
+}

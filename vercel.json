@@ -1,8 +1,19 @@
 {
+  "framework": "vite",
+  "buildCommand": "npm run build",
+  "outputDirectory": "dist",
   "rewrites": [
     {
       "source": "/webhook",
       "destination": "https://wvlbdjpllcnmndkujzpy.supabase.co/functions/v1/notify"
+    },
+    {
+      "source": "/auth/callback",
+      "destination": "/auth/callback.html"
+    },
+    {
+      "source": "/((?!api|assets|favicon\\.svg|auth).*)",
+      "destination": "/index.html"
     }
   ]
 }

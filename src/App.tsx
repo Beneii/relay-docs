@@ -112,7 +112,7 @@ export default function App() {
 
   // Scroll-linked rotation for nav logo
   const { scrollY } = useScroll();
-  const navLogoRotate = useTransform(scrollY, [0, 3000], [0, 720]);
+  const navLogoRotate = useTransform(scrollY, [0, 8000], [0, 1800]);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -272,7 +272,7 @@ export default function App() {
         </section>
 
         {/* Hero Visual (Terminal -> Webhook -> Phone) */}
-        <section className="py-12 px-6 max-w-6xl mx-auto overflow-hidden">
+        <section className="pt-20 pb-12 px-6 max-w-6xl mx-auto overflow-hidden">
           <div className="flex flex-col md:flex-row items-center justify-center gap-6 md:gap-12">
 
             {/* Left: Terminal — theme-aware */}

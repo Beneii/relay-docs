@@ -220,8 +220,10 @@ export default function App() {
           className="pointer-events-none absolute left-0 right-0 top-16 z-0 dot-grid"
           style={{
             height: '750px',
-            maskImage: 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, black 80%)',
-            WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, black 80%)',
+            maskImage: 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, black 80%), linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
+            WebkitMaskImage: 'radial-gradient(ellipse 80% 70% at 50% 45%, transparent 30%, black 80%), linear-gradient(to bottom, black 0%, black 60%, transparent 100%)',
+            maskComposite: 'intersect',
+            WebkitMaskComposite: 'source-in',
           }}
         />
 

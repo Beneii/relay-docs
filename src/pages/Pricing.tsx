@@ -48,11 +48,16 @@ export default function Pricing() {
         body: JSON.stringify({ userId, email }),
       });
 
+      if (!response.ok) {
+        const errData = await response.json().catch(() => ({}));
+        setUpgradeError(errData.error || `Server error (${response.status})`);
+        return;
+      }
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        setUpgradeError(data.error || 'Failed to create checkout session.');
+        setUpgradeError('No checkout URL returned. Please try again.');
       }
     } catch (error: any) {
       setUpgradeError(error.message || 'Something went wrong.');

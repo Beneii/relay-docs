@@ -24,11 +24,20 @@ export default function Pricing() {
     fetchUser();
   }, []);
 
+  const [upgradeError, setUpgradeError] = useState<string | null>(null);
+
   const handleUpgrade = async () => {
-    if (!user) {
+    setUpgradeError(null);
+
+    // If no profile loaded, check if there's a session directly
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) {
       navigate('/login');
       return;
     }
+
+    const userId = user?.id || session.user.id;
+    const email = user?.email || session.user.email;
 
     try {
       const response = await fetch('/api/create-checkout', {
@@ -36,20 +45,17 @@ export default function Pricing() {
         headers: {
           'Content-Type': 'application/json',
         },
-        body: JSON.stringify({
-          userId: user.id,
-          email: user.email,
-        }),
+        body: JSON.stringify({ userId, email }),
       });
 
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
       } else {
-        console.error('Failed to create checkout session:', data.error);
+        setUpgradeError(data.error || 'Failed to create checkout session.');
       }
-    } catch (error) {
-      console.error('Error upgrading:', error);
+    } catch (error: any) {
+      setUpgradeError(error.message || 'Something went wrong.');
     }
   };
 
@@ -153,7 +159,12 @@ export default function Pricing() {
               ))}
             </ul>
 
-            <button 
+            {upgradeError && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-400 p-3 rounded-md text-sm mb-4">
+                {upgradeError}
+              </div>
+            )}
+            <button
               onClick={handleUpgrade}
               disabled={user?.plan === 'pro'}
               className="w-full flex justify-center items-center h-12 rounded-lg bg-accent text-white font-medium hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"

@@ -219,14 +219,14 @@ export default function App() {
         <section className="relative pt-32 pb-20 px-6 text-center max-w-5xl mx-auto overflow-hidden">
           {/* Dot grid background */}
           <div
-            className="absolute inset-0 -z-10 opacity-[0.4] dark:opacity-[0.15]"
+            className="absolute -inset-32 -z-10"
             style={{
-              backgroundImage: 'radial-gradient(circle, var(--color-text-muted) 1px, transparent 1px)',
+              backgroundImage: 'radial-gradient(circle, var(--color-border) 1px, transparent 1px)',
               backgroundSize: '24px 24px',
             }}
           />
           {/* Radial fade overlay */}
-          <div className="absolute inset-0 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--color-bg)_70%)]" />
+          <div className="absolute -inset-32 -z-10 bg-[radial-gradient(ellipse_at_center,transparent_0%,var(--color-bg)_60%)]" />
 
           <motion.div
             initial={{ opacity: 0, y: 20 }}
@@ -501,7 +501,7 @@ export default function App() {
                 transition={{ duration: 0.5, delay: i * 0.15 }}
                 className="relative"
               >
-                <div className="text-5xl font-bold text-accent/25 mb-4">{item.step}</div>
+                <div className="text-5xl font-bold text-accent/50 mb-4">{item.step}</div>
                 <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
                 <p className="text-text-muted leading-relaxed">{item.desc}</p>
               </motion.div>

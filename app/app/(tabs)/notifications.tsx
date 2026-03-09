@@ -107,6 +107,7 @@ export default function NotificationsScreen() {
   const {
     data: notifications,
     isLoading,
+    isFetching,
     refetch,
   } = useNotifications();
   const { data: apps } = useApps();
@@ -181,7 +182,7 @@ export default function NotificationsScreen() {
         }
         refreshControl={
           <RefreshControl
-            refreshing={false}
+            refreshing={isFetching}
             onRefresh={refetch}
             tintColor={colors.accent}
           />

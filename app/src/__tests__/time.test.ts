@@ -28,20 +28,25 @@ describe("timeAgo", () => {
     expect(timeAgo(hoursAgo(23))).toBe("23h ago");
   });
 
-  it("returns days for < 1 week", () => {
+  it("returns days for < 30 days", () => {
     expect(timeAgo(daysAgo(1))).toBe("1d ago");
     expect(timeAgo(daysAgo(6))).toBe("6d ago");
+    expect(timeAgo(daysAgo(14))).toBe("14d ago");
+    expect(timeAgo(daysAgo(29))).toBe("29d ago");
   });
 
-  it("returns weeks for < 4 weeks", () => {
-    expect(timeAgo(daysAgo(14))).toBe("2w ago");
+  it("returns months at exactly 30 days", () => {
+    expect(timeAgo(daysAgo(30))).toBe("1mo ago");
   });
 
   it("returns months for < 12 months", () => {
     expect(timeAgo(daysAgo(60))).toBe("2mo ago");
+    expect(timeAgo(daysAgo(364))).toBe("12mo ago");
   });
 
-  it("returns years for > 12 months", () => {
+  it("returns years for >= 365 days", () => {
+    expect(timeAgo(daysAgo(365))).toBe("1y ago");
     expect(timeAgo(daysAgo(400))).toBe("1y ago");
+    expect(timeAgo(daysAgo(730))).toBe("2y ago");
   });
 });

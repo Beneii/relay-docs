@@ -91,6 +91,7 @@ export default function DashboardPage() {
   const [fetchError, setFetchError] = useState<string | null>(null);
   const [deleteDashboardError, setDeleteDashboardError] = useState<string | null>(null);
   const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
+  const [deleteConfirmation, setDeleteAccountConfirmation] = useState('');
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
   const [testingId, setTestingId] = useState<string | null>(null);
   const [testResult, setTestResult] = useState<{ id: string; status: 'success' | 'error' } | null>(null);
@@ -931,11 +932,23 @@ export default function DashboardPage() {
                 </div>
               </div>
               <p className="text-text-muted text-sm px-1">
-                Are you sure you want to delete your account? You cannot undo this.
+                Are you sure you want to delete your account? This action is <strong>irreversible</strong>.
               </p>
+              <div className="space-y-2">
+                <label className="block text-xs font-medium text-text-muted px-1 uppercase tracking-wider">
+                  Type "DELETE MY ACCOUNT" to confirm
+                </label>
+                <input
+                  type="text"
+                  value={deleteConfirmation}
+                  onChange={(e) => setDeleteAccountConfirmation(e.target.value)}
+                  placeholder="DELETE MY ACCOUNT"
+                  className="w-full bg-bg border border-border rounded-lg px-3 py-2.5 text-sm focus:outline-none focus:border-red-500 transition-colors"
+                />
+              </div>
               <div className="pt-4 flex flex-col gap-3">
                 <button
-                  disabled={deleting}
+                  disabled={deleting || deleteConfirmation !== 'DELETE MY ACCOUNT'}
                   onClick={handleDeleteAccount}
                   className="w-full h-11 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
                 >

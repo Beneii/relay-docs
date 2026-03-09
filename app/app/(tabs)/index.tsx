@@ -114,7 +114,7 @@ function AppCard({ app }: { app: AppRow }) {
 
 export default function HomeScreen() {
   const { colors } = useTheme();
-  const { data: apps, isLoading, error, refetch } = useApps();
+  const { data: apps, isLoading, isFetching, error, refetch } = useApps();
   const { data: profile } = useProfile();
 
   const plan = profile?.plan ?? "free";
@@ -175,7 +175,7 @@ export default function HomeScreen() {
               ·
             </Text>
             <Text style={[styles.planBadgeLimit, { color: colors.textTertiary }]}>
-              {appCount}/{FREE_LIMITS.dashboards} dashboard
+              {appCount}/{FREE_LIMITS.dashboards} dashboards
             </Text>
           </View>
         </View>
@@ -251,7 +251,7 @@ export default function HomeScreen() {
         }
         refreshControl={
           <RefreshControl
-            refreshing={false}
+            refreshing={isFetching}
             onRefresh={refetch}
             tintColor={colors.accent}
           />

@@ -76,8 +76,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     response.db.status = 'ok';
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json(response);
-  } catch (error: any) {
-    console.error('Health check unexpected error:', error?.message);
+  } catch (error: unknown) {
+    console.error('Health check unexpected error:', error instanceof Error ? error.message : error);
     response.status = 'error';
     response.db = {
       status: 'unreachable',

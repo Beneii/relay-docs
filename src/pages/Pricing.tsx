@@ -2,6 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CheckCircle2, X } from 'lucide-react';
+import { FREE_LIMITS, PRO_LIMITS } from '@shared/product';
 import { RelayIcon } from '../components/RelayLogo';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -73,8 +74,8 @@ export default function Pricing() {
       } else {
         setUpgradeError('No checkout URL returned. Please try again.');
       }
-    } catch (error: any) {
-      setUpgradeError(error.message || 'Something went wrong.');
+    } catch (error: unknown) {
+      setUpgradeError(error instanceof Error ? error.message : 'Something went wrong.');
     }
   };
 
@@ -117,6 +118,23 @@ export default function Pricing() {
   const monthlyPrice = '$7.99';
   const annualPrice = '$79';
   const annualMonthly = '$6.58';
+  const freePlanFeatures = [
+    { label: `${FREE_LIMITS.dashboards} dashboards`, included: true },
+    { label: `${FREE_LIMITS.devices} device`, included: true },
+    { label: `${FREE_LIMITS.notificationsPerMonth} notifications / month`, included: true },
+    { label: 'Webhook API access', included: true },
+    { label: `Up to ${PRO_LIMITS.devices} devices`, included: false },
+    { label: 'Notification history', included: false },
+    { label: 'Priority support', included: false },
+  ];
+  const proPlanFeatures = [
+    'Unlimited dashboards',
+    `Up to ${PRO_LIMITS.devices} devices`,
+    `${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications per month`,
+    'Notification history',
+    'Metadata events',
+    'Priority support',
+  ];
 
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
@@ -178,15 +196,7 @@ export default function Pricing() {
             <p className="text-text-muted mb-8">Perfect for personal projects and testing.</p>
 
             <ul className="space-y-4 mb-8 flex-1">
-              {[
-                { label: '3 dashboards', included: true },
-                { label: '1 device', included: true },
-                { label: '100 notifications / month', included: true },
-                { label: 'Webhook API access', included: true },
-                { label: 'Up to 10 devices', included: false },
-                { label: 'Notification history', included: false },
-                { label: 'Priority support', included: false },
-              ].map((feature, i) => (
+              {freePlanFeatures.map((feature, i) => (
                 <li key={i} className={`flex items-start gap-3 ${!feature.included ? 'opacity-40' : ''}`}>
                   {feature.included ? (
                     <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
@@ -225,14 +235,7 @@ export default function Pricing() {
             <p className="text-text-muted mb-8">For power users and professional teams.</p>
 
             <ul className="space-y-4 mb-8 flex-1">
-              {[
-                'Unlimited dashboards',
-                'Up to 10 devices',
-                '10,000 notifications per month',
-                'Notification history',
-                'Metadata events',
-                'Priority support'
-              ].map((feature, i) => (
+              {proPlanFeatures.map((feature, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
                   <span className="text-sm">{feature}</span>

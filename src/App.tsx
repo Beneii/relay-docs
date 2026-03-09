@@ -1,123 +1,12 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User, Menu, X, ChevronDown, Gauge, Wrench, Rocket, Bot, Activity, TrendingUp, Shield, MonitorSmartphone, Network } from 'lucide-react';
+import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User, Menu, X, Gauge, Wrench, Rocket, Bot, Activity, TrendingUp, Shield, MonitorSmartphone, Network } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { RelayIcon } from './components/RelayLogo';
 import { ThemeToggle } from './components/ThemeToggle';
-
-const INTEGRATIONS = {
-  bash: {
-    name: "Bash",
-    code: `curl -X POST https://relayapp.dev/webhook \\
-  -H "Content-Type: application/json" \\
-  -d '{
-    "token": "YOUR_WEBHOOK_TOKEN",
-    "title": "Build completed",
-    "body": "All tests passed"
-  }'`
-  },
-  github: {
-    name: "GitHub Actions",
-    code: `- name: Send Relay Notification
-  run: |
-    curl -X POST https://relayapp.dev/webhook \\
-      -H "Content-Type: application/json" \\
-      -d '{
-        "token": "\${{ secrets.RELAY_TOKEN }}",
-        "title": "Action Failed",
-        "body": "Workflow \${{ github.workflow }} failed"
-      }'`
-  },
-  python: {
-    name: "Python",
-    code: `import requests
-
-requests.post("https://relayapp.dev/webhook", json={
-    "token": "YOUR_WEBHOOK_TOKEN",
-    "title": "Model trained",
-    "body": "Accuracy: 98.5%"
-})`
-  },
-  node: {
-    name: "Node.js",
-    code: `fetch("https://relayapp.dev/webhook", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    token: "YOUR_WEBHOOK_TOKEN",
-    title: "Server Error",
-    body: "Database connection lost"
-  })
-});`
-  }
-};
-
-const FAQ_ITEMS = [
-  {
-    q: "What is Relay?",
-    a: "Relay is a mobile command center for web dashboards. Save any web dashboard as a native app on your phone, send webhooks to receive push notifications, and tap to open your dashboards instantly. It is commonly used to monitor AI agents, automations, servers, and self-hosted systems."
-  },
-  {
-    q: "Do my dashboards need to be public?",
-    a: "No. Most users access dashboards through Tailscale or another private network. Relay simply loads the URL you provide — your dashboards stay on your own infrastructure."
-  },
-  {
-    q: "Does Relay host my dashboards?",
-    a: "No. Relay simply loads your existing dashboards in a mobile interface and sends notifications. Your data and dashboards remain wherever you host them."
-  },
-  {
-    q: "Do I need to store images for notification icons?",
-    a: "No. Relay supports icon_url, so images can be hosted anywhere — your own server, a CDN, or any public URL."
-  },
-  {
-    q: "Does Relay replace my dashboard?",
-    a: "No. Relay is a mobile companion for dashboards and automation systems. It gives you a native app wrapper and push notifications on top of your existing setup."
-  },
-  {
-    q: "What kinds of systems work with Relay?",
-    a: "Anything that can send a webhook — AI agents, automation tools, CI pipelines, servers, scripts, monitoring systems, trading bots, and more. If it can make an HTTP POST request, it works with Relay."
-  },
-  {
-    q: "How do push notifications work?",
-    a: "Each dashboard you save gets a unique webhook token. Send a simple HTTP POST request with a title and body to our endpoint, and Relay delivers an instant push notification to your phone. Tap the notification to open the associated dashboard."
-  },
-  {
-    q: "Is there a free plan?",
-    a: "Yes. The free plan includes 3 dashboards, 1 device, and 100 notifications per month. Upgrade to Pro for unlimited dashboards and 10,000 notifications/month."
-  },
-  {
-    q: "Do I need to install an SDK?",
-    a: "No. Relay uses a simple REST API — just send an HTTP POST request from any language, script, or CI/CD pipeline. No SDKs, no dependencies."
-  },
-];
-
-function FAQItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen: boolean; onToggle: () => void }) {
-  return (
-    <div className="border-b border-border">
-      <button
-        onClick={onToggle}
-        className="w-full flex items-center justify-between py-5 text-left cursor-pointer group"
-      >
-        <h3 className="text-base font-medium pr-4 group-hover:text-accent transition-colors">{item.q}</h3>
-        <ChevronDown className={`w-5 h-5 text-text-muted shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
-      </button>
-      <AnimatePresence initial={false}>
-        {isOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            transition={{ duration: 0.2, ease: 'easeInOut' }}
-            className="overflow-hidden"
-          >
-            <p className="pb-5 text-text-muted leading-relaxed text-sm">{item.a}</p>
-          </motion.div>
-        )}
-      </AnimatePresence>
-    </div>
-  );
-}
+import { FAQItem } from './features/landing/FAQItem';
+import { FAQ_ITEMS, INTEGRATIONS } from './features/landing/content';
 
 export default function App() {
   const [activeTab, setActiveTab] = useState<keyof typeof INTEGRATIONS>('bash');

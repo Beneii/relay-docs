@@ -1,4 +1,5 @@
 import { Resend } from 'resend';
+import { FREE_LIMITS, PRO_LIMITS } from '../backend/shared/product.js';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -42,6 +43,8 @@ const D = {
 // Relay icon PNGs for emails — dark on light, white on dark
 const LOGO_DARK_URL = 'https://relayapp.dev/logo-dark.png';
 const LOGO_WHITE_URL = 'https://relayapp.dev/logo-white.png';
+const FREE_PLAN_SUMMARY = `${FREE_LIMITS.dashboards} dashboards, ${FREE_LIMITS.devices} device, ${FREE_LIMITS.notificationsPerMonth} notifications/month`;
+const PRO_PLAN_SUMMARY = `unlimited dashboards, up to ${PRO_LIMITS.devices} devices, and ${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/month`;
 
 // ── Layout wrapper with dark mode support ────────────────────────
 function layout(content: string): string {
@@ -157,7 +160,7 @@ export async function sendWelcomeEmail(to: string) {
       </tr>
     </table>
     ${button('Go to Dashboard', 'https://relayapp.dev/dashboard')}
-    ${paragraph("You're on the <strong class=\"email-strong\" style=\"color:" + L.text + ";\">Free</strong> plan. Upgrade anytime for unlimited dashboards and 10,000 notifications/month.")}
+    ${paragraph("You're on the <strong class=\"email-strong\" style=\"color:" + L.text + ";\">Free</strong> plan. Upgrade anytime for " + PRO_PLAN_SUMMARY + ".")}
   `);
 
   return resend.emails.send({
@@ -186,7 +189,7 @@ export async function sendProUpgradeEmail(to: string) {
       </tr>
       <tr>
         <td class="email-check-text" style="padding:8px 0;color:${L.text};font-size:14px;">
-          <span style="color:${L.green};margin-right:8px;">✓</span> 10,000 notifications/month
+          <span style="color:${L.green};margin-right:8px;">✓</span> ${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/month
         </td>
       </tr>
       <tr>
@@ -206,7 +209,7 @@ export async function sendProUpgradeEmail(to: string) {
     to,
     subject: 'Welcome to Relay Pro',
     html,
-    text: 'Your upgrade to Relay Pro is confirmed! You now have unlimited dashboards, unlimited devices, and 10,000 notifications/month. Manage your subscription at https://relayapp.dev/dashboard',
+    text: `Your upgrade to Relay Pro is confirmed. You now have ${PRO_PLAN_SUMMARY}. Manage your subscription at https://relayapp.dev/dashboard`,
   });
 }
 
@@ -219,21 +222,21 @@ export async function sendSubscriptionCancelledEmail(to: string) {
     <table cellpadding="0" cellspacing="0" style="margin:0 0 20px;width:100%;">
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> 3 dashboards
+          <span style="margin-right:8px;">•</span> ${FREE_LIMITS.dashboards} dashboards
         </td>
       </tr>
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> 1 device
+          <span style="margin-right:8px;">•</span> ${FREE_LIMITS.devices} device
         </td>
       </tr>
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> 100 notifications/month
+          <span style="margin-right:8px;">•</span> ${FREE_LIMITS.notificationsPerMonth} notifications/month
         </td>
       </tr>
     </table>
-    ${paragraph('If you had more than 3 dashboards, your extra dashboards are still saved — they\'ll be available again if you resubscribe.')}
+    ${paragraph(`If you had more than ${FREE_LIMITS.dashboards} dashboards, your extra dashboards are still saved and will be available again if you resubscribe.`)}
     ${button('Resubscribe to Pro', 'https://relayapp.dev/pricing')}
     ${paragraph('We\'d love to have you back. If anything wasn\'t working for you, just reply to this email.')}
   `);
@@ -243,7 +246,7 @@ export async function sendSubscriptionCancelledEmail(to: string) {
     to,
     subject: 'Your Relay Pro subscription has ended',
     html,
-    text: 'Your Relay Pro subscription has been cancelled and your account has been moved to the Free plan. Resubscribe anytime at https://relayapp.dev/pricing',
+    text: `Your Relay Pro subscription has been cancelled and your account has been moved to the Free plan (${FREE_PLAN_SUMMARY}). Resubscribe anytime at https://relayapp.dev/pricing`,
   });
 }
 

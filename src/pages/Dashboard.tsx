@@ -2,77 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { LayoutDashboard, Trash2, Plus, Settings, CreditCard, AlertCircle, Copy, Check, ExternalLink, UserX, Bell, Zap, Webhook } from 'lucide-react';
+import { FREE_LIMITS, NOTIFICATION_HISTORY_LIMITS, PRO_LIMITS, getLimits } from '@shared/product';
+import { timeAgo } from '@shared/time';
 import { RelayIcon } from '../components/RelayLogo';
 import { ThemeToggle } from '../components/ThemeToggle';
-
-const FREE_APP_LIMIT = 3;
-const FREE_NOTIFICATION_LIMIT = 100;
-const FREE_HISTORY_LIMIT = 10;
-const PRO_HISTORY_LIMIT = 50;
-
-function timeAgo(dateStr: string): string {
-  const now = Date.now();
-  const then = new Date(dateStr).getTime();
-  const diffMs = now - then;
-  const diffSec = Math.floor(diffMs / 1000);
-  if (diffSec < 60) return `${diffSec}s ago`;
-  const diffMin = Math.floor(diffSec / 60);
-  if (diffMin < 60) return `${diffMin}m ago`;
-  const diffHr = Math.floor(diffMin / 60);
-  if (diffHr < 24) return `${diffHr}h ago`;
-  const diffDay = Math.floor(diffHr / 24);
-  if (diffDay < 30) return `${diffDay}d ago`;
-  const diffMo = Math.floor(diffDay / 30);
-  return `${diffMo}mo ago`;
-}
-
-function sleep(ms: number) {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-}
-
-function generateWebhookToken(): string {
-  const cryptoApi = globalThis.crypto;
-
-  if (!cryptoApi?.getRandomValues) {
-    throw new Error('Secure token generation is unavailable in this browser.');
-  }
-
-  const bytes = new Uint8Array(32);
-  cryptoApi.getRandomValues(bytes);
-
-  return Array.from(bytes)
-    .map((byte) => byte.toString(16).padStart(2, '0'))
-    .join('');
-}
-
-interface UserData {
-  id: string;
-  email: string;
-  plan: 'free' | 'pro';
-  stripe_customer_id: string | null;
-  stripe_subscription_id: string | null;
-  billing_interval: 'month' | 'year' | null;
-  current_period_end: string | null;
-  cancel_at_period_end: boolean;
-}
-
-interface Dashboard {
-  id: string;
-  name: string;
-  url: string;
-  webhook_token: string;
-  icon: string | null;
-}
-
-interface NotificationRecord {
-  id: string;
-  app_id: string | null;
-  title: string;
-  body: string | null;
-  created_at: string;
-  read_at: string | null;
-  event_type: string | null;
-}
+import { Dashboard, NotificationRecord, UserData } from '../features/dashboard/types';
+import { generateWebhookToken, sleep } from '../features/dashboard/utils';
 
 export default function DashboardPage() {
   const [user, setUser] = useState<UserData | null>(null);
@@ -203,7 +138,7 @@ export default function DashboardPage() {
         setShowSuccess(true);
       }
 
-      const historyLimit = userData.plan === 'pro' ? PRO_HISTORY_LIMIT : FREE_HISTORY_LIMIT;
+      const historyLimit = NOTIFICATION_HISTORY_LIMITS[userData.plan];
 
       const [dashboardsResult, notificationsResult, historyResult] = await Promise.all([
         supabase
@@ -304,9 +239,9 @@ export default function DashboardPage() {
 
       await supabase.auth.signOut();
       navigate('/');
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to delete account', err);
-      setDeleteAccountError(err.message || 'Failed to delete account. Please try again or contact support.');
+      setDeleteAccountError(err instanceof Error ? err.message : 'Failed to delete account. Please try again or contact support.');
       setDeleting(false);
     }
   };
@@ -344,8 +279,8 @@ export default function DashboardPage() {
 
     setFetchError(null);
 
-    if (user.plan === 'free' && dashboards.length >= FREE_APP_LIMIT) {
-      setError(`Free plan is limited to ${FREE_APP_LIMIT} dashboards. Please upgrade to add more.`);
+    if (user.plan === 'free' && dashboards.length >= FREE_LIMITS.dashboards) {
+      setError(`Free plan is limited to ${FREE_LIMITS.dashboards} dashboards. Please upgrade to add more.`);
       return;
     }
 
@@ -353,8 +288,8 @@ export default function DashboardPage() {
 
     try {
       token = generateWebhookToken();
-    } catch (tokenError: any) {
-      setError(tokenError.message || 'Failed to generate a secure webhook token.');
+    } catch (tokenError: unknown) {
+      setError(tokenError instanceof Error ? tokenError.message : 'Failed to generate a secure webhook token.');
       return;
     }
 
@@ -435,13 +370,15 @@ export default function DashboardPage() {
       } else {
         throw new Error('No portal URL returned');
       }
-    } catch (err: any) {
+    } catch (err: unknown) {
       console.error('Failed to open billing portal', err);
-      alert(err.message || 'Failed to open billing portal. Please try again.');
+      alert(err instanceof Error ? err.message : 'Failed to open billing portal. Please try again.');
     }
   };
 
-  const notificationLimit = user?.plan === 'pro' ? 10000 : FREE_NOTIFICATION_LIMIT;
+  const activePlan = user?.plan ?? 'free';
+  const notificationLimit = getLimits(activePlan).notificationsPerMonth;
+  const notificationHistoryLimit = NOTIFICATION_HISTORY_LIMITS[activePlan];
   const notificationPercent = Math.min((notificationsUsed / notificationLimit) * 100, 100);
 
   if (loading) {
@@ -629,7 +566,7 @@ export default function DashboardPage() {
                   {user?.plan === 'free' && (
                     <div className="mt-3 bg-accent/5 border border-accent/20 rounded-xl p-3">
                       <p className="text-xs text-text-muted leading-relaxed mb-2">
-                        Free plan: <span className="text-text-main font-medium">3 apps, 1 device, 100 notifications/month.</span> Upgrade for unlimited apps, up to 10 devices, and 10k notifications.
+                        Free plan: <span className="text-text-main font-medium">{FREE_LIMITS.dashboards} dashboards, {FREE_LIMITS.devices} device, {FREE_LIMITS.notificationsPerMonth} notifications/month.</span> Upgrade for unlimited dashboards, up to {PRO_LIMITS.devices} devices, and {PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications.
                       </p>
                       <Link
                         to="/pricing"
@@ -794,7 +731,7 @@ export default function DashboardPage() {
                   Recent Notifications
                 </h2>
                 {user.plan === 'pro' && (
-                  <span className="text-xs text-text-muted">Last {PRO_HISTORY_LIMIT}</span>
+                  <span className="text-xs text-text-muted">Last {NOTIFICATION_HISTORY_LIMITS.pro}</span>
                 )}
               </div>
 
@@ -834,7 +771,7 @@ export default function DashboardPage() {
                   {user.plan === 'free' && (
                     <div className="px-5 py-4 border-t border-border bg-surface-hover flex items-center justify-between gap-4">
                       <p className="text-sm text-text-muted">
-                        Showing the last {FREE_HISTORY_LIMIT} notifications.
+                        Showing the last {notificationHistoryLimit} notifications.
                       </p>
                       <Link
                         to="/pricing"

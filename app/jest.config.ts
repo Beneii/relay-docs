@@ -7,6 +7,7 @@ const config: Config = {
   testMatch: ["**/__tests__/**/*.test.ts"],
   moduleNameMapper: {
     "^@/(.*)$": "<rootDir>/src/$1",
+    "^@shared/(.*)$": "<rootDir>/../backend/shared/$1",
   },
   transform: {
     "^.+\\.tsx?$": [

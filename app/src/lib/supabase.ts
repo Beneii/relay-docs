@@ -62,7 +62,6 @@ const storageAdapter =
         },
       }
     : (() => {
-        // eslint-disable-next-line @typescript-eslint/no-require-imports
         const SecureStore = require("expo-secure-store");
         const CHUNK_SIZE = 2000; // Stay under SecureStore's 2048 byte limit
 

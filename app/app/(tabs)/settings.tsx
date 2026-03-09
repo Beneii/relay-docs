@@ -17,12 +17,13 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import { useSettingsStore } from "@/stores/settingsStore";
-import { useProfile, FREE_LIMITS, PRO_LIMITS } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/useProfile";
 import { useApps } from "@/hooks/useApps";
 import { useMonthlyNotificationCount } from "@/hooks/useNotifications";
 import { openUpgradeWithSession } from "@/components/UpgradePrompt";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { ThemeMode } from "@/theme";
+import { getLimits } from "@shared/product";
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: "system", label: "System" },
@@ -97,7 +98,7 @@ export default function SettingsScreen() {
 
   const plan = profile?.plan ?? "free";
   const isPro = plan === "pro";
-  const limits = isPro ? PRO_LIMITS : FREE_LIMITS;
+  const limits = getLimits(plan);
   const appCount = apps?.length ?? 0;
   const notifCount = monthlyNotifCount ?? 0;
   const devCount = deviceCount ?? 0;

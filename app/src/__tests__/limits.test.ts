@@ -2,7 +2,7 @@ jest.mock("@/lib/supabase", () => ({ supabase: {} }));
 jest.mock("@/stores/authStore", () => ({ useAuthStore: jest.fn() }));
 jest.mock("@tanstack/react-query", () => ({ useQuery: jest.fn() }));
 
-import { FREE_LIMITS, PRO_LIMITS, getLimits } from "../hooks/useProfile";
+import { FREE_LIMITS, PRO_LIMITS, getLimits } from "@shared/product";
 
 describe("FREE_LIMITS", () => {
   it("allows 3 dashboards", () => {

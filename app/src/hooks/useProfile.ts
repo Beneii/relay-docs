@@ -24,19 +24,3 @@ export function useProfile() {
     enabled: !!user,
   });
 }
-
-export const FREE_LIMITS = {
-  dashboards: 3,
-  devices: 1,
-  notificationsPerMonth: 100,
-} as const;
-
-export const PRO_LIMITS = {
-  dashboards: Infinity,
-  devices: 10,
-  notificationsPerMonth: 10_000,
-} as const;
-
-export function getLimits(plan: "free" | "pro") {
-  return plan === "pro" ? PRO_LIMITS : FREE_LIMITS;
-}

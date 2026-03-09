@@ -90,8 +90,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     res.json({ url: session.url });
-  } catch (error: any) {
-    console.error(`[checkout] msg=${error.message?.substring(0, 120)} code=${error.code} param=${error.param} type=${error.type}`);
+  } catch (error: unknown) {
+    const stripeError =
+      typeof error === 'object' && error !== null
+        ? (error as { code?: string; param?: string; type?: string; message?: string })
+        : {};
+    console.error(
+      `[checkout] msg=${stripeError.message?.substring(0, 120)} code=${stripeError.code} param=${stripeError.param} type=${stripeError.type}`
+    );
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 }

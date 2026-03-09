@@ -75,8 +75,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   try {
     const rawBody = await getRawBody(req);
     event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
-  } catch (err: any) {
-    console.error('Webhook signature verification failed:', err.message);
+  } catch (err: unknown) {
+    console.error(
+      'Webhook signature verification failed:',
+      err instanceof Error ? err.message : err
+    );
     return res.status(400).send('Invalid signature');
   }
 

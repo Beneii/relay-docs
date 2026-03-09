@@ -1,4 +1,5 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
+import { FREE_LIMITS, PRO_LIMITS } from "../../../shared/product.ts";
 
 interface NotifyRequest {
   token: string;
@@ -9,9 +10,6 @@ interface NotifyRequest {
 }
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
-const FREE_APP_LIMIT = 3;
-const FREE_MONTHLY_NOTIFICATION_LIMIT = 100;
-const PRO_MONTHLY_NOTIFICATION_LIMIT = 10000;
 const RATE_LIMIT_WINDOW_MS = 60_000;
 const MAX_REQUESTS_PER_WINDOW = 60;
 const MAX_REQUEST_BYTES = 10 * 1024;
@@ -234,18 +232,20 @@ Deno.serve(async (req) => {
     const appCount = appCountResult.count || 0;
     const monthlyNotificationCount = notificationCountResult.count || 0;
 
-    if (plan === "free" && appCount > FREE_APP_LIMIT) {
+    if (plan === "free" && appCount > FREE_LIMITS.dashboards) {
       return jsonResponse(
         {
           error: "Free plan app limit exceeded",
-          limit: FREE_APP_LIMIT,
+          limit: FREE_LIMITS.dashboards,
         },
         429
       );
     }
 
     const monthlyLimit =
-      plan === "pro" ? PRO_MONTHLY_NOTIFICATION_LIMIT : FREE_MONTHLY_NOTIFICATION_LIMIT;
+      plan === "pro"
+        ? PRO_LIMITS.notificationsPerMonth
+        : FREE_LIMITS.notificationsPerMonth;
 
     if (monthlyNotificationCount >= monthlyLimit) {
       return jsonResponse(

@@ -5,8 +5,15 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "typecheck:app": "npm --prefix app run typecheck",
+    "lint": "npm --prefix app run lint",
+    "test:web": "node --test --experimental-strip-types tests/**/*.test.ts",
+    "test:app": "npm --prefix app run test -- --runInBand --watchman=false",
+    "test": "npm run test:web && npm run test:app",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "verify": "npm run typecheck && npm run typecheck:app && npm run lint && npm run test:web && npm run build && npm run test:app"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.98.0",

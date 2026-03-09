@@ -140,7 +140,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
 
     res.json({ sent: true });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to send welcome email:', error);
     res.status(500).json({ error: 'Failed to send welcome email' });
   }

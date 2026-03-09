@@ -59,7 +59,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     });
 
     res.json({ url: session.url });
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Error creating billing portal session:', error);
     res.status(500).json({ error: 'Failed to create billing portal session' });
   }

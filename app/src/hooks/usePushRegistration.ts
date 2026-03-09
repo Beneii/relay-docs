@@ -4,7 +4,6 @@ import * as Notifications from "expo-notifications";
 import * as Device from "expo-device";
 import Constants from "expo-constants";
 import { useAuthStore } from "@/stores/authStore";
-import { supabase } from "@/lib/supabase";
 
 /**
  * Registers for Expo Push Notifications and stores the token in the backend.
@@ -43,7 +42,7 @@ export function usePushRegistration() {
 
     async function register() {
       if (!Device.isDevice) {
-        console.log("Push notifications require a physical device");
+        console.warn("Push notifications require a physical device");
         return;
       }
 
@@ -57,7 +56,7 @@ export function usePushRegistration() {
       }
 
       if (finalStatus !== "granted") {
-        console.log("Push notification permission denied");
+        console.warn("Push notification permission denied");
         return;
       }
 

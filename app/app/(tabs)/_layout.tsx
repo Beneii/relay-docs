@@ -5,7 +5,7 @@ import { Feather } from "@expo/vector-icons";
 import { useAuthStore } from "@/stores/authStore";
 import { useNavigationStore } from "@/stores/navigationStore";
 import { useUnreadCount } from "@/hooks/useNotifications";
-import { useTheme, spacing, radii } from "@/theme";
+import { useTheme, radii } from "@/theme";
 
 function TabIcon({
   iconName,

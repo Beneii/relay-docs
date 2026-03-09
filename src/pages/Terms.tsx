@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { FREE_LIMITS, PRO_LIMITS } from '@shared/product';
 import { RelayIcon } from '../components/RelayLogo';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -38,8 +39,8 @@ export default function Terms() {
           <section>
             <h2 className="text-xl font-semibold text-text-main mb-3">4. Free and Pro Plans</h2>
             <ul className="list-disc pl-6 space-y-2">
-              <li><strong>Free Plan:</strong> 3 dashboards, 1 device, 100 notifications per month</li>
-              <li><strong>Pro Plan:</strong> Unlimited dashboards, unlimited devices, 10,000 notifications per month, and priority support. Additional features such as notification history and metadata events are planned and will be announced as they become available.</li>
+              <li><strong>Free Plan:</strong> {FREE_LIMITS.dashboards} dashboards, {FREE_LIMITS.devices} device, {FREE_LIMITS.notificationsPerMonth} notifications per month</li>
+              <li><strong>Pro Plan:</strong> Unlimited dashboards, up to {PRO_LIMITS.devices} devices, {PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications per month, and priority support. Additional features such as notification history and metadata events are planned and will be announced as they become available.</li>
             </ul>
             <p className="mt-3">We reserve the right to modify plan features and pricing with reasonable notice.</p>
           </section>

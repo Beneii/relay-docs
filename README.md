@@ -11,6 +11,14 @@ A mobile control app for dashboards and automations. Save your tools, receive pu
 
 Relay is a launcher for self-hosted tools and a native push bridge for web-based systems. It is not a browser.
 
+## Surfaces
+
+- **Web app:** Marketing site plus authenticated dashboard in `/src`
+- **Server routes:** Vercel API handlers in `/api`
+- **Mobile app:** Expo/React Native app in `/app`
+- **Backend:** Supabase schema and edge functions in `/backend/supabase`
+- **Shared domain modules:** Plan limits and common helpers in `/backend/shared`
+
 ## Stack
 
 - **Mobile:** Expo, React Native, TypeScript, Expo Router, Zustand, TanStack Query
@@ -21,21 +29,17 @@ Relay is a launcher for self-hosted tools and a native push bridge for web-based
 ## Project Structure
 
 ```
+/src                    # Vite web app (marketing site + dashboard)
+/api                    # Vercel server routes for billing, auth helpers, email
 /app                    # Expo/React Native mobile app
   /app                  # Expo Router screens
-  /src
-    /components         # Shared UI components
-    /hooks              # Data fetching and push hooks
-    /lib                # Supabase client
-    /stores             # Zustand stores
-    /theme              # Colors, spacing, typography
-    /types              # TypeScript types
-    /utils              # URL validation, time formatting
-    /__tests__          # Unit tests
+  /src                  # Mobile components, hooks, stores, theme, tests
 /backend
+  /shared               # Cross-surface product limits and pure helpers
   /supabase
     /migrations         # SQL schema
-    /functions          # Edge Functions (notify, register-device)
+    /functions          # Edge Functions (notify, register-device, receipts)
+/Relay                  # Native Apple shell used for local orchestration work
 /docs                   # Release materials
 ```
 
@@ -150,6 +154,22 @@ curl -X POST \
 
 ## Development
 
+### Repo-wide Verification
+
+```bash
+# From the repo root
+npm run verify
+```
+
+This runs:
+
+- web/API TypeScript checks
+- mobile TypeScript checks
+- mobile lint
+- web/API unit tests
+- web production build
+- mobile unit tests
+
 ```bash
 cd app
 
@@ -162,11 +182,18 @@ npm run typecheck
 # Lint
 npm run lint
 
+# Web/API unit tests (from repo root)
+cd ..
+npm run test:web
+
+# Back to mobile app
+cd app
+
 # Format
 npm run format
 
 # Test
-npm run test
+npm run test -- --watchman=false
 ```
 
 ## Building for Release

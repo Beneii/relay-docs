@@ -8,7 +8,6 @@ import {
   Alert,
   RefreshControl,
   Platform,
-  Linking,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -16,7 +15,7 @@ import { useApps, useDeleteApp } from "@/hooks/useApps";
 import {
   useLatestNotificationByApp,
 } from "@/hooks/useNotifications";
-import { useProfile, FREE_LIMITS } from "@/hooks/useProfile";
+import { useProfile } from "@/hooks/useProfile";
 import { AppIcon } from "@/components/AppIcon";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingScreen } from "@/components/LoadingScreen";
@@ -24,6 +23,7 @@ import { UpgradePrompt, openUpgradeWithSession } from "@/components/UpgradePromp
 import { extractHostname } from "@/utils/url";
 import { timeAgo } from "@/utils/time";
 import { Feather } from "@expo/vector-icons";
+import { FREE_LIMITS } from "@shared/product";
 import { RelayLogo } from "@/components/RelayLogo";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { AppRow } from "@/types/database";

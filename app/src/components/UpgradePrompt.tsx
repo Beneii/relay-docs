@@ -2,8 +2,8 @@ import React from "react";
 import { View, Text, Pressable, StyleSheet, Linking } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
-import { useAuthStore } from "@/stores/authStore";
 import { supabase } from "@/lib/supabase";
+import { PRO_LIMITS } from "@shared/product";
 
 interface UpgradePromptProps {
   title?: string;
@@ -17,7 +17,6 @@ export function UpgradePrompt({
   compact = false,
 }: UpgradePromptProps) {
   const { colors } = useTheme();
-  const user = useAuthStore((s) => s.user);
 
   function handleUpgrade() {
     openUpgradeWithSession("/pricing");
@@ -63,7 +62,11 @@ export function UpgradePrompt({
         {message}
       </Text>
       <View style={styles.features}>
-        {["Unlimited dashboards", "Unlimited devices", "10,000 notifications/mo"].map(
+        {[
+          "Unlimited dashboards",
+          `Up to ${PRO_LIMITS.devices} devices`,
+          `${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/mo`,
+        ].map(
           (feature) => (
             <View key={feature} style={styles.featureRow}>
               <Feather name="check" size={14} color={colors.accent} />

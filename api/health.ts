@@ -2,7 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { readFile } from 'node:fs/promises';
 import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
-import { handleOptions, setCorsHeaders } from './_cors';
+import { handleOptions, setCorsHeaders } from './_cors.js';
 
 type HealthResponse = {
   status: 'ok' | 'degraded' | 'error';

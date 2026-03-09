@@ -5,7 +5,7 @@ import {
   sendProUpgradeEmail,
   sendSubscriptionCancelledEmail,
   sendPaymentFailedEmail,
-} from './_email';
+} from './_email.js';
 
 function requireEnv(name: string): string {
   const value = process.env[name];

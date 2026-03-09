@@ -7,16 +7,19 @@ import {
   Alert,
   ScrollView,
   Linking,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Feather } from "@expo/vector-icons";
 import * as Notifications from "expo-notifications";
 import Constants from "expo-constants";
+import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import { useSettingsStore } from "@/stores/settingsStore";
 import { useProfile, FREE_LIMITS, PRO_LIMITS } from "@/hooks/useProfile";
 import { useApps } from "@/hooks/useApps";
+import { useMonthlyNotificationCount } from "@/hooks/useNotifications";
 import { openUpgradeWithSession } from "@/components/UpgradePrompt";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { ThemeMode } from "@/theme";
@@ -76,10 +79,28 @@ export default function SettingsScreen() {
   const { data: apps } = useApps();
   const [notifStatus, setNotifStatus] = useState<string>("checking...");
 
+  const { data: monthlyNotifCount } = useMonthlyNotificationCount();
+
+  const { data: deviceCount } = useQuery({
+    queryKey: ["devices", "count"],
+    queryFn: async (): Promise<number> => {
+      if (!user) return 0;
+      const { count, error } = await supabase
+        .from("devices")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id);
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
+
   const plan = profile?.plan ?? "free";
   const isPro = plan === "pro";
   const limits = isPro ? PRO_LIMITS : FREE_LIMITS;
   const appCount = apps?.length ?? 0;
+  const notifCount = monthlyNotifCount ?? 0;
+  const devCount = deviceCount ?? 0;
 
   useEffect(() => {
     Notifications.getPermissionsAsync().then(({ status }) => {
@@ -198,10 +219,18 @@ export default function SettingsScreen() {
               </View>
               <View style={styles.usageStat}>
                 <Text style={[styles.usageValue, { color: colors.textPrimary }]}>
-                  {limits.notificationsPerMonth === 10_000 ? "10k" : "100"}
+                  {devCount}
                 </Text>
                 <Text style={[styles.usageLabel, { color: colors.textTertiary }]}>
-                  notifs/mo
+                  / {limits.devices} devices
+                </Text>
+              </View>
+              <View style={styles.usageStat}>
+                <Text style={[styles.usageValue, { color: colors.textPrimary }]}>
+                  {notifCount}
+                </Text>
+                <Text style={[styles.usageLabel, { color: colors.textTertiary }]}>
+                  / {limits.notificationsPerMonth === 10_000 ? "10k" : limits.notificationsPerMonth} notifs/mo
                 </Text>
               </View>
             </View>

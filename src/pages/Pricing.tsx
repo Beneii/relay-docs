@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { CheckCircle2 } from 'lucide-react';
+import { CheckCircle2, X } from 'lucide-react';
 import { RelayIcon } from '../components/RelayLogo';
 import { ThemeToggle } from '../components/ThemeToggle';
 
@@ -179,15 +179,21 @@ export default function Pricing() {
 
             <ul className="space-y-4 mb-8 flex-1">
               {[
-                '3 dashboards',
-                '1 device',
-                '100 notifications per month',
-                'Webhook API access',
-                'Community support'
+                { label: '3 dashboards', included: true },
+                { label: '1 device', included: true },
+                { label: '100 notifications / month', included: true },
+                { label: 'Webhook API access', included: true },
+                { label: 'Up to 10 devices', included: false },
+                { label: 'Notification history', included: false },
+                { label: 'Priority support', included: false },
               ].map((feature, i) => (
-                <li key={i} className="flex items-start gap-3">
-                  <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                  <span className="text-sm">{feature}</span>
+                <li key={i} className={`flex items-start gap-3 ${!feature.included ? 'opacity-40' : ''}`}>
+                  {feature.included ? (
+                    <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
+                  ) : (
+                    <X className="w-5 h-5 text-text-muted shrink-0 mt-0.5" />
+                  )}
+                  <span className="text-sm">{feature.label}</span>
                 </li>
               ))}
             </ul>
@@ -220,21 +226,16 @@ export default function Pricing() {
 
             <ul className="space-y-4 mb-8 flex-1">
               {[
-                { label: 'Unlimited dashboards' },
-                { label: 'Unlimited devices' },
-                { label: '10,000 notifications per month' },
-                { label: 'Notification history', note: '(coming soon)' },
-                { label: 'Metadata events', note: '(coming soon)' },
-                { label: 'Priority support' }
+                'Unlimited dashboards',
+                'Up to 10 devices',
+                '10,000 notifications per month',
+                'Notification history',
+                'Metadata events',
+                'Priority support'
               ].map((feature, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                  <span className="text-sm">
-                    {feature.label}
-                    {feature.note && (
-                      <span className="ml-1.5 text-xs text-text-muted italic">{feature.note}</span>
-                    )}
-                  </span>
+                  <span className="text-sm">{feature}</span>
                 </li>
               ))}
             </ul>

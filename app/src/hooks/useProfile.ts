@@ -33,7 +33,7 @@ export const FREE_LIMITS = {
 
 export const PRO_LIMITS = {
   dashboards: Infinity,
-  devices: Infinity,
+  devices: 10,
   notificationsPerMonth: 10_000,
 } as const;
 

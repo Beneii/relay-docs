@@ -90,6 +90,32 @@ export function useMarkAllAsRead() {
 }
 
 /**
+ * Returns the count of notifications received in the current calendar month.
+ */
+export function useMonthlyNotificationCount() {
+  const user = useAuthStore((s) => s.user);
+
+  return useQuery({
+    queryKey: [...NOTIFICATIONS_KEY, "monthly_count"],
+    queryFn: async (): Promise<number> => {
+      if (!user) return 0;
+      const now = new Date();
+      const startOfMonth = new Date(now.getFullYear(), now.getMonth(), 1).toISOString();
+      const { count, error } = await supabase
+        .from("notifications")
+        .select("*", { count: "exact", head: true })
+        .eq("user_id", user.id)
+        .gte("created_at", startOfMonth);
+
+      if (error) throw error;
+      return count ?? 0;
+    },
+    enabled: !!user,
+    staleTime: 30_000,
+  });
+}
+
+/**
  * Returns the most recent notification for each app, keyed by app_id.
  */
 export function useLatestNotificationByApp() {

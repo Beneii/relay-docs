@@ -119,8 +119,9 @@ export function useDeleteApp() {
       const { error } = await supabase.from("apps").delete().eq("id", id);
       if (error) throw error;
     },
-    onSuccess: () => {
+    onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: APPS_KEY });
+      queryClient.removeQueries({ queryKey: ["apps", id] });
     },
   });
 }

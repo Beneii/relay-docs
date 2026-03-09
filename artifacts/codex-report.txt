@@ -1,0 +1,95 @@
+Task: Add shared CORS handling for Vercel API endpoints
+
+Summary
+- Added a shared CORS utility at `api/_lib/cors.ts`.
+- Updated these Vercel API endpoints to use the shared CORS helper:
+  - `api/send-welcome.ts`
+  - `api/create-checkout.ts`
+  - `api/create-billing-portal.ts`
+  - `api/health.ts`
+- Standardized CORS behavior across these routes, including preflight `OPTIONS` handling.
+
+Files changed
+- `api/_lib/cors.ts`
+- `api/send-welcome.ts`
+- `api/create-checkout.ts`
+- `api/create-billing-portal.ts`
+- `api/health.ts`
+
+What I changed
+1. Added shared CORS utility
+- Created `api/_lib/cors.ts` with two exported helpers:
+  - `setCorsHeaders(req, res, allowedMethods?)`
+  - `handleOptions(req, res, allowedMethods?)`
+- Why:
+  - Centralizes CORS logic so endpoints do not each implement it differently.
+
+2. Allowed production and localhost dev origins
+- The CORS helper allows:
+  - `https://relayapp.dev`
+  - localhost/127.0.0.1 origins with optional ports via regex
+- The helper resolves the request `Origin` header dynamically.
+- Why:
+  - Matches the requested production origin and local development use cases.
+
+3. Standardized response headers
+- The helper sets:
+  - `Access-Control-Allow-Origin`
+  - `Access-Control-Allow-Methods`
+  - `Access-Control-Allow-Headers`
+  - `Vary: Origin`
+- Allowed headers include:
+  - `Content-Type`
+  - `Authorization`
+  - `X-Webhook-Secret`
+  - `X-Supabase-Webhook-Secret`
+- Why:
+  - Covers the headers currently used by the authenticated endpoints and the webhook-auth fallback on `send-welcome`.
+
+4. Added shared `OPTIONS` preflight handling
+- `handleOptions(...)` now:
+  - applies the CORS headers
+  - responds with `204` for preflight requests
+  - returns a boolean so handlers can exit early
+- Why:
+  - Ensures consistent preflight handling across endpoints.
+
+5. Updated each target endpoint to use the helper
+- `api/send-welcome.ts`
+  - now handles `OPTIONS`
+  - now applies consistent CORS headers before normal request handling
+- `api/create-checkout.ts`
+  - now handles `OPTIONS`
+  - now applies consistent CORS headers before normal request handling
+- `api/create-billing-portal.ts`
+  - now handles `OPTIONS`
+  - now applies consistent CORS headers before normal request handling
+- `api/health.ts`
+  - now handles `OPTIONS`
+  - now applies consistent CORS headers before normal request handling
+  - uses `GET, OPTIONS` as its allowed methods while the others use `POST, OPTIONS`
+- Why:
+  - This gives all four endpoints the same CORS behavior with route-specific allowed methods.
+
+Implementation details
+- For normal requests, each handler now calls:
+  - `setCorsHeaders(...)`
+- For preflight requests, each handler now exits early via:
+  - `handleOptions(...)`
+- This ensures both successful and error responses include the expected CORS headers.
+
+Validation performed
+- Reviewed the new utility and the updated handlers.
+- Ran a targeted TypeScript check filtered to the changed API files; no errors were reported for the touched files.
+- Ran `git diff --check` across the changed files; it passed.
+
+Why this change was needed
+- The API routes previously handled cross-origin access inconsistently or not at all.
+- The frontend uses bearer-authenticated calls to these endpoints, which requires correct preflight and CORS header handling.
+- A shared utility reduces drift and makes future API endpoints easier to implement consistently.
+
+Change summary
+- Source files changed: 5
+- New shared utility added: `api/_lib/cors.ts`
+- Updated endpoints: `api/send-welcome.ts`, `api/create-checkout.ts`, `api/create-billing-portal.ts`, `api/health.ts`
+- Report file written: `artifacts/codex-report.txt`

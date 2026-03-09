@@ -5,9 +5,17 @@ import { CheckCircle2 } from 'lucide-react';
 import { RelayIcon } from '../components/RelayLogo';
 import { ThemeToggle } from '../components/ThemeToggle';
 
+interface UserProfile {
+  id: string;
+  email: string;
+  plan: 'free' | 'pro';
+  stripe_customer_id: string | null;
+}
+
 export default function Pricing() {
-  const [user, setUser] = useState<any>(null);
+  const [user, setUser] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
   const [annual, setAnnual] = useState(false);
   const navigate = useNavigate();
 
@@ -15,12 +23,18 @@ export default function Pricing() {
     const fetchUser = async () => {
       const { data: { session } } = await supabase.auth.getSession();
       if (session) {
-        const { data } = await supabase
+        const { data, error: profileError } = await supabase
           .from('profiles')
           .select('*')
           .eq('id', session.user.id)
           .single();
-        setUser(data);
+        
+        if (profileError) {
+          console.error('Error fetching profile:', profileError);
+          setError(true);
+        } else {
+          setUser(data);
+        }
       }
       setLoading(false);
     };
@@ -38,16 +52,14 @@ export default function Pricing() {
       return;
     }
 
-    const userId = user?.id || session.user.id;
-    const email = user?.email || session.user.email;
-
     try {
       const response = await fetch('/api/create-checkout', {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ userId, email, annual }),
+        body: JSON.stringify({ annual }),
       });
 
       if (!response.ok) {
@@ -72,6 +84,31 @@ export default function Pricing() {
         <div className="flex items-center gap-3 text-text-muted">
           <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
           Loading...
+        </div>
+      </div>
+    );
+  }
+
+  if (error) {
+    return (
+      <div className="min-h-screen bg-bg text-text-main flex flex-col items-center justify-center p-6 text-center">
+        <h2 className="text-xl font-bold mb-2">Account error</h2>
+        <p className="text-text-muted mb-8 max-w-sm">
+          We couldn't load your profile. Please try refreshing the page or sign in again.
+        </p>
+        <div className="flex gap-4">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 rounded-lg bg-surface border border-border text-sm font-medium hover:bg-surface-hover transition-all cursor-pointer"
+          >
+            Retry
+          </button>
+          <Link
+            to="/login"
+            className="px-6 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center"
+          >
+            Sign in
+          </Link>
         </div>
       </div>
     );
@@ -142,9 +179,9 @@ export default function Pricing() {
 
             <ul className="space-y-4 mb-8 flex-1">
               {[
-                '1 dashboard',
+                '3 dashboards',
                 '1 device',
-                '200 notifications per month',
+                '100 notifications per month',
                 'Webhook API access',
                 'Community support'
               ].map((feature, i) => (
@@ -183,16 +220,21 @@ export default function Pricing() {
 
             <ul className="space-y-4 mb-8 flex-1">
               {[
-                'Unlimited dashboards',
-                'Unlimited devices',
-                '10,000 notifications per month',
-                'Notification history',
-                'Metadata events',
-                'Priority support'
+                { label: 'Unlimited dashboards' },
+                { label: 'Unlimited devices' },
+                { label: '10,000 notifications per month' },
+                { label: 'Notification history', note: '(coming soon)' },
+                { label: 'Metadata events', note: '(coming soon)' },
+                { label: 'Priority support' }
               ].map((feature, i) => (
                 <li key={i} className="flex items-start gap-3">
                   <CheckCircle2 className="w-5 h-5 text-accent shrink-0 mt-0.5" />
-                  <span className="text-sm">{feature}</span>
+                  <span className="text-sm">
+                    {feature.label}
+                    {feature.note && (
+                      <span className="ml-1.5 text-xs text-text-muted italic">{feature.note}</span>
+                    )}
+                  </span>
                 </li>
               ))}
             </ul>

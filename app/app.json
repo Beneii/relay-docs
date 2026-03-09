@@ -18,13 +18,15 @@
       "infoPlist": {
         "NSCameraUsageDescription": "Relay does not use the camera.",
         "UIBackgroundModes": [
+          "remote-notification",
           "remote-notification"
         ],
         "NSAppTransportSecurity": {
           "NSAllowsArbitraryLoads": true,
           "NSAllowsLocalNetworking": true,
           "NSAllowsArbitraryLoadsInWebContent": true
-        }
+        },
+        "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
@@ -48,7 +50,8 @@
           "icon": "./assets/notification-icon.png",
           "color": "#10B981"
         }
-      ]
+      ],
+      "expo-web-browser"
     ],
     "extra": {
       "eas": {

@@ -1,0 +1,25 @@
+# Task Summary: SEO Implementation
+
+## 1. Metadata and Social Sharing
+- **File:** `index.html`
+- **Changes:**
+  - Added `<link rel="canonical" href="https://relayapp.dev" />`.
+  - Added `<meta property="og:image" content="https://relayapp.dev/og-image.png" />`.
+  - Added `<meta name="twitter:image" content="https://relayapp.dev/og-image.png" />`.
+  - Updated `twitter:card` to `summary_large_image`.
+- **Reason:** To prevent duplicate content issues and improve visual appearance when sharing on social media.
+
+## 2. Semantic HTML Fixes
+- **File:** `src/App.tsx`
+- **Change:** Replaced `<span>` tags with `<h3>` tags for FAQ questions.
+- **Reason:** To improve heading hierarchy and help search engines understand the structure of the FAQ content while maintaining existing visual styles.
+
+## 3. Crawler Configuration
+- **Files:** `public/robots.txt`, `public/sitemap.xml`
+- **Changes:**
+  - Created `robots.txt` to allow all crawlers and point to the sitemap.
+  - Created `sitemap.xml` with entries for main pages: Home, Pricing, Login, Signup, Privacy, and Terms.
+- **Reason:** To provide search engines with a clear map of the site's structure and ensure all relevant pages are indexed.
+
+---
+Summary provided by Gemini.

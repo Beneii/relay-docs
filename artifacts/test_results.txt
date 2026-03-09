@@ -1,0 +1,144 @@
+Relay baseline validation results
+
+Git-tracked sensitive config files:
+(none)
+
+Secret-signal scan:
+- README.md: supabase_service_role_literal
+
+## root_build
+cwd: /Users/ben/Desktop/Relay
+command: npm run build -- --outDir /tmp/relay-audit-dist
+exit_code: 0
+> relay-site@1.0.0 build
+> vite build --outDir /tmp/relay-audit-dist
+
+vite v6.4.1 building for production...
+
+(!) outDir /tmp/relay-audit-dist is not inside project root and will not be emptied.
+Use --emptyOutDir to override.
+
+transforming...
+✓ 2131 modules transformed.
+rendering chunks...
+computing gzip size...
+../../../../tmp/relay-audit-dist/index.html                   2.10 kB │ gzip:   0.77 kB
+../../../../tmp/relay-audit-dist/assets/index-CFTjQtV0.css   39.77 kB │ gzip:   7.49 kB
+../../../../tmp/relay-audit-dist/assets/index-BNlu2U4v.js   618.28 kB │ gzip: 181.60 kB
+
+(!) Some chunks are larger than 500 kB after minification. Consider:
+- Using dynamic import() to code-split the application
+- Use build.rollupOptions.output.manualChunks to improve chunking: https://rollupjs.org/configuration-options/#output-manualchunks
+- Adjust chunk size limit for this warning via build.chunkSizeWarningLimit.
+✓ built in 2.09s
+
+## root_audit
+cwd: /Users/ben/Desktop/Relay
+command: npm audit --omit=dev --json
+exit_code: 0
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {},
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "dependencies": {
+      "prod": 108,
+      "dev": 185,
+      "optional": 127,
+      "peer": 0,
+      "peerOptional": 0,
+      "total": 367
+    }
+  }
+}
+
+## app_typecheck
+cwd: /Users/ben/Desktop/Relay/app
+command: npm run typecheck
+exit_code: 0
+> relay@1.0.0 typecheck
+> tsc --noEmit
+
+## app_lint
+cwd: /Users/ben/Desktop/Relay/app
+command: npm run lint
+exit_code: 0
+> relay@1.0.0 lint
+> eslint src/ app/ --ext .ts,.tsx
+
+
+/Users/ben/Desktop/Relay/app/app/(tabs)/_layout.tsx
+  8:20  warning  'spacing' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/ben/Desktop/Relay/app/app/(tabs)/index.tsx
+  11:3  warning  'Linking' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/ben/Desktop/Relay/app/app/app/[id].tsx
+  8:3  warning  'Alert' is defined but never used  @typescript-eslint/no-unused-vars
+
+/Users/ben/Desktop/Relay/app/app/auth.tsx
+  21:7  warning  'SUPABASE_URL' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/ben/Desktop/Relay/app/src/components/UpgradePrompt.tsx
+  20:9  warning  'user' is assigned a value but never used  @typescript-eslint/no-unused-vars
+
+/Users/ben/Desktop/Relay/app/src/hooks/usePushRegistration.ts
+  22:9  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+  36:9  warning  Unexpected console statement. Only these console methods are allowed: warn, error  no-console
+
+/Users/ben/Desktop/Relay/app/src/lib/supabase.ts
+  65:9  warning  Unused eslint-disable directive (no problems were reported from '@typescript-eslint/no-require-imports')
+
+✖ 8 problems (0 errors, 8 warnings)
+  0 errors and 1 warning potentially fixable with the `--fix` option.
+
+## app_test
+cwd: /Users/ben/Desktop/Relay/app
+command: npm test -- --runInBand --watchAll=false
+exit_code: 1
+> relay@1.0.0 test
+> jest --runInBand --watchAll=false
+
+Error: Jest: Failed to parse the TypeScript config file /Users/ben/Desktop/Relay/app/jest.config.ts
+  Error: Jest: 'ts-node' is required for the TypeScript configuration files. Make sure it is installed
+Error: Cannot find package 'ts-node' imported from /Users/ben/Desktop/Relay/app/node_modules/jest-config/build/readConfigFileAndSetRootDir.js
+    at readConfigFileAndSetRootDir (/Users/ben/Desktop/Relay/app/node_modules/jest-config/build/readConfigFileAndSetRootDir.js:116:13)
+    at async readInitialOptions (/Users/ben/Desktop/Relay/app/node_modules/jest-config/build/index.js:403:13)
+    at async readConfig (/Users/ben/Desktop/Relay/app/node_modules/jest-config/build/index.js:147:48)
+    at async readConfigs (/Users/ben/Desktop/Relay/app/node_modules/jest-config/build/index.js:424:26)
+    at async runCLI (/Users/ben/Desktop/Relay/app/node_modules/@jest/core/build/cli/index.js:151:59)
+    at async Object.run (/Users/ben/Desktop/Relay/app/node_modules/jest-cli/build/run.js:130:37)
+
+## app_audit
+cwd: /Users/ben/Desktop/Relay/app
+command: npm audit --omit=dev --json
+exit_code: 0
+{
+  "auditReportVersion": 2,
+  "vulnerabilities": {},
+  "metadata": {
+    "vulnerabilities": {
+      "info": 0,
+      "low": 0,
+      "moderate": 0,
+      "high": 0,
+      "critical": 0,
+      "total": 0
+    },
+    "dependencies": {
+      "prod": 790,
+      "dev": 174,
+      "optional": 13,
+      "peer": 2,
+      "peerOptional": 0,
+      "total": 977
+    }
+  }
+}

@@ -1,0 +1,157 @@
+{
+  "root": "/Users/ben/Desktop/Relay",
+  "top_level": [
+    {
+      "name": ".DS_Store",
+      "type": "file"
+    },
+    {
+      "name": ".claude",
+      "type": "dir"
+    },
+    {
+      "name": ".env.local",
+      "type": "file"
+    },
+    {
+      "name": ".env.production",
+      "type": "file"
+    },
+    {
+      "name": ".env.production.local",
+      "type": "file"
+    },
+    {
+      "name": ".gitignore",
+      "type": "file"
+    },
+    {
+      "name": ".mcp.json",
+      "type": "file"
+    },
+    {
+      "name": ".vercel",
+      "type": "dir"
+    },
+    {
+      "name": "README.md",
+      "type": "file"
+    },
+    {
+      "name": "Relay",
+      "type": "dir"
+    },
+    {
+      "name": "Relay.xcodeproj",
+      "type": "dir"
+    },
+    {
+      "name": "RelayTests",
+      "type": "dir"
+    },
+    {
+      "name": "RelayUITests",
+      "type": "dir"
+    },
+    {
+      "name": "api",
+      "type": "dir"
+    },
+    {
+      "name": "app",
+      "type": "dir"
+    },
+    {
+      "name": "artifacts",
+      "type": "dir"
+    },
+    {
+      "name": "auth",
+      "type": "dir"
+    },
+    {
+      "name": "backend",
+      "type": "dir"
+    },
+    {
+      "name": "docs",
+      "type": "dir"
+    },
+    {
+      "name": "index.html",
+      "type": "file"
+    },
+    {
+      "name": "modern-vector-logo-for-a-developer-tool-called--re.svg",
+      "type": "file"
+    },
+    {
+      "name": "package-lock.json",
+      "type": "file"
+    },
+    {
+      "name": "package.json",
+      "type": "file"
+    },
+    {
+      "name": "playwright-audit.js",
+      "type": "file"
+    },
+    {
+      "name": "public",
+      "type": "dir"
+    },
+    {
+      "name": "scripts",
+      "type": "dir"
+    },
+    {
+      "name": "src",
+      "type": "dir"
+    },
+    {
+      "name": "tsconfig.json",
+      "type": "file"
+    },
+    {
+      "name": "vercel.json",
+      "type": "file"
+    },
+    {
+      "name": "vite.config.ts",
+      "type": "file"
+    }
+  ],
+  "key_files": {
+    "package.json": true,
+    "app/package.json": true,
+    "README.md": true,
+    "tsconfig.json": true,
+    "vite.config.ts": true,
+    "vercel.json": true,
+    "playwright-audit.js": true,
+    ".gitignore": true,
+    ".env.local": true,
+    ".env.production": true,
+    ".mcp.json": true
+  },
+  "env_files": {
+    ".env.local": {
+      "present": true,
+      "keys": [
+        "VERCEL_OIDC_TOKEN"
+      ]
+    },
+    ".env.production": {
+      "present": true,
+      "keys": [
+        "VITE_SUPABASE_URL",
+        "VITE_SUPABASE_ANON_KEY"
+      ]
+    },
+    ".mcp.json": {
+      "present": true,
+      "keys": []
+    }
+  }
+}

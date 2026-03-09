@@ -1,6 +1,16 @@
 import { Resend } from 'resend';
 
-const resend = new Resend(process.env.RESEND_API_KEY);
+function requireEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+const resend = new Resend(requireEnv('RESEND_API_KEY'));
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'Relay <hello@relayapp.dev>';
 
@@ -187,7 +197,7 @@ export async function sendProUpgradeEmail(to: string) {
     </table>
     ${divider()}
     ${paragraph('Your plan: ' + planBadge('pro'))}
-    ${paragraph('Billed at <strong class="email-strong" style="color:' + L.text + ';">$7.99/month</strong>. Manage your subscription anytime from the dashboard.')}
+    ${paragraph('Your Pro plan is now active. You can manage your subscription anytime from the dashboard.')}
     ${button('Go to Dashboard', 'https://relayapp.dev/dashboard')}
   `);
 
@@ -209,7 +219,7 @@ export async function sendSubscriptionCancelledEmail(to: string) {
     <table cellpadding="0" cellspacing="0" style="margin:0 0 20px;width:100%;">
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> 1 dashboard
+          <span style="margin-right:8px;">•</span> 3 dashboards
         </td>
       </tr>
       <tr>
@@ -219,11 +229,11 @@ export async function sendSubscriptionCancelledEmail(to: string) {
       </tr>
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> 200 notifications/month
+          <span style="margin-right:8px;">•</span> 100 notifications/month
         </td>
       </tr>
     </table>
-    ${paragraph('If you had more than 1 dashboard, your extra dashboards are still saved — they\'ll be available again if you resubscribe.')}
+    ${paragraph('If you had more than 3 dashboards, your extra dashboards are still saved — they\'ll be available again if you resubscribe.')}
     ${button('Resubscribe to Pro', 'https://relayapp.dev/pricing')}
     ${paragraph('We\'d love to have you back. If anything wasn\'t working for you, just reply to this email.')}
   `);

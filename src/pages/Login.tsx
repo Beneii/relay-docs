@@ -27,7 +27,9 @@ export default function Login() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [resetMessage, setResetMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [resetLoading, setResetLoading] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const justConfirmed = searchParams.get('confirmed') === 'true';
@@ -36,6 +38,7 @@ export default function Login() {
     e.preventDefault();
     setLoading(true);
     setError(null);
+    setResetMessage(null);
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
@@ -55,6 +58,8 @@ export default function Login() {
   };
 
   const handleOAuth = async (provider: 'github' | 'google') => {
+    setResetMessage(null);
+
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -64,6 +69,33 @@ export default function Login() {
     if (error) {
       setError(error.message);
     }
+  };
+
+  const handleForgotPassword = async () => {
+    const normalizedEmail = email.trim().toLowerCase();
+
+    if (!normalizedEmail) {
+      setError('Enter your email address first to reset your password.');
+      setResetMessage(null);
+      return;
+    }
+
+    setResetLoading(true);
+    setError(null);
+    setResetMessage(null);
+
+    const { error } = await supabase.auth.resetPasswordForEmail(normalizedEmail, {
+      redirectTo: `${window.location.origin}/reset-password`,
+    });
+
+    if (error) {
+      setError(error.message);
+      setResetLoading(false);
+      return;
+    }
+
+    setResetMessage('If an account exists for that email, we sent a password reset link.');
+    setResetLoading(false);
   };
 
   return (
@@ -86,6 +118,13 @@ export default function Login() {
             <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-lg text-sm mb-6 flex items-center gap-2">
               <Check className="w-4 h-4 shrink-0" />
               Email confirmed! You can now sign in.
+            </div>
+          )}
+
+          {resetMessage && (
+            <div className="bg-green-500/10 border border-green-500/20 text-green-500 p-3 rounded-lg text-sm mb-6 flex items-center gap-2">
+              <Check className="w-4 h-4 shrink-0" />
+              {resetMessage}
             </div>
           )}
 
@@ -142,9 +181,19 @@ export default function Login() {
             </div>
 
             <div>
-              <label className="block text-sm font-medium text-text-muted mb-1.5">
-                Password
-              </label>
+              <div className="flex items-center justify-between mb-1.5 gap-3">
+                <label className="block text-sm font-medium text-text-muted">
+                  Password
+                </label>
+                <button
+                  type="button"
+                  onClick={handleForgotPassword}
+                  disabled={resetLoading}
+                  className="text-xs font-medium text-accent hover:text-emerald-600 transition-colors cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {resetLoading ? 'Sending...' : 'Forgot password?'}
+                </button>
+              </div>
               <input
                 type="password"
                 required

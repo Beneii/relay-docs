@@ -1,0 +1,48 @@
+{
+  "project": "/Users/ben/Desktop/Relay",
+  "plan_status": "locked",
+  "tasks": [
+    {
+      "id": "baseline",
+      "agent": "hermes",
+      "status": "completed",
+      "scope": ["package.json", "app/package.json", "README.md", "tsconfig.json", "index.html", "vercel.json", "scripts/**", "Relay/**", "RelayTests/**", "RelayUITests/**", ".env.local", ".env.production", ".mcp.json"]
+    },
+    {
+      "id": "mobile-audit",
+      "agent": "codex",
+      "status": "in_progress",
+      "scope": ["app/app/**", "app/src/**", "app/package.json", "app/tsconfig.json"]
+    },
+    {
+      "id": "web-backend-audit",
+      "agent": "codex",
+      "status": "in_progress",
+      "scope": ["src/**", "api/**", "auth/**", "backend/**", "Relay/**", "RelayTests/**", "RelayUITests/**", "scripts/**", "playwright-audit.js", "package.json", "tsconfig.json", "vite.config.ts", "vercel.json", "index.html"]
+    },
+    {
+      "id": "security-analysis",
+      "agent": "gemini",
+      "status": "pending",
+      "scope": ["api/**", "auth/**", "backend/**", "Relay/**", "scripts/**", "app/app/auth.tsx", "app/src/lib/**", "package.json", "app/package.json", ".env.local", ".env.production", ".mcp.json"]
+    },
+    {
+      "id": "claude-plan-review",
+      "agent": "claude",
+      "status": "completed",
+      "scope": ["artifacts/plan.md"]
+    },
+    {
+      "id": "claude-audit-review",
+      "agent": "claude",
+      "status": "pending",
+      "scope": ["artifacts/codex_mobile_audit.md", "artifacts/codex_web_backend_audit.md", "artifacts/gemini_security_analysis.md", "artifacts/test_results.txt", "artifacts/codebase_metrics.txt"]
+    },
+    {
+      "id": "synthesis",
+      "agent": "hermes",
+      "status": "pending",
+      "scope": ["artifacts/*"]
+    }
+  ]
+}

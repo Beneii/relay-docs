@@ -3,3 +3,7 @@ dist/
 .env
 .env.*
 .vercel/
+.vercel
+.env*.local
+.mcp.json
+docs/site

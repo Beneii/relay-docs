@@ -1,23 +1,49 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import { getAuthenticatedUser } from './_lib/auth';
+import { handleOptions, setCorsHeaders } from './_lib/cors';
 
-const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
+function requireEnv(name: string): string {
+  const value = process.env[name];
+
+  if (!value) {
+    throw new Error(`Missing required environment variable: ${name}`);
+  }
+
+  return value;
+}
+
+const stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
 const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || '',
-  process.env.SUPABASE_SERVICE_ROLE_KEY || ''
+  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
+  requireEnv('SUPABASE_SERVICE_ROLE_KEY')
 );
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
+  if (handleOptions(req, res, ['POST', 'OPTIONS'])) {
+    return;
+  }
+
+  setCorsHeaders(req, res, ['POST', 'OPTIONS']);
+
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
   }
 
-  const { customerId, userId } = req.body;
+  const user = await getAuthenticatedUser(req);
 
-  if (!customerId || !userId) {
-    return res.status(400).json({ error: 'Missing customerId or userId' });
+  if (!user) {
+    return res.status(401).json({ error: 'Missing or invalid authentication' });
   }
+
+  const { customerId } = req.body || {};
+
+  if (!customerId) {
+    return res.status(400).json({ error: 'Missing customerId' });
+  }
+
+  const userId = user.id;
 
   // Verify the customer ID belongs to this user
   const { data: profile } = await supabase

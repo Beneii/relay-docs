@@ -84,7 +84,7 @@ const FAQ_ITEMS = [
   },
   {
     q: "Is there a free plan?",
-    a: "Yes. The free plan includes 1 dashboard, 1 device, and 200 notifications per month. Upgrade to Pro for unlimited dashboards and 10,000 notifications/month."
+    a: "Yes. The free plan includes 3 dashboards, 1 device, and 100 notifications per month. Upgrade to Pro for unlimited dashboards and 10,000 notifications/month."
   },
   {
     q: "Do I need to install an SDK?",
@@ -99,7 +99,7 @@ function FAQItem({ item, isOpen, onToggle }: { item: typeof FAQ_ITEMS[0]; isOpen
         onClick={onToggle}
         className="w-full flex items-center justify-between py-5 text-left cursor-pointer group"
       >
-        <span className="text-base font-medium pr-4 group-hover:text-accent transition-colors">{item.q}</span>
+        <h3 className="text-base font-medium pr-4 group-hover:text-accent transition-colors">{item.q}</h3>
         <ChevronDown className={`w-5 h-5 text-text-muted shrink-0 transition-transform duration-200 ${isOpen ? 'rotate-180' : ''}`} />
       </button>
       <AnimatePresence initial={false}>
@@ -787,8 +787,8 @@ export default function App() {
             <div>
               <h4 className="text-sm font-semibold mb-4">Legal</h4>
               <ul className="space-y-2.5 text-sm text-text-muted">
-                <li><a href="#" className="hover:text-text-main transition-colors">Privacy Policy</a></li>
-                <li><a href="#" className="hover:text-text-main transition-colors">Terms of Service</a></li>
+                <li><Link to="/privacy" className="hover:text-text-main transition-colors">Privacy Policy</Link></li>
+                <li><Link to="/terms" className="hover:text-text-main transition-colors">Terms of Service</Link></li>
               </ul>
             </div>
           </div>

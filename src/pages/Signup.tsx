@@ -82,8 +82,10 @@ export default function Signup() {
 
     setLoading(true);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const { data, error } = await supabase.auth.signUp({
-      email,
+      email: normalizedEmail,
       password,
       options: {
         emailRedirectTo: `${window.location.origin}/login?confirmed=true`,
@@ -100,21 +102,6 @@ export default function Signup() {
       setError('An account with this email already exists.');
       setLoading(false);
       return;
-    }
-
-    if (data.user) {
-      await supabase.from('profiles').upsert([
-        {
-          id: data.user.id,
-          email: data.user.email,
-        },
-      ], { onConflict: 'id' });
-
-      fetch('/api/send-welcome', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email: data.user.email, userId: data.user.id }),
-      }).catch(() => {});
     }
 
     setEmailSent(true);

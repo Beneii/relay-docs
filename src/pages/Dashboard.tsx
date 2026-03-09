@@ -1,15 +1,41 @@
 import React, { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
-import { LayoutDashboard, Trash2, Plus, Settings, CreditCard, AlertCircle, Copy, Check, ExternalLink } from 'lucide-react';
+import { LayoutDashboard, Trash2, Plus, Settings, CreditCard, AlertCircle, Copy, Check, ExternalLink, UserX } from 'lucide-react';
 import { RelayIcon } from '../components/RelayLogo';
 import { ThemeToggle } from '../components/ThemeToggle';
+
+const FREE_APP_LIMIT = 3;
+const FREE_NOTIFICATION_LIMIT = 100;
+
+function sleep(ms: number) {
+  return new Promise((resolve) => setTimeout(resolve, ms));
+}
+
+function generateWebhookToken(): string {
+  const cryptoApi = globalThis.crypto;
+
+  if (!cryptoApi?.getRandomValues) {
+    throw new Error('Secure token generation is unavailable in this browser.');
+  }
+
+  const bytes = new Uint8Array(32);
+  cryptoApi.getRandomValues(bytes);
+
+  return Array.from(bytes)
+    .map((byte) => byte.toString(16).padStart(2, '0'))
+    .join('');
+}
 
 interface UserData {
   id: string;
   email: string;
   plan: 'free' | 'pro';
   stripe_customer_id: string | null;
+  stripe_subscription_id: string | null;
+  billing_interval: 'month' | 'year' | null;
+  current_period_end: string | null;
+  cancel_at_period_end: boolean;
 }
 
 interface Dashboard {
@@ -24,76 +50,219 @@ export default function DashboardPage() {
   const [user, setUser] = useState<UserData | null>(null);
   const [dashboards, setDashboards] = useState<Dashboard[]>([]);
   const [loading, setLoading] = useState(true);
+  const [provisioningProfile, setProvisioningProfile] = useState(false);
   const [notificationsUsed, setNotificationsUsed] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showDeleteModal, setShowDeleteModal] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [deletingDashboardId, setDeletingDashboardId] = useState<string | null>(null);
+  const [showSuccess, setShowSuccess] = useState(false);
   const [newDashName, setNewDashName] = useState('');
   const [newDashUrl, setNewDashUrl] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [deleteDashboardError, setDeleteDashboardError] = useState<string | null>(null);
+  const [deleteAccountError, setDeleteAccountError] = useState<string | null>(null);
   const [copiedToken, setCopiedToken] = useState<string | null>(null);
+  const [reloadKey, setReloadKey] = useState(0);
   const navigate = useNavigate();
 
   useEffect(() => {
-    const fetchData = async () => {
+    let cancelled = false;
+
+    const fetchData = async (allowProfileRetry = true): Promise<void> => {
       const { data: { session } } = await supabase.auth.getSession();
+
+      if (cancelled) {
+        return;
+      }
+
       if (!session) {
         navigate('/login');
         return;
       }
 
-      let { data: userData } = await supabase
+      // Check for Stripe success redirect
+      const params = new URLSearchParams(window.location.search);
+      const hasCheckoutSessionRedirect = Boolean(params.get('session_id'));
+      if (hasCheckoutSessionRedirect) {
+        setShowSuccess(false);
+        window.history.replaceState({}, '', '/dashboard');
+      }
+
+      const fetchProfile = () => supabase
         .from('profiles')
         .select('*')
         .eq('id', session.user.id)
-        .single();
+        .maybeSingle();
 
-      // Auto-create profile for OAuth users (they skip the Signup page)
+      let { data: userData, error: profileError } = await fetchProfile();
+
+      if (cancelled) {
+        return;
+      }
+
+      if (profileError) {
+        console.error('Failed to load profile:', profileError);
+        setUser(null);
+        setFetchError('We couldn\'t load your account. Please try again.');
+        return;
+      }
+
       if (!userData) {
-        const { data: newProfile } = await supabase
-          .from('profiles')
-          .upsert([{ id: session.user.id, email: session.user.email }], { onConflict: 'id' })
-          .select()
-          .single();
-        userData = newProfile;
-
-        // Send welcome email for new OAuth users (fire-and-forget)
         if (session.user.email) {
           fetch('/api/send-welcome', {
             method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ email: session.user.email, userId: session.user.id }),
+            headers: {
+              'Content-Type': 'application/json',
+              Authorization: `Bearer ${session.access_token}`,
+            },
+            body: JSON.stringify({}),
           }).catch(() => {});
+        }
+
+        if (allowProfileRetry) {
+          setProvisioningProfile(true);
+          await sleep(1500);
+
+          if (cancelled) {
+            return;
+          }
+
+          setProvisioningProfile(false);
+          return fetchData(false);
+        }
+
+        setUser(null);
+        setFetchError('Your account is still being provisioned. Please try again.');
+        return;
+      }
+
+      if (hasCheckoutSessionRedirect && userData.plan !== 'pro') {
+        for (let attempt = 0; attempt < 3; attempt += 1) {
+          await sleep(2000);
+
+          if (cancelled) {
+            return;
+          }
+
+          const profileRetry = await fetchProfile();
+
+          if (profileRetry.error) {
+            console.error('Failed to confirm upgraded profile state:', profileRetry.error);
+            setUser(null);
+            setFetchError('We couldn\'t confirm your updated billing status. Please try again.');
+            return;
+          }
+
+          if (profileRetry.data) {
+            userData = profileRetry.data;
+
+            if (userData.plan === 'pro') {
+              break;
+            }
+          }
         }
       }
 
-      if (userData) {
-        setUser(userData);
+      setUser(userData);
+
+      if (hasCheckoutSessionRedirect && userData.plan === 'pro') {
+        setShowSuccess(true);
       }
 
-      const { data: dashData } = await supabase
-        .from('apps')
-        .select('*')
-        .eq('user_id', session.user.id);
+      const [dashboardsResult, notificationsResult] = await Promise.all([
+        supabase
+          .from('apps')
+          .select('*')
+          .eq('user_id', session.user.id),
+        supabase
+          .from('notifications')
+          .select('*', { count: 'exact', head: true })
+          .eq('user_id', session.user.id)
+          .gte('created_at', new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString()),
+      ]);
 
-      if (dashData) {
-        setDashboards(dashData);
+      if (cancelled) {
+        return;
       }
 
-      const { count } = await supabase
-        .from('notifications')
-        .select('*', { count: 'exact', head: true })
-        .eq('user_id', session.user.id)
-        .gte('created_at', new Date(new Date().getFullYear(), new Date().getMonth(), 1).toISOString());
+      let nextFetchError: string | null = null;
 
-      setNotificationsUsed(count || 0);
-      setLoading(false);
+      if (dashboardsResult.error) {
+        console.error('Failed to load dashboards:', dashboardsResult.error);
+        nextFetchError = 'We couldn\'t load your dashboards. Please try again.';
+      } else {
+        setDashboards(dashboardsResult.data || []);
+      }
+
+      if (notificationsResult.error) {
+        console.error('Failed to load notification usage:', notificationsResult.error);
+        nextFetchError = nextFetchError || 'We couldn\'t load your notification usage. Please try again.';
+      } else {
+        setNotificationsUsed(notificationsResult.count || 0);
+      }
+
+      setFetchError(nextFetchError);
     };
 
-    fetchData();
-  }, [navigate]);
+    setLoading(true);
+    setFetchError(null);
+    setProvisioningProfile(false);
+
+    fetchData()
+      .catch((fetchErr) => {
+        if (cancelled) {
+          return;
+        }
+
+        console.error('Unexpected dashboard load error:', fetchErr);
+        setFetchError('We couldn\'t load your dashboard. Please try again.');
+      })
+      .finally(() => {
+        if (!cancelled) {
+          setProvisioningProfile(false);
+          setLoading(false);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [navigate, reloadKey]);
+
+  const handleRetryFetch = () => {
+    setFetchError(null);
+    setDeleteDashboardError(null);
+    setReloadKey((current) => current + 1);
+  };
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();
     navigate('/');
+  };
+
+  const handleDeleteAccount = async () => {
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session) return;
+
+    setDeleting(true);
+    setDeleteAccountError(null);
+    try {
+      const { error: deleteError } = await supabase.functions.invoke('delete-account', {
+        body: {
+          confirmation: 'DELETE MY ACCOUNT',
+        },
+      });
+      if (deleteError) throw deleteError;
+
+      await supabase.auth.signOut();
+      navigate('/');
+    } catch (err: any) {
+      console.error('Failed to delete account', err);
+      setDeleteAccountError(err.message || 'Failed to delete account. Please try again or contact support.');
+      setDeleting(false);
+    }
   };
 
   const handleCopyToken = async (token: string) => {
@@ -106,12 +275,21 @@ export default function DashboardPage() {
     e.preventDefault();
     if (!user) return;
 
-    if (user.plan === 'free' && dashboards.length >= 1) {
-      setError('Free plan is limited to 1 dashboard. Please upgrade to add more.');
+    setFetchError(null);
+
+    if (user.plan === 'free' && dashboards.length >= FREE_APP_LIMIT) {
+      setError(`Free plan is limited to ${FREE_APP_LIMIT} dashboards. Please upgrade to add more.`);
       return;
     }
 
-    const token = Math.random().toString(36).substring(2, 15) + Math.random().toString(36).substring(2, 15);
+    let token: string;
+
+    try {
+      token = generateWebhookToken();
+    } catch (tokenError: any) {
+      setError(tokenError.message || 'Failed to generate a secure webhook token.');
+      return;
+    }
 
     const { data, error: insertError } = await supabase
       .from('apps')
@@ -138,8 +316,20 @@ export default function DashboardPage() {
   };
 
   const handleDeleteDashboard = async (id: string) => {
-    await supabase.from('apps').delete().eq('id', id);
-    setDashboards(dashboards.filter((d) => d.id !== id));
+    setDeleteDashboardError(null);
+    setDeletingDashboardId(id);
+
+    const { error: deleteError } = await supabase.from('apps').delete().eq('id', id);
+
+    if (deleteError) {
+      console.error('Failed to delete dashboard:', deleteError);
+      setDeleteDashboardError(deleteError.message || 'Failed to delete dashboard. Please try again.');
+      setDeletingDashboardId(null);
+      return;
+    }
+
+    setDashboards((currentDashboards) => currentDashboards.filter((dashboard) => dashboard.id !== id));
+    setDeletingDashboardId(null);
   };
 
   const handleManageBilling = async () => {
@@ -147,22 +337,44 @@ export default function DashboardPage() {
       navigate('/pricing');
       return;
     }
+
+    const {
+      data: { session },
+    } = await supabase.auth.getSession();
+
+    if (!session) {
+      navigate('/login');
+      return;
+    }
+
     try {
       const response = await fetch('/api/create-billing-portal', {
         method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+        },
         body: JSON.stringify({ customerId: user.stripe_customer_id }),
       });
+
+      if (!response.ok) {
+        const errorData = await response.json().catch(() => ({}));
+        throw new Error(errorData.error || 'Failed to open billing portal');
+      }
+
       const data = await response.json();
       if (data.url) {
         window.location.href = data.url;
+      } else {
+        throw new Error('No portal URL returned');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Failed to open billing portal', err);
+      alert(err.message || 'Failed to open billing portal. Please try again.');
     }
   };
 
-  const notificationLimit = user?.plan === 'pro' ? 10000 : 200;
+  const notificationLimit = user?.plan === 'pro' ? 10000 : FREE_NOTIFICATION_LIMIT;
   const notificationPercent = Math.min((notificationsUsed / notificationLimit) * 100, 100);
 
   if (loading) {
@@ -170,7 +382,77 @@ export default function DashboardPage() {
       <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">
         <div className="flex items-center gap-3 text-text-muted">
           <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
-          Loading...
+          Loading your dashboards...
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-bg text-text-main flex flex-col items-center justify-center p-6 text-center">
+        <AlertCircle className="w-12 h-12 text-red-500 mb-4 opacity-50" />
+        <h2 className="text-xl font-bold mb-2">Account Error</h2>
+        <p className="text-text-muted mb-8 max-w-sm">
+          We couldn't load your profile. This usually happens if there was a problem with your signup or login session.
+        </p>
+        <div className="flex gap-4">
+          <button
+            onClick={() => window.location.reload()}
+            className="px-6 py-2.5 rounded-lg bg-surface border border-border text-sm font-medium hover:bg-surface-hover transition-all cursor-pointer"
+          >
+            Retry
+          </button>
+          <button
+            onClick={handleSignOut}
+            className="px-6 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-all cursor-pointer"
+          >
+            Sign out
+          </button>
+        </div>
+      </div>
+    );
+  }
+
+  if (provisioningProfile) {
+    return (
+      <div className="min-h-screen bg-bg text-text-main flex items-center justify-center px-6">
+        <div className="max-w-md text-center">
+          <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <h2 className="text-xl font-semibold mb-2">Setting up your account…</h2>
+          <p className="text-sm text-text-muted">
+            We&apos;re provisioning your profile after sign-in. This should only take a moment.
+          </p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div className="min-h-screen bg-bg text-text-main flex items-center justify-center px-6">
+        <div className="max-w-md w-full bg-surface border border-red-500/20 rounded-2xl p-6 text-center">
+          <div className="w-12 h-12 rounded-full bg-red-500/10 text-red-500 flex items-center justify-center mx-auto mb-4">
+            <AlertCircle className="w-6 h-6" />
+          </div>
+          <h2 className="text-xl font-semibold mb-2">Unable to load your dashboard</h2>
+          <p className="text-sm text-text-muted mb-6">
+            {fetchError || 'We couldn\'t load your account. Please try again.'}
+          </p>
+          <div className="flex items-center justify-center gap-3">
+            <button
+              onClick={handleRetryFetch}
+              className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+            >
+              Retry
+            </button>
+            <button
+              onClick={handleSignOut}
+              className="px-4 py-2.5 rounded-lg border border-border text-sm font-medium text-text-muted hover:text-text-main transition-colors cursor-pointer"
+            >
+              Sign out
+            </button>
+          </div>
         </div>
       </div>
     );
@@ -195,6 +477,42 @@ export default function DashboardPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-6 py-12">
+        {showSuccess && (
+          <div className="mb-8 bg-emerald-500/10 border border-emerald-500/20 rounded-2xl p-4 flex items-center justify-between gap-4 animate-in fade-in slide-in-from-top-4 duration-500">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center shrink-0">
+                <Check className="w-6 h-6 text-white" />
+              </div>
+              <div>
+                <h3 className="font-bold text-emerald-500">Welcome to Pro!</h3>
+                <p className="text-sm text-emerald-500/80">Your account has been upgraded successfully. You now have unlimited dashboards and higher limits.</p>
+              </div>
+            </div>
+            <button
+              onClick={() => setShowSuccess(false)}
+              className="text-emerald-500 hover:text-emerald-600 p-2 cursor-pointer"
+            >
+              <Trash2 className="w-5 h-5 opacity-50" />
+            </button>
+          </div>
+        )}
+        {fetchError && (
+          <div className="mb-8 bg-red-500/10 border border-red-500/20 rounded-2xl p-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-red-500 shrink-0 mt-0.5" />
+              <div>
+                <h3 className="font-semibold text-red-500">Dashboard data failed to load</h3>
+                <p className="text-sm text-red-500/80">{fetchError}</p>
+              </div>
+            </div>
+            <button
+              onClick={handleRetryFetch}
+              className="px-4 py-2.5 rounded-lg bg-red-500 text-white text-sm font-medium hover:bg-red-600 transition-all cursor-pointer"
+            >
+              Retry
+            </button>
+          </div>
+        )}
         <div className="grid md:grid-cols-3 gap-8">
 
           {/* Sidebar */}
@@ -249,6 +567,13 @@ export default function DashboardPage() {
                   <CreditCard className="w-4 h-4" />
                   Manage Billing
                 </button>
+                <button
+                  onClick={() => setShowDeleteModal(true)}
+                  className="w-full flex items-center justify-center gap-2 h-10 rounded-lg bg-red-500/5 border border-red-500/10 text-sm font-medium text-red-500/70 hover:bg-red-500/10 hover:text-red-500 transition-all cursor-pointer mt-2"
+                >
+                  <UserX className="w-4 h-4" />
+                  Delete Account
+                </button>
               </div>
             </div>
           </div>
@@ -265,6 +590,13 @@ export default function DashboardPage() {
                 Add Dashboard
               </button>
             </div>
+
+            {deleteDashboardError && (
+              <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm flex items-start gap-2">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <p>{deleteDashboardError}</p>
+              </div>
+            )}
 
             {dashboards.length === 0 ? (
               <div className="bg-surface border border-dashed border-border rounded-2xl p-12 text-center">
@@ -307,9 +639,14 @@ export default function DashboardPage() {
                     </div>
                     <button
                       onClick={() => handleDeleteDashboard(dash.id)}
-                      className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all self-start sm:self-center cursor-pointer"
+                      disabled={deletingDashboardId === dash.id}
+                      className="p-2 text-text-muted hover:text-red-500 hover:bg-red-500/10 rounded-lg transition-all self-start sm:self-center cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
                     >
-                      <Trash2 className="w-5 h-5" />
+                      {deletingDashboardId === dash.id ? (
+                        <div className="w-5 h-5 border-2 border-current border-t-transparent rounded-full animate-spin" />
+                      ) : (
+                        <Trash2 className="w-5 h-5" />
+                      )}
                     </button>
                   </div>
                 ))}
@@ -374,6 +711,55 @@ export default function DashboardPage() {
                 </button>
               </div>
             </form>
+          </div>
+        </div>
+      )}
+
+      {/* Delete Account Modal */}
+      {showDeleteModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-surface border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
+            <div className="p-6 border-b border-border">
+              <h2 className="text-xl font-semibold text-red-500">Delete Account</h2>
+            </div>
+            <div className="p-6 space-y-4">
+              {deleteAccountError && (
+                <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg text-sm flex items-start gap-2">
+                  <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                  <p>{deleteAccountError}</p>
+                </div>
+              )}
+              <div className="bg-red-500/10 border border-red-500/20 text-red-500 p-4 rounded-xl text-sm flex items-start gap-3">
+                <AlertCircle className="w-5 h-5 shrink-0 mt-0.5" />
+                <div>
+                  <p className="font-semibold mb-1">This action is permanent</p>
+                  <p className="opacity-80">All your dashboards, apps, and notification history will be deleted immediately. Active Pro subscriptions will be cancelled.</p>
+                </div>
+              </div>
+              <p className="text-text-muted text-sm px-1">
+                Are you sure you want to delete your account? You cannot undo this.
+              </p>
+              <div className="pt-4 flex flex-col gap-3">
+                <button
+                  disabled={deleting}
+                  onClick={handleDeleteAccount}
+                  className="w-full h-11 rounded-lg bg-red-500 text-white text-sm font-semibold hover:bg-red-600 transition-all disabled:opacity-50 flex items-center justify-center gap-2 cursor-pointer"
+                >
+                  {deleting ? (
+                    <><div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> Deleting account...</>
+                  ) : (
+                    'Yes, delete my account'
+                  )}
+                </button>
+                <button
+                  disabled={deleting}
+                  onClick={() => setShowDeleteModal(false)}
+                  className="w-full h-11 rounded-lg border border-border text-sm font-medium text-text-muted hover:text-text-main hover:bg-surface-hover transition-all cursor-pointer"
+                >
+                  Cancel
+                </button>
+              </div>
+            </div>
           </div>
         </div>
       )}

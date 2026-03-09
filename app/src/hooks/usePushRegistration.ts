@@ -17,32 +17,17 @@ export function usePushRegistration() {
   const lastToken = useRef<string | null>(null);
   const lastUserId = useRef<string | null>(null);
 
-  // Deregister on sign-out: when user transitions from set to null
+  // Reset registration state on sign-out.
+  // Note: Actual device row deletion happens in settings.tsx handleSignOut
+  // BEFORE calling supabase.auth.signOut(), because after signOut the client
+  // has no auth session and RLS would reject the delete.
   useEffect(() => {
     if (user) {
       lastUserId.current = user.id;
       return;
     }
 
-    // user is null — if we had a registered token, delete the device row
-    if (!registered.current || !lastToken.current || !lastUserId.current || Platform.OS === "web") {
-      return;
-    }
-
-    const tokenToDelete = lastToken.current;
-    const userIdToDelete = lastUserId.current;
-
-    supabase
-      .from("devices")
-      .delete()
-      .eq("user_id", userIdToDelete)
-      .eq("expo_push_token", tokenToDelete)
-      .then(({ error }) => {
-        if (error) {
-          console.error("Failed to deregister push token:", error);
-        }
-      });
-
+    // user went null — clean up local refs
     registered.current = false;
     lastToken.current = null;
     lastUserId.current = null;

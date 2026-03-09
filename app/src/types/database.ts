@@ -7,6 +7,11 @@ export interface Database {
           email: string;
           plan: "free" | "pro";
           stripe_customer_id: string | null;
+          stripe_subscription_id: string | null;
+          billing_interval: "month" | "year" | null;
+          current_period_end: string | null;
+          cancel_at_period_end: boolean;
+          welcome_email_sent: boolean;
           created_at: string;
           updated_at: string;
         };
@@ -15,6 +20,11 @@ export interface Database {
           email: string;
           plan?: "free" | "pro";
           stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          billing_interval?: "month" | "year" | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          welcome_email_sent?: boolean;
           created_at?: string;
           updated_at?: string;
         };
@@ -23,6 +33,11 @@ export interface Database {
           email?: string;
           plan?: "free" | "pro";
           stripe_customer_id?: string | null;
+          stripe_subscription_id?: string | null;
+          billing_interval?: "month" | "year" | null;
+          current_period_end?: string | null;
+          cancel_at_period_end?: boolean;
+          welcome_email_sent?: boolean;
           updated_at?: string;
         };
       };

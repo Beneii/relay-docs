@@ -83,8 +83,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.APP_URL || 'https://relayapp.dev'}/dashboard?upgraded=1`,
-      cancel_url: `${process.env.APP_URL || 'https://relayapp.dev'}/pricing`,
+      success_url: `${(process.env.APP_URL || 'https://relayapp.dev').trim()}/dashboard?upgraded=1`,
+      cancel_url: `${(process.env.APP_URL || 'https://relayapp.dev').trim()}/pricing`,
       client_reference_id: userId,
       ...customerParams,
     });

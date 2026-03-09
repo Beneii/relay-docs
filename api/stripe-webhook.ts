@@ -1,6 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+import {
+  sendProUpgradeEmail,
+  sendSubscriptionCancelledEmail,
+  sendPaymentFailedEmail,
+} from './_lib/email';
 
 const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '');
 const supabase = createClient(
@@ -20,6 +25,26 @@ async function getRawBody(req: VercelRequest): Promise<Buffer> {
     chunks.push(typeof chunk === 'string' ? Buffer.from(chunk) : chunk);
   }
   return Buffer.concat(chunks);
+}
+
+// Look up user email from Stripe customer ID
+async function getEmailByCustomerId(customerId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('stripe_customer_id', customerId)
+    .single();
+  return data?.email || null;
+}
+
+// Look up user email from user ID
+async function getEmailByUserId(userId: string): Promise<string | null> {
+  const { data } = await supabase
+    .from('profiles')
+    .select('email')
+    .eq('id', userId)
+    .single();
+  return data?.email || null;
 }
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
@@ -50,22 +75,57 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       const userId = session.client_reference_id;
 
       if (userId) {
-        await supabase
+        const { error: updateError } = await supabase
           .from('profiles')
           .update({
             plan: 'pro',
             stripe_customer_id: customerId,
           })
           .eq('id', userId);
+
+        if (updateError) {
+          console.error('Failed to upgrade user to pro:', updateError);
+          return res.status(500).send('Failed to update user plan');
+        }
+
+        const email = await getEmailByUserId(userId);
+        if (email) {
+          await sendProUpgradeEmail(email).catch((err) =>
+            console.error('Failed to send Pro upgrade email:', err)
+          );
+        }
       }
     } else if (event.type === 'customer.subscription.deleted') {
       const subscription = event.data.object as Stripe.Subscription;
       const customerId = subscription.customer as string;
 
-      await supabase
+      const email = await getEmailByCustomerId(customerId);
+
+      const { error: updateError } = await supabase
         .from('profiles')
         .update({ plan: 'free' })
         .eq('stripe_customer_id', customerId);
+
+      if (updateError) {
+        console.error('Failed to downgrade user to free:', updateError);
+        return res.status(500).send('Failed to update user plan');
+      }
+
+      if (email) {
+        await sendSubscriptionCancelledEmail(email).catch((err) =>
+          console.error('Failed to send cancellation email:', err)
+        );
+      }
+    } else if (event.type === 'invoice.payment_failed') {
+      const invoice = event.data.object as Stripe.Invoice;
+      const customerId = invoice.customer as string;
+
+      const email = await getEmailByCustomerId(customerId);
+      if (email) {
+        await sendPaymentFailedEmail(email).catch((err) =>
+          console.error('Failed to send payment failed email:', err)
+        );
+      }
     }
   } catch (error) {
     console.error('Error processing webhook:', error);

@@ -21,8 +21,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(400).json({ error: 'Missing email' });
   }
 
-  // Simple auth: either comes from Supabase webhook (has record) or needs a valid userId
-  if (!req.body?.record && userId) {
+  // Auth: must come from Supabase webhook (has record) or have a valid userId
+  if (!req.body?.record) {
+    if (!userId) {
+      return res.status(403).json({ error: 'Missing authentication' });
+    }
     const { data } = await supabase
       .from('profiles')
       .select('id')
@@ -39,6 +42,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.json({ sent: true });
   } catch (error: any) {
     console.error('Failed to send welcome email:', error);
-    res.status(500).json({ error: error.message });
+    res.status(500).json({ error: 'Failed to send welcome email' });
   }
 }

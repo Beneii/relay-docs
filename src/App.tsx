@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
 import { Link } from 'react-router-dom';
-import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User, Menu, X, ChevronDown, Gauge, Wrench, Rocket } from 'lucide-react';
+import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User, Menu, X, ChevronDown, Gauge, Wrench, Rocket, Bot, Activity, TrendingUp, Shield, MonitorSmartphone, Network } from 'lucide-react';
 import { supabase } from './lib/supabase';
 import { RelayIcon } from './components/RelayLogo';
 import { ThemeToggle } from './components/ThemeToggle';
@@ -56,23 +56,39 @@ requests.post("https://relayapp.dev/webhook", json={
 const FAQ_ITEMS = [
   {
     q: "What is Relay?",
-    a: "Relay lets you save any web dashboard (Grafana, Home Assistant, n8n, CI/CD tools, etc.) as a native app on your phone. Each dashboard gets a unique webhook URL — send a POST request to trigger an instant push notification that opens the dashboard directly."
+    a: "Relay is a mobile command center for web dashboards. Save any web dashboard as a native app on your phone, send webhooks to receive push notifications, and tap to open your dashboards instantly. It is commonly used to monitor AI agents, automations, servers, and self-hosted systems."
+  },
+  {
+    q: "Do my dashboards need to be public?",
+    a: "No. Most users access dashboards through Tailscale or another private network. Relay simply loads the URL you provide — your dashboards stay on your own infrastructure."
+  },
+  {
+    q: "Does Relay host my dashboards?",
+    a: "No. Relay simply loads your existing dashboards in a mobile interface and sends notifications. Your data and dashboards remain wherever you host them."
+  },
+  {
+    q: "Do I need to store images for notification icons?",
+    a: "No. Relay supports icon_url, so images can be hosted anywhere — your own server, a CDN, or any public URL."
+  },
+  {
+    q: "Does Relay replace my dashboard?",
+    a: "No. Relay is a mobile companion for dashboards and automation systems. It gives you a native app wrapper and push notifications on top of your existing setup."
+  },
+  {
+    q: "What kinds of systems work with Relay?",
+    a: "Anything that can send a webhook — AI agents, automation tools, CI pipelines, servers, scripts, monitoring systems, trading bots, and more. If it can make an HTTP POST request, it works with Relay."
   },
   {
     q: "How do push notifications work?",
     a: "Each dashboard you save gets a unique webhook token. Send a simple HTTP POST request with a title and body to our endpoint, and Relay delivers an instant push notification to your phone. Tap the notification to open the associated dashboard."
   },
   {
-    q: "What can I use as a dashboard?",
-    a: "Anything with a URL — Grafana, Home Assistant, n8n, Uptime Kuma, Portainer, Jenkins, your own internal tools. If it renders in a browser, you can save it in Relay."
-  },
-  {
     q: "Is there a free plan?",
-    a: "Yes! The free plan includes 1 dashboard, 1 device, and 200 notifications per month. It's perfect for personal projects and testing. Upgrade to Pro for unlimited dashboards and 10,000 notifications/month."
+    a: "Yes. The free plan includes 1 dashboard, 1 device, and 200 notifications per month. Upgrade to Pro for unlimited dashboards and 10,000 notifications/month."
   },
   {
     q: "Do I need to install an SDK?",
-    a: "No. Relay uses a simple REST API — just send an HTTP POST request from any language, script, or CI/CD pipeline. If your system can make an HTTP request, it works with Relay."
+    a: "No. Relay uses a simple REST API — just send an HTTP POST request from any language, script, or CI/CD pipeline. No SDKs, no dependencies."
   },
 ];
 
@@ -155,6 +171,7 @@ export default function App() {
           </Link>
           <div className="hidden md:flex items-center gap-8 text-sm font-medium text-text-muted">
             <a href="#features" className="hover:text-text-main transition-colors">Features</a>
+            <a href="#use-cases" className="hover:text-text-main transition-colors">Use Cases</a>
             <a href="#how-it-works" className="hover:text-text-main transition-colors">How it works</a>
             <a href="#api" className="hover:text-text-main transition-colors">API</a>
             <Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link>
@@ -199,6 +216,7 @@ export default function App() {
             >
               <div className="px-6 py-4 space-y-1">
                 <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Features</a>
+                <a href="#use-cases" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Use Cases</a>
                 <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">How it works</a>
                 <a href="#api" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">API</a>
                 <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Pricing</Link>
@@ -407,7 +425,7 @@ export default function App() {
         </section>
 
         {/* Use Cases */}
-        <section className="py-24 px-6 max-w-6xl mx-auto border-t border-border">
+        <section id="use-cases" className="py-24 px-6 max-w-6xl mx-auto border-t border-border">
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             whileInView={{ opacity: 1, y: 0 }}
@@ -416,52 +434,150 @@ export default function App() {
             className="text-center mb-16"
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Built for builders.</h2>
-            <p className="text-text-muted text-lg max-w-2xl mx-auto">Whether you're managing servers, shipping products, or tinkering at home — Relay keeps you in the loop.</p>
+            <p className="text-text-muted text-lg max-w-2xl mx-auto">Whether you're running AI agents, managing servers, or monitoring automations — Relay keeps you in the loop.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-6">
-            {[
-              {
-                icon: <Wrench className="w-6 h-6 text-accent" />,
-                title: "Self-Hosted & Open Source",
-                desc: "Monitor OpenClaw, Uptime Kuma, Gitea, and any self-hosted tool. Get push alerts from your own infrastructure without relying on third-party notification services.",
-                tools: ["OpenClaw", "Uptime Kuma", "Gitea"]
-              },
-              {
-                icon: <Gauge className="w-6 h-6 text-accent" />,
-                title: "DevOps & Homelab",
-                desc: "Keep tabs on Grafana dashboards, n8n automations, Home Assistant, and CI/CD pipelines. Know instantly when a deploy fails or a sensor triggers.",
-                tools: ["Grafana", "n8n", "Home Assistant"]
-              },
-              {
-                icon: <Rocket className="w-6 h-6 text-accent" />,
-                title: "Founders & Indie Hackers",
-                desc: "Track new signups, payments, and errors in real time. Connect Stripe webhooks, monitor your SaaS metrics — no dashboard tab-hopping.",
-                tools: ["Stripe", "Vercel", "Supabase"]
-              },
-            ].map((item, i) => (
-              <motion.div
-                key={i}
-                initial={{ opacity: 0, y: 20 }}
-                whileInView={{ opacity: 1, y: 0 }}
-                viewport={{ once: true, margin: "-50px" }}
-                transition={{ duration: 0.4, delay: i * 0.1 }}
-                className="bg-surface border border-border rounded-2xl p-8"
-              >
-                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                  {item.icon}
-                </div>
-                <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
-                <p className="text-text-muted leading-relaxed text-sm mb-6">{item.desc}</p>
-                <div className="flex flex-wrap gap-2">
-                  {item.tools.map(tool => (
-                    <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">
-                      {tool}
-                    </span>
-                  ))}
-                </div>
-              </motion.div>
-            ))}
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* Monitor AI Agents */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4 }}
+              className="bg-surface border border-border rounded-2xl p-8"
+            >
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                <Bot className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Monitor AI Agents</h3>
+              <p className="text-text-muted leading-relaxed text-sm mb-6">Run agent systems like Obelisk, OpenClaw, or other automations and receive instant alerts when tasks complete or fail.</p>
+              <div className="bg-bg border border-border rounded-xl p-4 font-mono text-xs text-text-muted space-y-1">
+                <p>Agent finishes job</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Webhook sent to Relay</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Phone notification</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Tap &rarr; open agent dashboard</p>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-6">
+                {["Obelisk", "OpenClaw", "Custom Agents"].map(tool => (
+                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Self-Hosted Dashboards */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.1 }}
+              className="bg-surface border border-border rounded-2xl p-8"
+            >
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                <Wrench className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Self-Hosted Dashboards</h3>
+              <p className="text-text-muted leading-relaxed text-sm mb-6">Relay works with self-hosted dashboards like Grafana, Home Assistant, Kubernetes dashboards, internal tools, and AI agent control panels. Keep everything private on your network while still receiving alerts on your phone.</p>
+              <div className="flex flex-wrap gap-2">
+                {["Grafana", "Home Assistant", "Kubernetes", "Internal Tools", "AI Panels"].map(tool => (
+                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          <div className="grid md:grid-cols-2 gap-6 mb-6">
+            {/* Monitor Automations */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="bg-surface border border-border rounded-2xl p-8"
+            >
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                <Activity className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Monitor Automations</h3>
+              <p className="text-text-muted leading-relaxed text-sm mb-6">Ideal for monitoring CI pipelines, server deployments, automation workflows, and background jobs.</p>
+              <div className="bg-bg border border-border rounded-xl p-4 font-mono text-xs text-text-muted space-y-1">
+                <p>Deployment finished</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Webhook &rarr; Relay</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Phone alert</p>
+              </div>
+              <div className="flex flex-wrap gap-2 mt-6">
+                {["CI/CD", "Deployments", "Cron Jobs", "n8n"].map(tool => (
+                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
+                ))}
+              </div>
+            </motion.div>
+
+            {/* Trading Bots & Monitoring */}
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.3 }}
+              className="bg-surface border border-border rounded-2xl p-8"
+            >
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                <TrendingUp className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Trading Bots & Monitoring</h3>
+              <p className="text-text-muted leading-relaxed text-sm mb-6">Users running trading bots or scripts can receive alerts when trades execute, strategies trigger, or errors occur.</p>
+              <div className="flex flex-wrap gap-2">
+                {["Trade Alerts", "Strategy Triggers", "Error Monitoring", "Portfolio Bots"].map(tool => (
+                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
+                ))}
+              </div>
+            </motion.div>
+          </div>
+
+          {/* Tips: Dashboard Best Practice + Networking */}
+          <div className="grid md:grid-cols-2 gap-6">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.4 }}
+              className="bg-surface border border-border rounded-2xl p-8"
+            >
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                <MonitorSmartphone className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Best Practice for Dashboards</h3>
+              <p className="text-text-muted leading-relaxed text-sm mb-4">Relay loads dashboards inside a mobile webview. For the best experience, ask your AI or frontend tool to generate a mobile-responsive version.</p>
+              <div className="bg-bg border border-border rounded-xl p-4">
+                <p className="text-xs font-mono text-text-muted italic">"Create a mobile responsive version of this dashboard UI optimized for a narrow phone screen. Use stacked layouts and large touch targets."</p>
+              </div>
+            </motion.div>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              whileInView={{ opacity: 1, y: 0 }}
+              viewport={{ once: true, margin: "-50px" }}
+              transition={{ duration: 0.4, delay: 0.5 }}
+              className="bg-surface border border-border rounded-2xl p-8"
+            >
+              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                <Network className="w-6 h-6 text-accent" />
+              </div>
+              <h3 className="text-xl font-semibold mb-3">Private Network Access</h3>
+              <p className="text-text-muted leading-relaxed text-sm mb-4">Most self-hosted dashboards aren't publicly accessible. Use Tailscale to securely access your internal dashboards from your phone.</p>
+              <div className="bg-bg border border-border rounded-xl p-4 font-mono text-xs text-text-muted space-y-1">
+                <p>Self-hosted server</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Tailscale network</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Phone running Relay</p>
+                <p className="text-accent">  &darr;</p>
+                <p>Dashboard loads securely</p>
+              </div>
+            </motion.div>
           </div>
         </section>
 
@@ -650,6 +766,7 @@ export default function App() {
               <h4 className="text-sm font-semibold mb-4">Product</h4>
               <ul className="space-y-2.5 text-sm text-text-muted">
                 <li><a href="#features" className="hover:text-text-main transition-colors">Features</a></li>
+                <li><a href="#use-cases" className="hover:text-text-main transition-colors">Use Cases</a></li>
                 <li><a href="#how-it-works" className="hover:text-text-main transition-colors">How it works</a></li>
                 <li><Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link></li>
                 <li><a href="#api" className="hover:text-text-main transition-colors">API</a></li>

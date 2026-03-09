@@ -1,8 +1,23 @@
 import React, { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
-import { Check } from 'lucide-react';
+import { Check, X, ArrowLeft } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 import { RelayIcon } from '../components/RelayLogo';
+
+function getPasswordStrength(pw: string): { label: string; color: string; percent: number } {
+  let score = 0;
+  if (pw.length >= 8) score++;
+  if (pw.length >= 12) score++;
+  if (/[A-Z]/.test(pw)) score++;
+  if (/[0-9]/.test(pw)) score++;
+  if (/[^A-Za-z0-9]/.test(pw)) score++;
+
+  if (score <= 1) return { label: 'Weak', color: 'bg-red-500', percent: 20 };
+  if (score <= 2) return { label: 'Fair', color: 'bg-yellow-500', percent: 40 };
+  if (score <= 3) return { label: 'Good', color: 'bg-blue-500', percent: 60 };
+  if (score <= 4) return { label: 'Strong', color: 'bg-green-500', percent: 80 };
+  return { label: 'Very strong', color: 'bg-green-400', percent: 100 };
+}
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -12,6 +27,15 @@ export default function ResetPassword() {
   const [recoveryReady, setRecoveryReady] = useState(false);
   const [success, setSuccess] = useState(false);
   const [error, setError] = useState<string | null>(null);
+
+  const passwordChecks = [
+    { label: 'At least 8 characters', met: password.length >= 8 },
+    { label: 'Contains uppercase letter', met: /[A-Z]/.test(password) },
+    { label: 'Contains a number', met: /[0-9]/.test(password) },
+  ];
+  const allChecksMet = passwordChecks.every((c) => c.met);
+  const passwordsMatch = password === confirmPassword && confirmPassword.length > 0;
+  const strength = password.length > 0 ? getPasswordStrength(password) : null;
 
   useEffect(() => {
     let active = true;
@@ -84,8 +108,8 @@ export default function ResetPassword() {
   const handleResetPassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (password.length < 8) {
-      setError('Your new password must be at least 8 characters long.');
+    if (!allChecksMet) {
+      setError('Please meet all password requirements.');
       return;
     }
 
@@ -118,6 +142,7 @@ export default function ResetPassword() {
             <RelayIcon size={40} className="text-text-main" />
           </Link>
           <div className="bg-surface rounded-2xl border border-border p-8">
+            <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
             <p className="text-sm text-text-muted">Checking your reset link...</p>
           </div>
         </div>
@@ -133,16 +158,16 @@ export default function ResetPassword() {
             <RelayIcon size={40} className="text-text-main" />
           </Link>
           <div className="bg-surface rounded-2xl border border-border p-8">
-            <div className="w-12 h-12 rounded-2xl bg-green-500/10 text-green-500 flex items-center justify-center mx-auto mb-4">
-              <Check className="w-6 h-6" />
+            <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-6">
+              <Check className="w-7 h-7 text-accent" />
             </div>
-            <h2 className="text-2xl font-bold tracking-tight mb-2">Password updated</h2>
-            <p className="text-sm text-text-muted mb-6">
-              Your password has been reset successfully. Sign in with your new password.
+            <h2 className="text-2xl font-bold tracking-tight mb-3">Password updated</h2>
+            <p className="text-sm text-text-muted mb-8 leading-relaxed">
+              Your password has been reset successfully. You can now sign in with your new credentials.
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all"
+              className="inline-flex items-center justify-center gap-2 h-11 px-8 rounded-lg bg-accent text-white font-medium hover:bg-emerald-600 transition-all w-full shadow-lg shadow-accent/10"
             >
               Go to sign in
             </Link>
@@ -176,13 +201,14 @@ export default function ResetPassword() {
 
           {!recoveryReady ? (
             <div className="text-center">
-              <p className="text-sm text-text-muted mb-6">
+              <p className="text-sm text-text-muted mb-8 leading-relaxed">
                 This reset link is no longer valid. Request a new password reset email from the login page.
               </p>
               <Link
                 to="/login"
-                className="inline-flex items-center justify-center h-10 px-4 rounded-lg border border-border text-text-main text-sm font-medium hover:bg-surface-hover transition-all"
+                className="inline-flex items-center justify-center gap-2 h-11 px-6 rounded-lg border border-border text-text-main text-sm font-medium hover:bg-surface-hover transition-all w-full"
               >
+                <ArrowLeft className="w-4 h-4" />
                 Back to login
               </Link>
             </div>
@@ -195,11 +221,39 @@ export default function ResetPassword() {
                 <input
                   type="password"
                   required
-                  minLength={8}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   className="block w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm placeholder-text-muted/50 focus:border-accent focus:outline-none transition-colors"
                 />
+                {strength && (
+                  <div className="mt-2">
+                    <div className="h-1 w-full bg-surface-hover rounded-full overflow-hidden">
+                      <div
+                        className={`h-full ${strength.color} transition-all duration-300`}
+                        style={{ width: `${strength.percent}%` }}
+                      />
+                    </div>
+                    <p className={`text-xs mt-1 ${strength.percent <= 40 ? 'text-red-400' : 'text-text-muted'}`}>
+                      {strength.label}
+                    </p>
+                  </div>
+                )}
+                {password.length > 0 && (
+                  <ul className="mt-3 space-y-1">
+                    {passwordChecks.map((check, i) => (
+                      <li key={i} className="flex items-center gap-2 text-xs">
+                        {check.met ? (
+                          <Check className="w-3.5 h-3.5 text-green-500" />
+                        ) : (
+                          <X className="w-3.5 h-3.5 text-text-muted/50" />
+                        )}
+                        <span className={check.met ? 'text-green-500' : 'text-text-muted/70'}>
+                          {check.label}
+                        </span>
+                      </li>
+                    ))}
+                  </ul>
+                )}
               </div>
 
               <div>
@@ -209,16 +263,24 @@ export default function ResetPassword() {
                 <input
                   type="password"
                   required
-                  minLength={8}
                   value={confirmPassword}
                   onChange={(e) => setConfirmPassword(e.target.value)}
                   className="block w-full rounded-lg border border-border bg-bg px-3 py-2.5 text-sm placeholder-text-muted/50 focus:border-accent focus:outline-none transition-colors"
                 />
+                {confirmPassword.length > 0 && (
+                  <p className={`text-xs mt-1.5 flex items-center gap-1.5 ${passwordsMatch ? 'text-green-500' : 'text-red-400'}`}>
+                    {passwordsMatch ? (
+                      <><Check className="w-3.5 h-3.5" /> Passwords match</>
+                    ) : (
+                      <><X className="w-3.5 h-3.5" /> Passwords do not match</>
+                    )}
+                  </p>
+                )}
               </div>
 
               <button
                 type="submit"
-                disabled={loading}
+                disabled={loading || !allChecksMet || !passwordsMatch}
                 className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-emerald-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {loading ? 'Updating password...' : 'Set new password'}

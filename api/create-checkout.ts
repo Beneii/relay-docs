@@ -92,13 +92,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.json({ url: session.url });
   } catch (error: any) {
-    console.error('Error creating checkout session:', {
-      message: error.message,
-      type: error.type,
-      code: error.code,
-      param: error.param,
-      requestId: error.requestId,
-    });
+    console.error('[checkout] FAILED:', error.message);
+    console.error('[checkout] type:', error.type, 'code:', error.code, 'param:', error.param);
+    console.error('[checkout] requestId:', error.requestId);
+    console.error('[checkout] priceId used:', priceId);
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 }

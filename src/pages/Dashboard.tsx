@@ -678,20 +678,38 @@ export default function DashboardPage() {
             )}
 
             {dashboards.length === 0 ? (
-              <div className="bg-surface border border-dashed border-border rounded-2xl p-12 text-center">
+              <div className="bg-surface border border-dashed border-border rounded-2xl p-12 text-center max-w-2xl mx-auto">
                 <div className="w-14 h-14 rounded-2xl bg-accent/10 flex items-center justify-center mx-auto mb-5">
                   <Webhook className="w-7 h-7 text-accent" />
                 </div>
-                <h3 className="text-lg font-semibold mb-2">Add your first app</h3>
-                <p className="text-text-muted mb-6 text-sm max-w-xs mx-auto">
-                  Connect any web dashboard or tool. Copy your webhook URL and send notifications from anywhere.
+                <h3 className="text-xl font-semibold mb-2">Add your first app</h3>
+                <p className="text-text-muted mb-8 text-sm max-w-md mx-auto leading-relaxed">
+                  Relay saves your dashboards and tools, gives each one a webhook URL, and sends push notifications
+                  when something important happens.
                 </p>
+                <div className="grid sm:grid-cols-3 gap-3 text-left mb-8">
+                  <div className="rounded-xl border border-border bg-bg p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-1">1</p>
+                    <p className="text-sm font-medium mb-1">Add a dashboard</p>
+                    <p className="text-xs text-text-muted">Save any internal tool, monitoring view, or web app you want to launch quickly.</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-bg p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-1">2</p>
+                    <p className="text-sm font-medium mb-1">Copy the webhook</p>
+                    <p className="text-xs text-text-muted">Each app gets its own webhook URL so you can trigger alerts from scripts and automations.</p>
+                  </div>
+                  <div className="rounded-xl border border-border bg-bg p-4">
+                    <p className="text-xs font-semibold uppercase tracking-wide text-accent mb-1">3</p>
+                    <p className="text-sm font-medium mb-1">Receive notifications</p>
+                    <p className="text-xs text-text-muted">Tap the push to jump straight into the exact dashboard that needs your attention.</p>
+                  </div>
+                </div>
                 <button
                   onClick={() => setShowAddModal(true)}
                   className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
                 >
                   <Plus className="w-4 h-4" />
-                  Add App
+                  Add your first app
                 </button>
               </div>
             ) : (
@@ -721,7 +739,7 @@ export default function DashboardPage() {
                         <button
                           onClick={() => handleTestWebhook(dash)}
                           disabled={testingId === dash.id}
-                          className="flex items-center gap-1 text-xs text-text-muted hover:text-text-main transition-colors cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
+                          className="inline-flex items-center gap-1 h-7 px-2.5 rounded-lg border border-border bg-bg text-xs text-text-muted hover:text-text-main hover:bg-surface-hover transition-all cursor-pointer shrink-0 disabled:opacity-50 disabled:cursor-not-allowed"
                         >
                           {testingId === dash.id ? (
                             <><div className="w-3.5 h-3.5 border-2 border-current border-t-transparent rounded-full animate-spin" /> Testing</>

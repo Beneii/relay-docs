@@ -153,7 +153,11 @@ export default function AppWebViewScreen() {
           </Text>
           <Pressable
             style={[styles.errorButton, { backgroundColor: colors.surface }]}
-            onPress={() => webViewRef.current?.reload()}
+            onPress={() => {
+              setLoadError(null);
+              setIsPageLoading(true);
+              webViewRef.current?.reload();
+            }}
           >
             <Text style={{ color: colors.accent, fontSize: fontSizes.md }}>
               Retry

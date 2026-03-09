@@ -13,6 +13,7 @@ export default function handler(_req: VercelRequest, res: VercelResponse) {
       hasPriceIdPro: !!process.env.STRIPE_PRICE_ID_PRO,
       hasPriceIdProAnnual: !!process.env.STRIPE_PRICE_ID_PRO_ANNUAL,
       priceIdProPrefix: process.env.STRIPE_PRICE_ID_PRO?.substring(0, 10) || null,
+      appUrl: process.env.APP_URL || null,
     },
   });
 }

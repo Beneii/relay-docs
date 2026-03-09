@@ -83,7 +83,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           quantity: 1,
         },
       ],
-      success_url: `${process.env.APP_URL || 'https://relayapp.dev'}/dashboard?session_id={CHECKOUT_SESSION_ID}`,
+      success_url: `${process.env.APP_URL || 'https://relayapp.dev'}/dashboard?upgraded=1`,
       cancel_url: `${process.env.APP_URL || 'https://relayapp.dev'}/pricing`,
       client_reference_id: userId,
       ...customerParams,
@@ -91,10 +91,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     res.json({ url: session.url });
   } catch (error: any) {
-    console.error('[checkout] FAILED:', error.message);
-    console.error('[checkout] type:', error.type, 'code:', error.code, 'param:', error.param);
-    console.error('[checkout] requestId:', error.requestId);
-    console.error('[checkout] priceId used:', priceId);
+    console.error(`[checkout] ERROR type=${error.type} code=${error.code} param=${error.param} msg=${error.message} price=${priceId}`);
     res.status(500).json({ error: 'Failed to create checkout session' });
   }
 }

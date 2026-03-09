@@ -33,7 +33,7 @@ export function MobileDownloadSection() {
                 href={appStoreUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-12 px-5 rounded-xl bg-accent text-white font-medium items-center justify-center gap-2 hover:bg-emerald-600 transition-all"
+                className="inline-flex min-h-[3.25rem] px-5 py-3.5 rounded-xl bg-accent text-white font-medium leading-none items-center justify-center gap-2 hover:bg-emerald-600 transition-all"
               >
                 <Download className="w-4 h-4" />
                 App Store
@@ -41,7 +41,7 @@ export function MobileDownloadSection() {
             ) : (
               <a
                 href="mailto:hello@relayapp.dev?subject=Relay%20iOS%20beta"
-                className="inline-flex h-12 px-5 rounded-xl bg-accent text-white font-medium items-center justify-center gap-2 hover:bg-emerald-600 transition-all"
+                className="inline-flex min-h-[3.25rem] px-5 py-3.5 rounded-xl bg-accent text-white font-medium leading-none items-center justify-center gap-2 hover:bg-emerald-600 transition-all"
               >
                 <Download className="w-4 h-4" />
                 Join iOS beta
@@ -53,7 +53,7 @@ export function MobileDownloadSection() {
                 href={playStoreUrl}
                 target="_blank"
                 rel="noreferrer"
-                className="inline-flex h-12 px-5 rounded-xl border border-border bg-bg text-text-main font-medium items-center justify-center gap-2 hover:bg-surface-hover transition-all"
+                className="inline-flex min-h-[3.25rem] px-5 py-3.5 rounded-xl border border-border bg-bg text-text-main font-medium leading-none items-center justify-center gap-2 hover:bg-surface-hover transition-all"
               >
                 <Download className="w-4 h-4" />
                 Google Play
@@ -61,7 +61,7 @@ export function MobileDownloadSection() {
             ) : (
               <a
                 href="mailto:hello@relayapp.dev?subject=Relay%20Android%20beta"
-                className="inline-flex h-12 px-5 rounded-xl border border-border bg-bg text-text-main font-medium items-center justify-center gap-2 hover:bg-surface-hover transition-all"
+                className="inline-flex min-h-[3.25rem] px-5 py-3.5 rounded-xl border border-border bg-bg text-text-main font-medium leading-none items-center justify-center gap-2 hover:bg-surface-hover transition-all"
               >
                 <Download className="w-4 h-4" />
                 Join Android beta

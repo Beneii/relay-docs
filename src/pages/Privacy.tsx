@@ -23,7 +23,8 @@ export default function Privacy() {
           <section>
             <h2 className="text-xl font-semibold text-text-main mb-3">1. Information We Collect</h2>
             <p>When you create a Relay account, we collect your email address and, if you use OAuth, basic profile information from Google or GitHub. When you subscribe to Relay Pro, payment information is processed securely by Stripe &mdash; we never store your card details.</p>
-            <p className="mt-3">We also collect usage data such as the number of dashboards you create, notifications sent, and general usage patterns to improve our service.</p>
+            <p className="mt-3">To deliver push notifications, we securely store Apple and Google device push tokens. We also temporarily process the title and body content of the webhook payloads you send, which are stored for delivery purposes and deleted when you remove an app or your account.</p>
+            <p className="mt-3">We collect usage data such as the number of dashboards you create, notifications sent, and general usage patterns to improve our service.</p>
           </section>
 
           <section>

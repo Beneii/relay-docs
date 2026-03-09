@@ -420,7 +420,7 @@ export default function DashboardPage() {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${session.access_token}`,
         },
-        body: JSON.stringify({ customerId: user.stripe_customer_id }),
+        body: JSON.stringify({}),
       });
 
       if (!response.ok) {

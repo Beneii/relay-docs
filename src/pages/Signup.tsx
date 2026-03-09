@@ -44,6 +44,7 @@ export default function Signup() {
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [isOAuthLoading, setIsOAuthLoading] = useState<string | null>(null);
   const [emailSent, setEmailSent] = useState(false);
 
   const passwordChecks = [
@@ -57,6 +58,7 @@ export default function Signup() {
 
   const handleOAuth = async (provider: 'github' | 'google') => {
     setError(null);
+    setIsOAuthLoading(provider);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -65,6 +67,7 @@ export default function Signup() {
     });
     if (error) {
       setError(`Authentication failed: ${error.message}`);
+      setIsOAuthLoading(null);
     }
   };
 
@@ -165,18 +168,28 @@ export default function Signup() {
             <button
               type="button"
               onClick={() => handleOAuth('google')}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer"
+              disabled={loading || !!isOAuthLoading}
+              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <GoogleIcon />
-              Continue with Google
+              {isOAuthLoading === 'google' ? (
+                <div className="w-5 h-5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <GoogleIcon />
+              )}
+              {isOAuthLoading === 'google' ? 'Connecting...' : 'Continue with Google'}
             </button>
             <button
               type="button"
               onClick={() => handleOAuth('github')}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer"
+              disabled={loading || !!isOAuthLoading}
+              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
-              <GitHubIcon />
-              Continue with GitHub
+              {isOAuthLoading === 'github' ? (
+                <div className="w-5 h-5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <GitHubIcon />
+              )}
+              {isOAuthLoading === 'github' ? 'Connecting...' : 'Continue with GitHub'}
             </button>
           </div>
 

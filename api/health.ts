@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { readFile } from 'node:fs/promises';
-import { join } from 'node:path';
 import { createClient } from '@supabase/supabase-js';
 import { handleOptions, setCorsHeaders } from './_cors.js';
 
@@ -14,7 +13,7 @@ type HealthResponse = {
   };
 };
 
-const versionPromise = readFile(join(__dirname, '../package.json'), 'utf8')
+const versionPromise = readFile(new URL('../package.json', import.meta.url), 'utf8')
   .then((content) => JSON.parse(content).version || 'unknown')
   .catch(() => 'unknown');
 

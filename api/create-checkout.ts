@@ -14,11 +14,19 @@ function requireEnv(name: string): string {
   return value;
 }
 
-const stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY')
-);
+let stripe: Stripe;
+let supabase: ReturnType<typeof createClient>;
+try {
+  stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
+  supabase = createClient(
+    process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
+    requireEnv('SUPABASE_SERVICE_ROLE_KEY')
+  );
+  console.log('[create-checkout] module init OK');
+} catch (initErr: any) {
+  console.error('[create-checkout] module init FAILED:', initErr?.message);
+  throw initErr;
+}
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res, ['POST', 'OPTIONS'])) {
@@ -99,10 +107,6 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       param: error.param,
       requestId: error.requestId,
     });
-    res.status(500).json({ 
-      error: 'Failed to create checkout session',
-      details: error.message,
-      code: error.code 
-    });
+    res.status(500).json({ error: 'Failed to create checkout session' });
   }
 }

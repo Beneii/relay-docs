@@ -193,7 +193,7 @@ export default function Pricing() {
                   ) : (
                     <X className="w-5 h-5 text-text-muted shrink-0 mt-0.5" />
                   )}
-                  <span className="text-sm">{feature.label}</span>
+                  <span className={`text-sm ${!feature.included ? 'line-through' : ''}`}>{feature.label}</span>
                 </li>
               ))}
             </ul>

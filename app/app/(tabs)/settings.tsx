@@ -101,6 +101,9 @@ export default function SettingsScreen() {
   const appCount = apps?.length ?? 0;
   const notifCount = monthlyNotifCount ?? 0;
   const devCount = deviceCount ?? 0;
+  const cancelAtPeriodEnd = profile?.cancel_at_period_end ?? false;
+  const billingInterval = profile?.billing_interval ?? null;
+  const currentPeriodEnd = profile?.current_period_end ?? null;
 
   useEffect(() => {
     Notifications.getPermissionsAsync().then(({ status }) => {
@@ -200,12 +203,29 @@ export default function SettingsScreen() {
                   {isPro ? "Pro" : "Free"}
                 </Text>
                 {isPro ? (
-                  <View style={[styles.proBadge, { backgroundColor: colors.accent }]}>
-                    <Text style={styles.proBadgeText}>Active</Text>
+                  <View style={[styles.proBadge, { backgroundColor: cancelAtPeriodEnd ? colors.warning : colors.accent }]}>
+                    <Text style={styles.proBadgeText}>{cancelAtPeriodEnd ? "Canceling" : "Active"}</Text>
                   </View>
                 ) : null}
               </View>
             </View>
+
+            {/* Subscription details for Pro users */}
+            {isPro && (billingInterval || currentPeriodEnd) ? (
+              <View style={styles.subscriptionInfo}>
+                {billingInterval ? (
+                  <Text style={[styles.subscriptionText, { color: colors.textSecondary }]}>
+                    {billingInterval === "year" ? "Annual" : "Monthly"} plan
+                  </Text>
+                ) : null}
+                {currentPeriodEnd ? (
+                  <Text style={[styles.subscriptionText, { color: cancelAtPeriodEnd ? colors.warning : colors.textTertiary }]}>
+                    {cancelAtPeriodEnd ? "Ends" : "Renews"}{" "}
+                    {new Date(currentPeriodEnd).toLocaleDateString(undefined, { month: "short", day: "numeric", year: "numeric" })}
+                  </Text>
+                ) : null}
+              </View>
+            ) : null}
 
             {/* Usage stats */}
             <View style={styles.usageRow}>
@@ -385,6 +405,14 @@ const styles = StyleSheet.create({
     color: "#FFFFFF",
     fontSize: fontSizes.xs,
     fontWeight: "600",
+  },
+  subscriptionInfo: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  subscriptionText: {
+    fontSize: fontSizes.xs,
   },
   usageRow: {
     flexDirection: "row",

@@ -63,10 +63,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .limit(1);
 
     if (error) {
+      console.error('Health check DB error:', error.message);
       response.status = 'error';
       response.db = {
         status: 'unreachable',
-        error: error.message,
       };
 
       res.setHeader('Cache-Control', 'no-store');
@@ -77,10 +77,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     res.setHeader('Cache-Control', 'no-store');
     return res.status(200).json(response);
   } catch (error: any) {
+    console.error('Health check unexpected error:', error?.message);
     response.status = 'error';
     response.db = {
       status: 'unreachable',
-      error: error?.message || 'Unknown database error',
     };
 
     res.setHeader('Cache-Control', 'no-store');

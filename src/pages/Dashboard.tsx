@@ -609,6 +609,22 @@ export default function DashboardPage() {
                       </Link>
                     )}
                   </div>
+                  {user?.plan === 'pro' && user.cancel_at_period_end && (
+                    <div className="mt-3 bg-red-500/5 border border-red-500/20 rounded-xl p-3">
+                      <div className="flex items-start gap-2 mb-2">
+                        <AlertCircle className="w-4 h-4 text-red-500 shrink-0 mt-0.5" />
+                        <p className="text-xs text-text-muted leading-relaxed">
+                          Your subscription is set to cancel on <span className="text-text-main font-medium">{new Date(user.current_period_end!).toLocaleDateString(undefined, { month: 'long', day: 'numeric', year: 'numeric' })}</span>.
+                        </p>
+                      </div>
+                      <button
+                        onClick={handleManageBilling}
+                        className="inline-flex items-center justify-center w-full h-8 rounded-lg bg-red-500/10 text-red-500 text-xs font-semibold hover:bg-red-500/20 transition-all cursor-pointer"
+                      >
+                        Reactivate Subscription
+                      </button>
+                    </div>
+                  )}
                   {user?.plan === 'free' && (
                     <div className="mt-3 bg-accent/5 border border-accent/20 rounded-xl p-3">
                       <p className="text-xs text-text-muted leading-relaxed mb-2">

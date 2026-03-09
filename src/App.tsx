@@ -271,11 +271,11 @@ export default function App() {
               <RelayIcon size={180} className="text-accent" />
             </motion.div>
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.08]">
-              Your dashboards,<br />
-              one tap away.
+              Push notifications for your<br />
+              dashboards and scripts.
             </h1>
-            <p className="text-lg md:text-xl text-text-muted max-w-xl mx-auto mb-10 leading-relaxed font-normal">
-              Save any web dashboard as a native app. Send push notifications via webhook. Tap to open instantly.
+            <p className="text-lg md:text-xl text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
+              Bridge the gap between your critical infrastructure and your phone. Trigger instant mobile alerts from any script, server, or internal tool with a simple webhook.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/signup" className="h-12 px-6 rounded-lg bg-accent text-white font-medium flex items-center gap-2 hover:bg-emerald-600 transition-all w-full sm:w-auto justify-center cursor-pointer">
@@ -594,7 +594,7 @@ export default function App() {
             <p className="text-text-muted text-lg">Three simple steps to connect your infrastructure to your phone.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-3 gap-8">
+          <div className="grid md:grid-cols-3 gap-8 mb-16">
             {[
               {
                 step: "01",
@@ -626,6 +626,36 @@ export default function App() {
               </motion.div>
             ))}
           </div>
+
+          <motion.div
+            initial={{ opacity: 0, scale: 0.95 }}
+            whileInView={{ opacity: 1, scale: 1 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
+            className="bg-surface border border-border rounded-2xl p-8 max-w-3xl mx-auto shadow-sm"
+          >
+            <div className="flex items-center gap-3 mb-6">
+              <div className="w-10 h-10 rounded-xl bg-accent/10 flex items-center justify-center">
+                <Code className="w-5 h-5 text-accent" />
+              </div>
+              <div>
+                <h3 className="text-lg font-semibold">Try it now</h3>
+                <p className="text-sm text-text-muted">Send a notification to your phone with a single command.</p>
+              </div>
+            </div>
+            <div className="bg-bg rounded-xl p-6 overflow-x-auto border border-border">
+              <pre className="font-mono text-sm text-text-muted leading-relaxed">
+                <code>
+                  curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/notify/YOUR_TOKEN \<br />
+                  &nbsp;&nbsp;-H "Content-Type: application/json" \<br />
+                  &nbsp;&nbsp;-d '&#123;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;"title": "Hello from Relay",<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;"body": "It works."<br />
+                  &nbsp;&nbsp;&#125;'
+                </code>
+              </pre>
+            </div>
+          </motion.div>
         </section>
 
         {/* API & Integrations */}

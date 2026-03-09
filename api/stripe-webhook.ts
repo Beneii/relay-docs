@@ -140,7 +140,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           stripe_customer_id: customerId,
           stripe_subscription_id: subscription.id,
           billing_interval: subscription.items.data[0]?.plan?.interval ?? null,
-          current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+          current_period_end: (() => {
+            const end = subscription.items.data[0]?.current_period_end;
+            return end ? new Date(end * 1000).toISOString() : null;
+          })(),
           cancel_at_period_end: subscription.cancel_at_period_end,
         }, { count: 'exact' })
         .eq('stripe_customer_id', customerId);
@@ -154,8 +157,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       // look up by the subscription metadata or customer email from Stripe
       if (subUpdateCount === 0) {
         try {
-          const customer = await stripe.customers.retrieve(customerId);
-          if (customer && !customer.deleted && customer.email) {
+          const customerObj = await stripe.customers.retrieve(customerId) as Stripe.Customer | Stripe.DeletedCustomer;
+          if (customerObj && !customerObj.deleted && (customerObj as Stripe.Customer).email) {
+            const activeCustomer = customerObj as Stripe.Customer;
             const { error: backfillError } = await supabase
               .from('profiles')
               .update({
@@ -163,10 +167,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
                 stripe_customer_id: customerId,
                 stripe_subscription_id: subscription.id,
                 billing_interval: subscription.items.data[0]?.plan?.interval ?? null,
-                current_period_end: new Date(subscription.current_period_end * 1000).toISOString(),
+                current_period_end: (() => {
+                  const end = subscription.items.data[0]?.current_period_end;
+                  return end ? new Date(end * 1000).toISOString() : null;
+                })(),
                 cancel_at_period_end: subscription.cancel_at_period_end,
               })
-              .eq('email', customer.email)
+              .eq('email', activeCustomer.email)
               .is('stripe_customer_id', null);
 
             if (backfillError) {
@@ -180,7 +187,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     } else if (event.type === 'invoice.paid') {
       const invoice = event.data.object as Stripe.Invoice;
       const customerId = invoice.customer as string;
-      const subscriptionId = invoice.subscription as string | null;
+      const subscriptionId = (invoice.parent?.subscription_details?.subscription as string | null) ?? null;
 
       // Build update payload — always confirm pro + set customer ID
       const update: Record<string, unknown> = {
@@ -194,7 +201,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           const sub = await stripe.subscriptions.retrieve(subscriptionId);
           update.stripe_subscription_id = sub.id;
           update.billing_interval = sub.items.data[0]?.plan?.interval ?? null;
-          update.current_period_end = new Date(sub.current_period_end * 1000).toISOString();
+          const periodEnd = sub.items.data[0]?.current_period_end;
+          update.current_period_end = periodEnd ? new Date(periodEnd * 1000).toISOString() : null;
           update.cancel_at_period_end = sub.cancel_at_period_end;
         } catch (subErr) {
           console.error('Failed to retrieve subscription on invoice.paid:', subErr);

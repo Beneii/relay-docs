@@ -249,7 +249,7 @@ export default function EditAppScreen() {
                 ]}
                 onPress={() => setIcon(key)}
               >
-                <AppIcon icon={key} accentColor={null} size={28} />
+                <AppIcon icon={key} accentColor={icon === key ? accentColor : null} size={28} />
               </Pressable>
             ))}
           </View>
@@ -312,7 +312,7 @@ export default function EditAppScreen() {
           </View>
         </Pressable>
 
-        {/* Webhook info (edit mode only) */}
+        {/* Webhook info */}
         {isEditing && existingApp ? (
           <View style={styles.field}>
             <Text style={[styles.label, { color: colors.textSecondary }]}>
@@ -337,7 +337,14 @@ export default function EditAppScreen() {
               Send POST requests to this URL to push notifications to this app.
             </Text>
           </View>
-        ) : null}
+        ) : (
+          <View style={[styles.webhookHint, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+            <Feather name="link" size={16} color={colors.textTertiary} />
+            <Text style={[styles.webhookHintText, { color: colors.textTertiary }]}>
+              A unique webhook URL will be generated when you save.
+            </Text>
+          </View>
+        )}
 
         {/* Delete (edit mode only) */}
         {isEditing ? (
@@ -467,6 +474,20 @@ const styles = StyleSheet.create({
   webhookToken: {
     fontSize: fontSizes.sm,
     fontFamily: "Courier",
+    flex: 1,
+  },
+  webhookHint: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: 14,
+    borderRadius: radii.md,
+    borderWidth: 1,
+    borderStyle: "dashed",
+  },
+  webhookHintText: {
+    fontSize: fontSizes.sm,
     flex: 1,
   },
   deleteButton: {

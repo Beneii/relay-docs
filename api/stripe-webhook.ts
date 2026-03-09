@@ -76,7 +76,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const rawBody = await getRawBody(req);
     event = stripe.webhooks.constructEvent(rawBody, sig, endpointSecret);
   } catch (err: any) {
-    return res.status(400).send(`Webhook Error: ${err.message}`);
+    console.error('Webhook signature verification failed:', err.message);
+    return res.status(400).send('Invalid signature');
   }
 
   // Idempotency: Check if we've already processed this event
@@ -121,6 +122,32 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
           await sendProUpgradeEmail(email).catch((err) =>
             console.error('Failed to send Pro upgrade email:', err)
           );
+        }
+      } else {
+        // client_reference_id missing — fall back to matching by customer email
+        console.error(`checkout.session.completed: no client_reference_id on session ${session.id}`);
+        const customerEmail = session.customer_details?.email ?? session.customer_email;
+        if (customerEmail) {
+          const { error: fallbackError, count } = await supabase
+            .from('profiles')
+            .update({ plan: 'pro', stripe_customer_id: customerId }, { count: 'exact' })
+            .eq('email', customerEmail);
+
+          if (fallbackError) {
+            console.error('Fallback checkout upgrade by email failed:', fallbackError);
+            return res.status(500).send('Failed to update user plan');
+          }
+          if (count === 0) {
+            console.error(`checkout.session.completed: no profile found for email ${customerEmail}`);
+            return res.status(500).send('No matching user profile');
+          }
+
+          await sendProUpgradeEmail(customerEmail).catch((err) =>
+            console.error('Failed to send Pro upgrade email:', err)
+          );
+        } else {
+          console.error(`checkout.session.completed: no userId and no email on session ${session.id}`);
+          return res.status(500).send('Cannot identify user from checkout session');
         }
       }
     } else if (

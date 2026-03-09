@@ -37,24 +37,20 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return res.status(401).json({ error: 'Missing or invalid authentication' });
   }
 
-  const { customerId } = req.body || {};
-
-  if (!customerId) {
-    return res.status(400).json({ error: 'Missing customerId' });
-  }
-
   const userId = user.id;
 
-  // Verify the customer ID belongs to this user
+  // Look up the customer ID server-side — never trust client-supplied IDs
   const { data: profile } = await supabase
     .from('profiles')
     .select('stripe_customer_id')
     .eq('id', userId)
     .single();
 
-  if (!profile || profile.stripe_customer_id !== customerId) {
-    return res.status(403).json({ error: 'Unauthorized' });
+  if (!profile?.stripe_customer_id) {
+    return res.status(404).json({ error: 'No billing account found' });
   }
+
+  const customerId = profile.stripe_customer_id;
 
   try {
     const session = await stripe.billingPortal.sessions.create({

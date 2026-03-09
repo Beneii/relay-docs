@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
-import { getAuthenticatedUser } from './_lib/auth';
-import { handleOptions, setCorsHeaders } from './_lib/cors';
+import { getAuthenticatedUser } from './_auth';
+import { handleOptions, setCorsHeaders } from './_cors';
 
 function requireEnv(name: string): string {
   const value = process.env[name];

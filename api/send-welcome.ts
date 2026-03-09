@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
-import { sendWelcomeEmail } from './_lib/email';
-import { getAuthenticatedUser, getRequestHeader } from './_lib/auth';
-import { handleOptions, setCorsHeaders } from './_lib/cors';
+import { sendWelcomeEmail } from './_email';
+import { getAuthenticatedUser, getRequestHeader } from './_auth';
+import { handleOptions, setCorsHeaders } from './_cors';
 
 const WEBHOOK_SECRET_HEADERS = ['x-supabase-webhook-secret', 'x-webhook-secret'];
 const SIGNUP_WINDOW_MS = 5 * 60 * 1000;

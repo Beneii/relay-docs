@@ -56,6 +56,7 @@ export default function Signup() {
   const strength = password.length > 0 ? getPasswordStrength(password) : null;
 
   const handleOAuth = async (provider: 'github' | 'google') => {
+    setError(null);
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
       options: {
@@ -63,7 +64,7 @@ export default function Signup() {
       },
     });
     if (error) {
-      setError(error.message);
+      setError(`Authentication failed: ${error.message}`);
     }
   };
 

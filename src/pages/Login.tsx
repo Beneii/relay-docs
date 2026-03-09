@@ -40,14 +40,18 @@ export default function Login() {
     setError(null);
     setResetMessage(null);
 
+    const normalizedEmail = email.trim().toLowerCase();
+
     const { error } = await supabase.auth.signInWithPassword({
-      email,
+      email: normalizedEmail,
       password,
     });
 
     if (error) {
       if (error.message === 'Email not confirmed') {
         setError('Please check your email and click the confirmation link before signing in.');
+      } else if (error.message === 'Invalid login credentials') {
+        setError('Invalid email or password. Please try again.');
       } else {
         setError(error.message);
       }
@@ -59,6 +63,7 @@ export default function Login() {
 
   const handleOAuth = async (provider: 'github' | 'google') => {
     setResetMessage(null);
+    setError(null);
 
     const { error } = await supabase.auth.signInWithOAuth({
       provider,
@@ -67,7 +72,7 @@ export default function Login() {
       },
     });
     if (error) {
-      setError(error.message);
+      setError(`Authentication failed: ${error.message}`);
     }
   };
 

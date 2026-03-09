@@ -1,125 +1,164 @@
-import React, { useState, useEffect } from 'react';
-import { motion, useScroll, useTransform, AnimatePresence } from 'motion/react';
+import { motion } from 'motion/react';
+import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, User, Menu, X, Gauge, Wrench, Rocket, Bot, Activity, TrendingUp, Shield, MonitorSmartphone, Network } from 'lucide-react';
-import { supabase } from './lib/supabase';
+import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, Gauge, Wrench, Rocket, Bot, Activity, TrendingUp, Shield, MonitorSmartphone, Network } from 'lucide-react';
 import { RelayIcon } from './components/RelayLogo';
-import { ThemeToggle } from './components/ThemeToggle';
-import { FAQItem } from './features/landing/FAQItem';
-import { FAQ_ITEMS, INTEGRATIONS } from './features/landing/content';
+import { INTEGRATIONS } from './features/landing/content';
+import { FAQSection } from './features/landing/FAQSection';
+import { LandingFooter } from './features/landing/LandingFooter';
+import { LandingNav } from './features/landing/LandingNav';
+import { MobileDownloadSection } from './features/landing/MobileDownloadSection';
+import { useLandingPage } from './features/landing/useLandingPage';
+
+interface LandingFeatureCard {
+  description: string;
+  icon: ReactElement;
+  title: string;
+}
+
+interface LandingUseCaseCard {
+  description: string;
+  icon: ReactElement;
+  note?: string;
+  quote?: string;
+  tags?: string[];
+  title: string;
+  workflow?: string[];
+}
+
+interface LandingStep {
+  desc: string;
+  step: string;
+  title: string;
+}
+
+const FEATURE_CARDS: LandingFeatureCard[] = [
+  {
+    description:
+      'Grafana, Home Assistant, n8n, CI/CD pipelines, or custom internal tools. If it has a URL and renders in a browser, you can save it as a native app in Relay.',
+    icon: <LayoutDashboard className="w-6 h-6 text-accent" />,
+    title: 'Save any dashboard',
+  },
+  {
+    description:
+      'Each saved dashboard gets a unique webhook token. Send a POST request to trigger a secure push notification.',
+    icon: <Bell className="w-6 h-6 text-accent" />,
+    title: 'Webhook alerts',
+  },
+  {
+    description:
+      "Tapping a notification doesn't just open the app — it opens the exact dashboard associated with that alert instantly.",
+    icon: <Smartphone className="w-6 h-6 text-accent" />,
+    title: 'Tap to open',
+  },
+  {
+    description:
+      'No complex SDKs to install. Relay works with any system, script, or service that can send a simple HTTP POST request. Bash, Python, Node, GitHub Actions — it all works.',
+    icon: <Server className="w-6 h-6 text-accent" />,
+    title: 'Universal compatibility',
+  },
+] as const;
+
+const USE_CASE_CARDS: LandingUseCaseCard[] = [
+  {
+    description:
+      'Run agent systems like Obelisk, OpenClaw, or other automations and receive instant alerts when tasks complete or fail.',
+    icon: <Bot className="w-6 h-6 text-accent" />,
+    tags: ['Obelisk', 'OpenClaw', 'Custom Agents'],
+    title: 'Monitor AI Agents',
+    workflow: [
+      'Agent finishes job',
+      'Webhook sent to Relay',
+      'Phone notification',
+      'Tap → open agent dashboard',
+    ],
+  },
+  {
+    description:
+      'Relay works with self-hosted dashboards like Grafana, Home Assistant, Kubernetes dashboards, internal tools, and AI agent control panels.',
+    icon: <Wrench className="w-6 h-6 text-accent" />,
+    note: 'Keep everything private on your network while still receiving alerts on your phone.',
+    tags: ['Grafana', 'Home Assistant', 'Kubernetes', 'Internal Tools', 'AI Panels'],
+    title: 'Self-Hosted Dashboards',
+  },
+  {
+    description:
+      'Ideal for monitoring CI pipelines, server deployments, automation workflows, and background jobs.',
+    icon: <Activity className="w-6 h-6 text-accent" />,
+    tags: ['CI/CD', 'Deployments', 'Cron Jobs', 'n8n'],
+    title: 'Monitor Automations',
+    workflow: ['Deployment finished', 'Webhook → Relay', 'Phone alert'],
+  },
+  {
+    description:
+      'Receive alerts when trades execute, strategies trigger, or errors occur, then jump straight into the relevant dashboard.',
+    icon: <TrendingUp className="w-6 h-6 text-accent" />,
+    tags: ['Trade Alerts', 'Strategy Triggers', 'Error Monitoring', 'Portfolio Bots'],
+    title: 'Trading Bots & Monitoring',
+    workflow: ['Trade executed', 'Strategy triggered', 'Relay alert sent'],
+  },
+  {
+    description:
+      'Relay loads dashboards inside a mobile webview. For the best experience, ask your AI or frontend tool to generate a narrow-screen version.',
+    icon: <MonitorSmartphone className="w-6 h-6 text-accent" />,
+    quote:
+      '"Create a mobile responsive version of this dashboard UI optimized for a narrow phone screen. Use stacked layouts and large touch targets."',
+    title: 'Best Practice for Dashboards',
+  },
+  {
+    description:
+      "Most self-hosted dashboards aren't publicly accessible. Use Tailscale to securely access your internal dashboards from your phone.",
+    icon: <Network className="w-6 h-6 text-accent" />,
+    title: 'Private Network Access',
+    workflow: [
+      'Self-hosted server',
+      'Tailscale network',
+      'Phone running Relay',
+      'Dashboard loads securely',
+    ],
+  },
+] as const;
+
+const HOW_IT_WORKS_STEPS: LandingStep[] = [
+  {
+    desc: 'Open the Relay app and add your dashboard URL (e.g., your Grafana instance).',
+    step: '01',
+    title: 'Add a URL',
+  },
+  {
+    desc: 'Relay generates a unique, secure webhook token for that specific dashboard.',
+    step: '02',
+    title: 'Get a Token',
+  },
+  {
+    desc: 'Your systems POST to the webhook. You get a push notification instantly.',
+    step: '03',
+    title: 'Send a POST',
+  },
+] as const;
 
 export default function App() {
-  const [activeTab, setActiveTab] = useState<keyof typeof INTEGRATIONS>('bash');
-  const [showNotification, setShowNotification] = useState(false);
-  const [isSignedIn, setIsSignedIn] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
-  const [openFAQ, setOpenFAQ] = useState<number | null>(null);
-
-  // Scroll-linked rotation for nav logo
-  const { scrollY } = useScroll();
-  const navLogoRotate = useTransform(scrollY, [0, 8000], [0, 1800]);
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setIsSignedIn(!!session);
-    });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      setIsSignedIn(!!session);
-    });
-    return () => subscription.unsubscribe();
-  }, []);
-
-  useEffect(() => {
-    const interval = setInterval(() => {
-      setShowNotification(false);
-      setTimeout(() => setShowNotification(true), 1500);
-    }, 6000);
-    return () => clearInterval(interval);
-  }, []);
-
-  // Close mobile menu on route change or resize
-  useEffect(() => {
-    const handleResize = () => {
-      if (window.innerWidth >= 768) setMobileMenuOpen(false);
-    };
-    window.addEventListener('resize', handleResize);
-    return () => window.removeEventListener('resize', handleResize);
-  }, []);
+  const {
+    activeTab,
+    isSignedIn,
+    mobileMenuOpen,
+    navLogoRotate,
+    openFAQ,
+    setActiveTab,
+    setMobileMenuOpen,
+    setOpenFAQ,
+    showNotification,
+  } = useLandingPage();
 
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
-
-      {/* Navigation */}
-      <nav className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <motion.div style={{ rotate: navLogoRotate }}>
-              <RelayIcon size={24} className="text-text-main" />
-            </motion.div>
-            <span className="font-semibold tracking-tight">Relay</span>
-          </Link>
-          <div className="hidden md:flex items-center gap-8 text-sm font-medium text-text-muted">
-            <a href="#features" className="hover:text-text-main transition-colors">Features</a>
-            <a href="#use-cases" className="hover:text-text-main transition-colors">Use Cases</a>
-            <a href="#how-it-works" className="hover:text-text-main transition-colors">How it works</a>
-            <a href="#api" className="hover:text-text-main transition-colors">API</a>
-            <Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link>
-          </div>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            {isSignedIn ? (
-              <Link to="/dashboard" className="h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center gap-2">
-                <User className="w-4 h-4" />
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="hidden md:flex items-center text-sm font-medium text-text-muted hover:text-text-main transition-colors">
-                  Sign in
-                </Link>
-                <Link to="/signup" className="hidden md:flex h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all items-center">
-                  Get Started
-                </Link>
-              </>
-            )}
-            {/* Mobile hamburger */}
-            <button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="md:hidden w-9 h-9 rounded-lg flex items-center justify-center text-text-muted hover:text-text-main hover:bg-surface-hover transition-colors cursor-pointer"
-              aria-label="Toggle menu"
-            >
-              {mobileMenuOpen ? <X className="w-5 h-5" /> : <Menu className="w-5 h-5" />}
-            </button>
-          </div>
-        </div>
-
-        {/* Mobile menu */}
-        <AnimatePresence>
-          {mobileMenuOpen && (
-            <motion.div
-              initial={{ height: 0, opacity: 0 }}
-              animate={{ height: 'auto', opacity: 1 }}
-              exit={{ height: 0, opacity: 0 }}
-              transition={{ duration: 0.2 }}
-              className="md:hidden border-t border-border bg-bg overflow-hidden"
-            >
-              <div className="px-6 py-4 space-y-1">
-                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Features</a>
-                <a href="#use-cases" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Use Cases</a>
-                <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">How it works</a>
-                <a href="#api" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">API</a>
-                <Link to="/pricing" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Pricing</Link>
-                {!isSignedIn && (
-                  <div className="pt-3 space-y-2 border-t border-border mt-2">
-                    <Link to="/login" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors">Sign in</Link>
-                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)} className="block py-2.5 text-sm font-medium text-accent hover:text-emerald-600 transition-colors">Get Started Free</Link>
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          )}
-        </AnimatePresence>
-      </nav>
+      <LandingNav
+        isSignedIn={isSignedIn}
+        mobileMenuOpen={mobileMenuOpen}
+        navLogoRotate={navLogoRotate}
+        onToggleMobileMenu={() => setMobileMenuOpen((isOpen) => !isOpen)}
+        onCloseMobileMenu={() => setMobileMenuOpen(false)}
+      />
 
       <main>
         {/* Dot grid — full width, hero height, organic fade from edges inward */}
@@ -275,6 +314,8 @@ export default function App() {
           </div>
         </section>
 
+        <MobileDownloadSection />
+
         {/* Features */}
         <section id="features" className="py-24 px-6 max-w-6xl mx-auto">
           <motion.div
@@ -288,26 +329,21 @@ export default function App() {
             <p className="text-text-muted max-w-2xl mx-auto text-lg">Relay is designed to be simple, fast, and stay out of your way until you need it.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-            {[
-              { icon: <LayoutDashboard className="w-6 h-6 text-accent" />, title: "Save any dashboard", desc: "Grafana, Home Assistant, n8n, CI/CD pipelines, or custom internal tools. If it has a URL and renders in a browser, you can save it as a native app in Relay.", wide: true },
-              { icon: <Bell className="w-6 h-6 text-accent" />, title: "Webhook alerts", desc: "Each saved dashboard gets a unique webhook token. Send a POST request to trigger a secure push notification." },
-              { icon: <Smartphone className="w-6 h-6 text-accent" />, title: "Tap to open", desc: "Tapping a notification doesn't just open the app — it opens the exact dashboard associated with that alert instantly." },
-              { icon: <Server className="w-6 h-6 text-accent" />, title: "Universal compatibility", desc: "No complex SDKs to install. Relay works with any system, script, or service that can send a simple HTTP POST request. Bash, Python, Node, GitHub Actions — it all works.", wide: true },
-            ].map((item, i) => (
+          <div className="grid md:grid-cols-2 gap-6">
+            {FEATURE_CARDS.map((item, i) => (
               <motion.div
                 key={i}
                 initial={{ opacity: 0, y: 20 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.4, delay: i * 0.1 }}
-                className={`${item.wide ? 'lg:col-span-2' : ''} group bg-surface border border-border rounded-2xl p-8 hover:border-accent/20 transition-all`}
+                className="group h-full bg-surface border border-border rounded-2xl p-8 hover:border-accent/20 transition-all"
               >
                 <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
                   {item.icon}
                 </div>
                 <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
-                <p className={`text-text-muted leading-relaxed ${item.wide ? 'max-w-md' : ''}`}>{item.desc}</p>
+                <p className="text-text-muted leading-relaxed">{item.description}</p>
               </motion.div>
             ))}
           </div>
@@ -326,147 +362,61 @@ export default function App() {
             <p className="text-text-muted text-lg max-w-2xl mx-auto">Whether you're running AI agents, managing servers, or monitoring automations — Relay keeps you in the loop.</p>
           </motion.div>
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            {/* Monitor AI Agents */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4 }}
-              className="bg-surface border border-border rounded-2xl p-8"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                <Bot className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Monitor AI Agents</h3>
-              <p className="text-text-muted leading-relaxed text-sm mb-6">Run agent systems like Obelisk, OpenClaw, or other automations and receive instant alerts when tasks complete or fail.</p>
-              <div className="bg-bg border border-border rounded-xl p-4 font-mono text-xs text-text-muted space-y-1">
-                <p>Agent finishes job</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Webhook sent to Relay</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Phone notification</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Tap &rarr; open agent dashboard</p>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-6">
-                {["Obelisk", "OpenClaw", "Custom Agents"].map(tool => (
-                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
-                ))}
-              </div>
-            </motion.div>
+          <div className="grid md:grid-cols-2 gap-6 items-stretch">
+            {USE_CASE_CARDS.map((item, i) => (
+              <motion.div
+                key={item.title}
+                initial={{ opacity: 0, y: 20 }}
+                whileInView={{ opacity: 1, y: 0 }}
+                viewport={{ once: true, margin: "-50px" }}
+                transition={{ duration: 0.4, delay: i * 0.08 }}
+                className="h-full bg-surface border border-border rounded-2xl p-8 flex flex-col"
+              >
+                <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
+                  {item.icon}
+                </div>
+                <h3 className="text-xl font-semibold mb-3">{item.title}</h3>
+                <p className="text-text-muted leading-relaxed text-sm mb-6">
+                  {item.description}
+                </p>
 
-            {/* Self-Hosted Dashboards */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: 0.1 }}
-              className="bg-surface border border-border rounded-2xl p-8"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                <Wrench className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Self-Hosted Dashboards</h3>
-              <p className="text-text-muted leading-relaxed text-sm mb-6">Relay works with self-hosted dashboards like Grafana, Home Assistant, Kubernetes dashboards, internal tools, and AI agent control panels. Keep everything private on your network while still receiving alerts on your phone.</p>
-              <div className="flex flex-wrap gap-2">
-                {["Grafana", "Home Assistant", "Kubernetes", "Internal Tools", "AI Panels"].map(tool => (
-                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
-                ))}
-              </div>
-            </motion.div>
-          </div>
+                {item.note ? (
+                  <p className="text-sm text-text-muted mb-6">{item.note}</p>
+                ) : null}
 
-          <div className="grid md:grid-cols-2 gap-6 mb-6">
-            {/* Monitor Automations */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: 0.2 }}
-              className="bg-surface border border-border rounded-2xl p-8"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                <Activity className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Monitor Automations</h3>
-              <p className="text-text-muted leading-relaxed text-sm mb-6">Ideal for monitoring CI pipelines, server deployments, automation workflows, and background jobs.</p>
-              <div className="bg-bg border border-border rounded-xl p-4 font-mono text-xs text-text-muted space-y-1">
-                <p>Deployment finished</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Webhook &rarr; Relay</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Phone alert</p>
-              </div>
-              <div className="flex flex-wrap gap-2 mt-6">
-                {["CI/CD", "Deployments", "Cron Jobs", "n8n"].map(tool => (
-                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
-                ))}
-              </div>
-            </motion.div>
+                {item.workflow ? (
+                  <div className="bg-bg border border-border rounded-xl p-4 font-mono text-xs text-text-muted space-y-1 mb-6">
+                    {item.workflow.map((line, lineIndex) => (
+                      <div key={line}>
+                        <p>{line}</p>
+                        {lineIndex < item.workflow.length - 1 ? (
+                          <p className="text-accent">  &darr;</p>
+                        ) : null}
+                      </div>
+                    ))}
+                  </div>
+                ) : null}
 
-            {/* Trading Bots & Monitoring */}
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: 0.3 }}
-              className="bg-surface border border-border rounded-2xl p-8"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                <TrendingUp className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Trading Bots & Monitoring</h3>
-              <p className="text-text-muted leading-relaxed text-sm mb-6">Users running trading bots or scripts can receive alerts when trades execute, strategies trigger, or errors occur.</p>
-              <div className="flex flex-wrap gap-2">
-                {["Trade Alerts", "Strategy Triggers", "Error Monitoring", "Portfolio Bots"].map(tool => (
-                  <span key={tool} className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border">{tool}</span>
-                ))}
-              </div>
-            </motion.div>
-          </div>
+                {item.quote ? (
+                  <div className="bg-bg border border-border rounded-xl p-4 mb-6">
+                    <p className="text-xs font-mono text-text-muted italic">{item.quote}</p>
+                  </div>
+                ) : null}
 
-          {/* Tips: Dashboard Best Practice + Networking */}
-          <div className="grid md:grid-cols-2 gap-6">
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: 0.4 }}
-              className="bg-surface border border-border rounded-2xl p-8"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                <MonitorSmartphone className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Best Practice for Dashboards</h3>
-              <p className="text-text-muted leading-relaxed text-sm mb-4">Relay loads dashboards inside a mobile webview. For the best experience, ask your AI or frontend tool to generate a mobile-responsive version.</p>
-              <div className="bg-bg border border-border rounded-xl p-4">
-                <p className="text-xs font-mono text-text-muted italic">"Create a mobile responsive version of this dashboard UI optimized for a narrow phone screen. Use stacked layouts and large touch targets."</p>
-              </div>
-            </motion.div>
-
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              whileInView={{ opacity: 1, y: 0 }}
-              viewport={{ once: true, margin: "-50px" }}
-              transition={{ duration: 0.4, delay: 0.5 }}
-              className="bg-surface border border-border rounded-2xl p-8"
-            >
-              <div className="w-12 h-12 rounded-xl bg-accent/10 flex items-center justify-center mb-6">
-                <Network className="w-6 h-6 text-accent" />
-              </div>
-              <h3 className="text-xl font-semibold mb-3">Private Network Access</h3>
-              <p className="text-text-muted leading-relaxed text-sm mb-4">Most self-hosted dashboards aren't publicly accessible. Use Tailscale to securely access your internal dashboards from your phone.</p>
-              <div className="bg-bg border border-border rounded-xl p-4 font-mono text-xs text-text-muted space-y-1">
-                <p>Self-hosted server</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Tailscale network</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Phone running Relay</p>
-                <p className="text-accent">  &darr;</p>
-                <p>Dashboard loads securely</p>
-              </div>
-            </motion.div>
+                {item.tags ? (
+                  <div className="flex flex-wrap gap-2 mt-auto">
+                    {item.tags.map((tag) => (
+                      <span
+                        key={tag}
+                        className="text-xs font-medium px-2.5 py-1 rounded-full bg-surface-hover text-text-muted border border-border"
+                      >
+                        {tag}
+                      </span>
+                    ))}
+                  </div>
+                ) : null}
+              </motion.div>
+            ))}
           </div>
         </section>
 
@@ -484,25 +434,9 @@ export default function App() {
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-16">
-            {[
-              {
-                step: "01",
-                title: "Add a URL",
-                desc: "Open the Relay app and add your dashboard URL (e.g., your Grafana instance)."
-              },
-              {
-                step: "02",
-                title: "Get a Token",
-                desc: "Relay generates a unique, secure webhook token for that specific dashboard."
-              },
-              {
-                step: "03",
-                title: "Send a POST",
-                desc: "Your systems POST to the webhook. You get a push notification instantly."
-              }
-            ].map((item, i) => (
+            {HOW_IT_WORKS_STEPS.map((item, i) => (
               <motion.div
-                key={i}
+                key={item.step}
                 initial={{ opacity: 0, y: 30 }}
                 whileInView={{ opacity: 1, y: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
@@ -535,9 +469,10 @@ export default function App() {
             <div className="bg-bg rounded-xl p-6 overflow-x-auto border border-border">
               <pre className="font-mono text-sm text-text-muted leading-relaxed">
                 <code>
-                  curl -X POST https://YOUR_PROJECT.supabase.co/functions/v1/notify/YOUR_TOKEN \<br />
+                  curl -X POST https://relayapp.dev/webhook \<br />
                   &nbsp;&nbsp;-H "Content-Type: application/json" \<br />
                   &nbsp;&nbsp;-d '&#123;<br />
+                  &nbsp;&nbsp;&nbsp;&nbsp;"token": "YOUR_WEBHOOK_TOKEN",<br />
                   &nbsp;&nbsp;&nbsp;&nbsp;"title": "Hello from Relay",<br />
                   &nbsp;&nbsp;&nbsp;&nbsp;"body": "It works."<br />
                   &nbsp;&nbsp;&#125;'
@@ -615,36 +550,10 @@ export default function App() {
           </div>
         </section>
 
-        {/* FAQ */}
-        <section id="faq" className="py-24 px-6 max-w-3xl mx-auto border-t border-border">
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-100px" }}
-            transition={{ duration: 0.5 }}
-            className="text-center mb-12"
-          >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Frequently asked questions</h2>
-            <p className="text-text-muted text-lg">Everything you need to know about Relay.</p>
-          </motion.div>
-
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            whileInView={{ opacity: 1, y: 0 }}
-            viewport={{ once: true, margin: "-50px" }}
-            transition={{ duration: 0.5, delay: 0.1 }}
-            className="border-t border-border"
-          >
-            {FAQ_ITEMS.map((item, i) => (
-              <FAQItem
-                key={i}
-                item={item}
-                isOpen={openFAQ === i}
-                onToggle={() => setOpenFAQ(openFAQ === i ? null : i)}
-              />
-            ))}
-          </motion.div>
-        </section>
+        <FAQSection
+          openFAQ={openFAQ}
+          onToggleFAQ={(index) => setOpenFAQ(openFAQ === index ? null : index)}
+        />
 
         {/* CTA */}
         <section className="py-24 px-6 border-t border-border">
@@ -665,58 +574,7 @@ export default function App() {
         </section>
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border">
-        <div className="max-w-7xl mx-auto px-6 py-16">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
-            {/* Brand */}
-            <div className="col-span-2 md:col-span-1">
-              <div className="flex items-center gap-2 mb-4">
-                <RelayIcon size={20} className="text-text-main" />
-                <span className="font-semibold">Relay</span>
-              </div>
-              <p className="text-sm text-text-muted leading-relaxed">
-                Real-time webhook notifications for your dashboards, straight to your phone.
-              </p>
-            </div>
-
-            {/* Product */}
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Product</h4>
-              <ul className="space-y-2.5 text-sm text-text-muted">
-                <li><a href="#features" className="hover:text-text-main transition-colors">Features</a></li>
-                <li><a href="#use-cases" className="hover:text-text-main transition-colors">Use Cases</a></li>
-                <li><a href="#how-it-works" className="hover:text-text-main transition-colors">How it works</a></li>
-                <li><Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link></li>
-                <li><a href="#api" className="hover:text-text-main transition-colors">API</a></li>
-              </ul>
-            </div>
-
-            {/* Resources */}
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Resources</h4>
-              <ul className="space-y-2.5 text-sm text-text-muted">
-                <li><a href="#faq" className="hover:text-text-main transition-colors">FAQ</a></li>
-                <li><Link to="/login" className="hover:text-text-main transition-colors">Sign in</Link></li>
-                <li><Link to="/signup" className="hover:text-text-main transition-colors">Sign up</Link></li>
-              </ul>
-            </div>
-
-            {/* Legal */}
-            <div>
-              <h4 className="text-sm font-semibold mb-4">Legal</h4>
-              <ul className="space-y-2.5 text-sm text-text-muted">
-                <li><Link to="/privacy" className="hover:text-text-main transition-colors">Privacy Policy</Link></li>
-                <li><Link to="/terms" className="hover:text-text-main transition-colors">Terms of Service</Link></li>
-              </ul>
-            </div>
-          </div>
-
-          <div className="pt-8 border-t border-border flex flex-col md:flex-row items-center justify-between gap-4">
-            <p className="text-sm text-text-muted">&copy; {new Date().getFullYear()} Relay. All rights reserved.</p>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter />
     </div>
   );
 }

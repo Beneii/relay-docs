@@ -26,3 +26,8 @@ export interface NotificationRecord {
   read_at: string | null;
   event_type: string | null;
 }
+
+export interface DashboardTestResult {
+  id: string;
+  status: "success" | "error";
+}

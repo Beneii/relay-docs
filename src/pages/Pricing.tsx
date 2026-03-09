@@ -1,10 +1,12 @@
-import React, { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CheckCircle2, X } from 'lucide-react';
 import { FREE_LIMITS, PRO_LIMITS } from '@shared/product';
-import { RelayIcon } from '../components/RelayLogo';
-import { ThemeToggle } from '../components/ThemeToggle';
+import { LandingFooter } from '../features/landing/LandingFooter';
+import { LandingNav } from '../features/landing/LandingNav';
+import { MobileDownloadSection } from '../features/landing/MobileDownloadSection';
+import { useMarketingNav } from '../features/landing/useMarketingNav';
 
 interface UserProfile {
   id: string;
@@ -19,6 +21,8 @@ export default function Pricing() {
   const [error, setError] = useState(false);
   const [annual, setAnnual] = useState(false);
   const navigate = useNavigate();
+  const { isSignedIn, mobileMenuOpen, navLogoRotate, setMobileMenuOpen } =
+    useMarketingNav();
 
   useEffect(() => {
     const fetchUser = async () => {
@@ -138,31 +142,14 @@ export default function Pricing() {
 
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
-      <nav className="sticky top-0 z-50 border-b border-border bg-bg/80 backdrop-blur-xl">
-        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
-          <Link to="/" className="flex items-center gap-3">
-            <RelayIcon size={24} className="text-text-main" />
-            <span className="font-semibold tracking-tight">Relay</span>
-          </Link>
-          <div className="flex items-center gap-3">
-            <ThemeToggle />
-            {user ? (
-              <Link to="/dashboard" className="text-sm font-medium text-text-muted hover:text-text-main transition-colors">
-                Dashboard
-              </Link>
-            ) : (
-              <>
-                <Link to="/login" className="text-sm font-medium text-text-muted hover:text-text-main transition-colors">
-                  Sign in
-                </Link>
-                <Link to="/signup" className="h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center">
-                  Get Started
-                </Link>
-              </>
-            )}
-          </div>
-        </div>
-      </nav>
+      <LandingNav
+        anchorBasePath="/"
+        isSignedIn={isSignedIn}
+        mobileMenuOpen={mobileMenuOpen}
+        navLogoRotate={navLogoRotate}
+        onToggleMobileMenu={() => setMobileMenuOpen((isOpen) => !isOpen)}
+        onCloseMobileMenu={() => setMobileMenuOpen(false)}
+      />
 
       <main className="max-w-7xl mx-auto px-6 py-24">
         <div className="text-center max-w-3xl mx-auto mb-12">
@@ -174,6 +161,8 @@ export default function Pricing() {
             <span className={`text-sm font-medium ${!annual ? 'text-text-main' : 'text-text-muted'}`}>Monthly</span>
             <button
               onClick={() => setAnnual(!annual)}
+              aria-label="Toggle annual billing"
+              aria-pressed={annual}
               className={`relative w-12 h-7 rounded-full transition-colors cursor-pointer ${annual ? 'bg-accent' : 'bg-border'}`}
             >
               <div className={`absolute top-1 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${annual ? 'left-6' : 'left-1'}`} />
@@ -257,21 +246,11 @@ export default function Pricing() {
             </button>
           </div>
         </div>
+
+        <MobileDownloadSection />
       </main>
 
-      {/* Footer */}
-      <footer className="border-t border-border mt-12">
-        <div className="max-w-7xl mx-auto px-6 py-12 flex flex-col md:flex-row items-center justify-between gap-6">
-          <div className="flex items-center gap-2">
-            <RelayIcon size={18} className="text-text-muted" />
-            <span className="text-text-muted text-sm">Relay — Real-time webhook notifications</span>
-          </div>
-          <div className="flex items-center gap-6 text-sm text-text-muted">
-            <Link to="/" className="hover:text-text-main transition-colors">Home</Link>
-            <Link to="/pricing" className="hover:text-text-main transition-colors">Pricing</Link>
-          </div>
-        </div>
-      </footer>
+      <LandingFooter anchorBasePath="/" />
     </div>
   );
 }

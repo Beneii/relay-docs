@@ -1,8 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 import { createClient } from '@supabase/supabase-js';
+
+import { createBillingPortalHandler } from './_billing.js';
 import { getAuthenticatedUser } from './_auth.js';
-import { handleOptions, setCorsHeaders } from './_cors.js';
 
 function requireEnv(name: string): string {
   const value = process.env[name];
@@ -20,47 +21,21 @@ const supabase = createClient(
   requireEnv('SUPABASE_SERVICE_ROLE_KEY')
 );
 
-export default async function handler(req: VercelRequest, res: VercelResponse) {
-  if (handleOptions(req, res, ['POST', 'OPTIONS'])) {
-    return;
-  }
+const handler = createBillingPortalHandler({
+  getAuthenticatedUser,
+  getStripeCustomerId: async (userId) => {
+    const { data } = await supabase
+      .from('profiles')
+      .select('stripe_customer_id')
+      .eq('id', userId)
+      .single();
 
-  setCorsHeaders(req, res, ['POST', 'OPTIONS']);
+    return data?.stripe_customer_id ?? null;
+  },
+  createBillingPortalSession: (params) => stripe.billingPortal.sessions.create(params),
+  appUrl: process.env.APP_URL,
+});
 
-  if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
-  }
-
-  const user = await getAuthenticatedUser(req);
-
-  if (!user) {
-    return res.status(401).json({ error: 'Missing or invalid authentication' });
-  }
-
-  const userId = user.id;
-
-  // Look up the customer ID server-side — never trust client-supplied IDs
-  const { data: profile } = await supabase
-    .from('profiles')
-    .select('stripe_customer_id')
-    .eq('id', userId)
-    .single();
-
-  if (!profile?.stripe_customer_id) {
-    return res.status(404).json({ error: 'No billing account found' });
-  }
-
-  const customerId = profile.stripe_customer_id;
-
-  try {
-    const session = await stripe.billingPortal.sessions.create({
-      customer: customerId,
-      return_url: `${process.env.APP_URL || 'https://relayapp.dev'}/dashboard`,
-    });
-
-    res.json({ url: session.url });
-  } catch (error: unknown) {
-    console.error('Error creating billing portal session:', error);
-    res.status(500).json({ error: 'Failed to create billing portal session' });
-  }
+export default function route(req: VercelRequest, res: VercelResponse) {
+  return handler(req, res);
 }

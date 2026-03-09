@@ -107,6 +107,12 @@ EXPO_PUBLIC_SUPABASE_URL=https://YOUR_PROJECT.supabase.co
 EXPO_PUBLIC_SUPABASE_ANON_KEY=your-anon-key
 ```
 
+**Marketing site** (`.env.local`, optional):
+```
+VITE_APP_STORE_URL=https://apps.apple.com/app/id1234567890
+VITE_PLAY_STORE_URL=https://play.google.com/store/apps/details?id=com.relay.app
+```
+
 **Supabase Edge Functions** (set via Supabase Dashboard → Edge Functions → Secrets):
 ```
 SUPABASE_URL=https://YOUR_PROJECT.supabase.co

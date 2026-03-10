@@ -223,15 +223,21 @@ function validateActions(value: unknown): RelayAction[] | null {
   });
 }
 
-function isInQuietHours(quietStart: string | null, quietEnd: string | null, now: Date): boolean {
+function isInQuietHours(
+  quietStart: string | null,
+  quietEnd: string | null,
+  utcOffsetMinutes: number,
+  now: Date,
+): boolean {
   if (!quietStart || !quietEnd) return false;
   const [sh, sm] = quietStart.split(":").map(Number);
   const [eh, em] = quietEnd.split(":").map(Number);
-  const nowMins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  // Convert UTC now to device local time
+  const localMins = (now.getUTCHours() * 60 + now.getUTCMinutes() + utcOffsetMinutes + 1440) % 1440;
   const startMins = sh * 60 + sm;
   const endMins = eh * 60 + em;
-  if (startMins <= endMins) return nowMins >= startMins && nowMins < endMins;
-  return nowMins >= startMins || nowMins < endMins; // overnight wrap
+  if (startMins <= endMins) return localMins >= startMins && localMins < endMins;
+  return localMins >= startMins || localMins < endMins; // overnight wrap
 }
 
 async function generateSignature(token: string, payload: string) {
@@ -450,7 +456,7 @@ Deno.serve(async (req) => {
     const [devicesResult, channelPrefResult] = await Promise.all([
       supabase
         .from("devices")
-        .select("expo_push_token, quiet_start, quiet_end")
+        .select("expo_push_token, quiet_start, quiet_end, utc_offset_minutes")
         .eq("user_id", app.user_id),
       channelValue
         ? supabase
@@ -469,11 +475,11 @@ Deno.serve(async (req) => {
 
     // Filter devices by quiet hours (critical bypasses quiet hours)
     const now = new Date();
-    type DeviceRow = { expo_push_token: string; quiet_start: string | null; quiet_end: string | null };
+    type DeviceRow = { expo_push_token: string; quiet_start: string | null; quiet_end: string | null; utc_offset_minutes: number };
     const eligibleDevices: DeviceRow[] = [];
     if (devices && !isChannelMuted) {
       for (const d of devices as DeviceRow[]) {
-        if (severity === "critical" || !isInQuietHours(d.quiet_start, d.quiet_end, now)) {
+        if (severity === "critical" || !isInQuietHours(d.quiet_start, d.quiet_end, d.utc_offset_minutes ?? 0, now)) {
           eligibleDevices.push(d);
         }
       }

@@ -149,11 +149,13 @@ export default function SettingsScreen() {
         const projectId = Constants.expoConfig?.extra?.eas?.projectId;
         if (!projectId || projectId === "YOUR_EAS_PROJECT_ID") return;
         const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        const utcOffsetMinutes = -new Date().getTimezoneOffset();
         await supabase
           .from("devices")
           .update({
             quiet_start: enabled ? start : null,
             quiet_end: enabled ? end : null,
+            utc_offset_minutes: utcOffsetMinutes,
           })
           .eq("user_id", user.id)
           .eq("expo_push_token", tokenData.data);

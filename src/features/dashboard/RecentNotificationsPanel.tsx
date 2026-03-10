@@ -103,9 +103,9 @@ export function RecentNotificationsPanel({
                     </div>
                     <p className="text-xs text-text-muted mt-2">
                       {notification.pushed_count && notification.pushed_count > 0
-                        ? `Pushed to ${notification.pushed_count} device${
-                            notification.pushed_count === 1 ? "" : "s"
-                          }`
+                        ? `Pushed to ${notification.pushed_count} device${notification.pushed_count === 1 ? "" : "s"}`
+                        : notification.pushed_count === 0
+                        ? "Push skipped (quiet hours or muted channel)"
                         : "No devices registered"}
                     </p>
                   </div>

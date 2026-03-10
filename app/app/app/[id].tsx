@@ -14,6 +14,7 @@ import { WebView } from "react-native-webview";
 import type { WebViewNavigation } from "react-native-webview";
 import { useAuthStore } from "@/stores/authStore";
 import { useApp, useUpdateLastOpened } from "@/hooks/useApps";
+import { AppIcon } from "@/components/AppIcon";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { Feather } from "@expo/vector-icons";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
@@ -132,11 +133,25 @@ export default function AppWebViewScreen() {
     );
   }
 
+  const accentBg = app.accent_color ?? colors.surface;
+  const appDisplayName = app.custom_app_name || app.name;
+
   return (
     <SafeAreaView
       edges={["top"]}
       style={[styles.container, { backgroundColor: colors.background }]}
     >
+      {/* Branded header */}
+      <View style={[styles.brandedHeader, { backgroundColor: accentBg + "22", borderBottomColor: accentBg + "44" }]}>
+        <AppIcon icon={app.icon} accentColor={app.accent_color} customIconUrl={app.custom_icon_url} backgroundColor={app.background_color} size={28} />
+        <Text style={[styles.brandedHeaderTitle, { color: app.accent_color ?? colors.textPrimary }]} numberOfLines={1}>
+          {appDisplayName}
+        </Text>
+        <Pressable onPress={handleExit} style={styles.brandedHeaderClose} hitSlop={8}>
+          <Feather name="x" size={18} color={app.accent_color ?? colors.textSecondary} />
+        </Pressable>
+      </View>
+
       {/* Loading bar */}
       {isPageLoading ? (
         <View style={[styles.loadingBar, { backgroundColor: colors.background }]}>
@@ -264,6 +279,22 @@ export default function AppWebViewScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  brandedHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    gap: spacing.sm,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+  },
+  brandedHeaderTitle: {
+    flex: 1,
+    fontSize: fontSizes.md,
+    fontWeight: "600",
+  },
+  brandedHeaderClose: {
+    padding: 4,
   },
   webview: {
     flex: 1,

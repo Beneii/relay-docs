@@ -54,6 +54,9 @@ interface CreateAppInput {
   accent_color?: string | null;
   notifications_enabled?: boolean;
   heartbeat_interval_minutes?: number | null;
+  custom_icon_url?: string | null;
+  custom_app_name?: string | null;
+  background_color?: string | null;
 }
 
 export function useCreateApp() {
@@ -89,6 +92,9 @@ interface UpdateAppInput {
   accent_color?: string | null;
   notifications_enabled?: boolean;
   heartbeat_interval_minutes?: number | null;
+  custom_icon_url?: string | null;
+  custom_app_name?: string | null;
+  background_color?: string | null;
 }
 
 export function useUpdateApp() {

@@ -2,12 +2,14 @@ import { useState } from "react";
 import { AlertCircle, Check, ChevronDown, Copy, ExternalLink, Plus, Send, Trash2, Users, Webhook, Zap } from "lucide-react";
 
 import type { DashboardTestResult, DashboardWithSharing } from "./types";
+import { OutboundWebhooksSection } from "./OutboundWebhooksSection";
 
 interface DashboardListSectionProps {
   copiedToken: string | null;
   dashboards: DashboardWithSharing[];
   deleteDashboardError: string | null;
   deletingDashboardId: string | null;
+  isPro: boolean;
   onCopyToken: (token: string) => Promise<void>;
   onDeleteDashboard: (id: string) => Promise<void>;
   onShowAddModal: () => void;
@@ -24,6 +26,7 @@ function DashboardCard({
   dashboard,
   copiedToken,
   deletingDashboardId,
+  isPro,
   testResult,
   testingId,
   onCopyToken,
@@ -34,6 +37,7 @@ function DashboardCard({
   dashboard: DashboardWithSharing;
   copiedToken: string | null;
   deletingDashboardId: string | null;
+  isPro: boolean;
   testResult: DashboardTestResult | null;
   testingId: string | null;
   onCopyToken: (token: string) => Promise<void>;
@@ -165,6 +169,8 @@ await relay.notify({ title: 'Hello from Relay' })`;
                   </div>
                 </div>
               )}
+
+              <OutboundWebhooksSection appId={dashboard.id} isPro={isPro} />
             </>
           )}
         </div>
@@ -201,6 +207,7 @@ export function DashboardListSection({
   dashboards,
   deleteDashboardError,
   deletingDashboardId,
+  isPro,
   onCopyToken,
   onDeleteDashboard,
   onShowAddModal,
@@ -299,6 +306,7 @@ export function DashboardListSection({
               dashboard={dashboard}
               copiedToken={copiedToken}
               deletingDashboardId={deletingDashboardId}
+              isPro={isPro}
               testResult={testResult}
               testingId={testingId}
               onCopyToken={onCopyToken}

@@ -15,6 +15,7 @@ import * as Clipboard from "expo-clipboard";
 import Constants from "expo-constants";
 import { useAuthStore } from "@/stores/authStore";
 import { useApp, useCreateApp, useUpdateApp, useDeleteApp } from "@/hooks/useApps";
+import { useProfile } from "@/hooks/useProfile";
 import { AppIcon, ICON_KEYS } from "@/components/AppIcon";
 import { LoadingScreen } from "@/components/LoadingScreen";
 import { validateUrl } from "@/utils/url";
@@ -41,9 +42,12 @@ export default function EditAppScreen() {
   if (!session) return <Redirect href="/auth" />;
 
   const { data: existingApp, isLoading: loadingApp } = useApp(params.id ?? "");
+  const { data: profile } = useProfile();
   const createApp = useCreateApp();
   const updateApp = useUpdateApp();
   const deleteApp = useDeleteApp();
+
+  const isPro = profile?.plan === "pro";
 
   const [name, setName] = useState("");
   const [url, setUrl] = useState("");
@@ -52,6 +56,9 @@ export default function EditAppScreen() {
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
   const [heartbeatInterval, setHeartbeatInterval] = useState<number | null>(null);
   const [manifestDetected, setManifestDetected] = useState(false);
+  const [customAppName, setCustomAppName] = useState("");
+  const [customIconUrl, setCustomIconUrl] = useState("");
+  const [backgroundColor, setBackgroundColor] = useState("");
 
   // Auto-fetch relay.json manifest
   useEffect(() => {
@@ -108,6 +115,9 @@ export default function EditAppScreen() {
       setAccentColor(existingApp.accent_color ?? ACCENT_COLORS[0]);
       setNotificationsEnabled(existingApp.notifications_enabled);
       setHeartbeatInterval(existingApp.heartbeat_interval_minutes ?? null);
+      setCustomAppName(existingApp.custom_app_name ?? "");
+      setCustomIconUrl(existingApp.custom_icon_url ?? "");
+      setBackgroundColor(existingApp.background_color ?? "");
     }
   }, [existingApp]);
 
@@ -118,6 +128,14 @@ export default function EditAppScreen() {
     if (!canSave) return;
 
     try {
+      const brandingFields = isPro
+        ? {
+            custom_app_name: customAppName.trim() || null,
+            custom_icon_url: customIconUrl.trim() || null,
+            background_color: backgroundColor.trim() || null,
+          }
+        : {};
+
       if (isEditing && params.id) {
         await updateApp.mutateAsync({
           id: params.id,
@@ -128,6 +146,7 @@ export default function EditAppScreen() {
             accent_color: accentColor,
             notifications_enabled: notificationsEnabled,
             heartbeat_interval_minutes: heartbeatInterval,
+            ...brandingFields,
           },
         });
       } else {
@@ -138,6 +157,7 @@ export default function EditAppScreen() {
           accent_color: accentColor,
           notifications_enabled: notificationsEnabled,
           heartbeat_interval_minutes: heartbeatInterval,
+          ...brandingFields,
         });
       }
       router.back();
@@ -331,6 +351,63 @@ export default function EditAppScreen() {
                 onPress={() => setAccentColor(c)}
               />
             ))}
+          </View>
+        </View>
+
+        {/* Custom Branding (Pro) */}
+        <View style={[styles.field, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 16, paddingHorizontal: spacing.md, borderRadius: 12, borderWidth: 1 }]}>
+          <View style={{ flexDirection: "row", alignItems: "center", justifyContent: "space-between", marginBottom: 4 }}>
+            <View>
+              <Text style={[styles.label, { color: colors.textPrimary, paddingHorizontal: 0 }]}>Custom branding</Text>
+              <Text style={[styles.fieldHint, { color: colors.textTertiary, paddingHorizontal: 0 }]}>
+                Override display name, icon, and background color.
+              </Text>
+            </View>
+            {!isPro && (
+              <View style={{ flexDirection: "row", alignItems: "center", gap: 4, backgroundColor: colors.accentSubtle, paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }}>
+                <Feather name="lock" size={12} color={colors.accent} />
+                <Text style={{ fontSize: fontSizes.xs, color: colors.accent, fontWeight: "600" }}>Pro</Text>
+              </View>
+            )}
+          </View>
+          <View style={{ gap: spacing.sm, marginTop: spacing.sm, opacity: isPro ? 1 : 0.4 }}>
+            <View style={{ gap: 4 }}>
+              <Text style={[styles.fieldHint, { color: colors.textSecondary, paddingHorizontal: 0 }]}>Display name</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                placeholder="Same as app name"
+                placeholderTextColor={colors.textTertiary}
+                value={customAppName}
+                onChangeText={isPro ? setCustomAppName : undefined}
+                editable={isPro}
+              />
+            </View>
+            <View style={{ gap: 4 }}>
+              <Text style={[styles.fieldHint, { color: colors.textSecondary, paddingHorizontal: 0 }]}>Icon URL</Text>
+              <TextInput
+                style={[styles.input, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                placeholder="https://example.com/icon.png"
+                placeholderTextColor={colors.textTertiary}
+                value={customIconUrl}
+                onChangeText={isPro ? setCustomIconUrl : undefined}
+                editable={isPro}
+                autoCapitalize="none"
+                autoCorrect={false}
+                keyboardType="url"
+              />
+            </View>
+            <View style={{ gap: 4 }}>
+              <Text style={[styles.fieldHint, { color: colors.textSecondary, paddingHorizontal: 0 }]}>Background color</Text>
+              <View style={{ flexDirection: "row", flexWrap: "wrap", gap: spacing.sm }}>
+                {ACCENT_COLORS.map((c) => (
+                  <Pressable
+                    key={c}
+                    style={[styles.colorOption, { backgroundColor: c + "30", borderColor: backgroundColor === c ? colors.textPrimary : "transparent" }]}
+                    onPress={() => isPro && setBackgroundColor(backgroundColor === c ? "" : c)}
+                  />
+                ))}
+              </View>
+            </View>
           </View>
         </View>
 

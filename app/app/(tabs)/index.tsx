@@ -81,13 +81,13 @@ function AppCard({ app }: { app: AppRow }) {
       onLongPress={handleLongPress}
       android_ripple={{ color: colors.accentSubtle }}
     >
-      <AppIcon icon={app.icon} accentColor={app.accent_color} size={48} />
+      <AppIcon icon={app.icon} accentColor={app.accent_color} customIconUrl={app.custom_icon_url} backgroundColor={app.background_color} size={48} />
       <View style={styles.cardContent}>
         <Text
           style={[styles.cardName, { color: colors.textPrimary }]}
           numberOfLines={1}
         >
-          {app.name}
+          {app.custom_app_name || app.name}
         </Text>
         <Text
           style={[styles.cardHost, { color: colors.textTertiary }]}

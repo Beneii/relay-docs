@@ -382,7 +382,8 @@ export function useDashboardPage() {
     if (insertError) {
       setError(insertError.message);
     } else if (data) {
-      setDashboards([...dashboards, data]);
+      const enriched: DashboardWithSharing = { ...data, is_owner: true };
+      setDashboards([...dashboards, enriched]);
       setShowAddModal(false);
       setNewDashName("");
       setNewDashUrl("");

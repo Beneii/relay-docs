@@ -219,6 +219,7 @@ export default function DashboardPage() {
               dashboards={dashboards}
               deleteDashboardError={deleteDashboardError}
               deletingDashboardId={deletingDashboardId}
+              isPro={user.plan === "pro"}
               onCopyToken={handleCopyToken}
               onDeleteDashboard={handleDeleteDashboard}
               onShowAddModal={() => setShowAddModal(true)}

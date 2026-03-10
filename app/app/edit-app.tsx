@@ -50,6 +50,7 @@ export default function EditAppScreen() {
   const [icon, setIcon] = useState<string>("globe");
   const [accentColor, setAccentColor] = useState<string>(ACCENT_COLORS[0]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [heartbeatInterval, setHeartbeatInterval] = useState<number | null>(null);
   const [manifestDetected, setManifestDetected] = useState(false);
 
   // Auto-fetch relay.json manifest
@@ -106,6 +107,7 @@ export default function EditAppScreen() {
       setIcon(existingApp.icon ?? "globe");
       setAccentColor(existingApp.accent_color ?? ACCENT_COLORS[0]);
       setNotificationsEnabled(existingApp.notifications_enabled);
+      setHeartbeatInterval(existingApp.heartbeat_interval_minutes ?? null);
     }
   }, [existingApp]);
 
@@ -125,6 +127,7 @@ export default function EditAppScreen() {
             icon,
             accent_color: accentColor,
             notifications_enabled: notificationsEnabled,
+            heartbeat_interval_minutes: heartbeatInterval,
           },
         });
       } else {
@@ -134,6 +137,7 @@ export default function EditAppScreen() {
           icon,
           accent_color: accentColor,
           notifications_enabled: notificationsEnabled,
+          heartbeat_interval_minutes: heartbeatInterval,
         });
       }
       router.back();
@@ -364,6 +368,89 @@ export default function EditAppScreen() {
           </View>
         </Pressable>
 
+        {/* Heartbeat monitoring */}
+        <View style={[styles.field, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 16 }]}>
+          <View style={styles.heartbeatHeader}>
+            <View>
+              <Text style={[styles.label, { color: colors.textPrimary }]}>Heartbeat monitoring</Text>
+              <Text style={[styles.fieldHint, { color: colors.textTertiary }]}>
+                Get alerted if your agent or cron job stops pinging Relay.
+              </Text>
+            </View>
+            <Pressable
+              onPress={() =>
+                setHeartbeatInterval((current) => (current ? null : 15))
+              }
+              style={[
+                styles.toggle,
+                {
+                  backgroundColor: heartbeatInterval ? colors.accent : colors.textTertiary,
+                },
+              ]}
+            >
+              <View
+                style={[
+                  styles.toggleKnob,
+                  {
+                    transform: [{ translateX: heartbeatInterval ? 18 : 2 }],
+                  },
+                ]}
+              />
+            </Pressable>
+          </View>
+          {heartbeatInterval ? (
+            <View style={{ marginTop: 16 }}>
+              <Text style={[styles.fieldHint, { color: colors.textSecondary, marginBottom: 10 }]}>
+                Send a POST request to{" "}
+                <Text style={{ fontFamily: "monospace" }}>https://relayapp.dev/api/heartbeat</Text> with
+                {" "}
+                <Text style={{ fontFamily: "monospace" }}>{`{ "token": "${existingApp?.webhook_token ?? "YOUR_TOKEN"}" }`}</Text>.
+                Relay will notify you if no heartbeat arrives within the interval.
+              </Text>
+              <View style={styles.heartbeatOptions}>
+                {[5, 15, 30, 60, 360].map((minutes) => (
+                  <Pressable
+                    key={minutes}
+                    onPress={() => setHeartbeatInterval(minutes)}
+                    style={[
+                      styles.heartbeatOption,
+                      {
+                        borderColor:
+                          heartbeatInterval === minutes ? colors.accent : colors.border,
+                        backgroundColor:
+                          heartbeatInterval === minutes ? colors.accent + "20" : colors.surface,
+                      },
+                    ]}
+                  >
+                    <Text
+                      style={{
+                        color:
+                          heartbeatInterval === minutes ? colors.accent : colors.textSecondary,
+                        fontWeight: heartbeatInterval === minutes ? "600" : "500",
+                      }}
+                    >
+                      {minutes < 60
+                        ? `${minutes} min`
+                        : minutes === 60
+                        ? "1 hour"
+                        : `${minutes / 60} hours`}
+                    </Text>
+                  </Pressable>
+                ))}
+              </View>
+              {existingApp?.heartbeat_last_seen_at ? (
+                <Text style={[styles.fieldHint, { color: colors.textSecondary, marginTop: 8 }]}>
+                  Last heartbeat: {new Date(existingApp.heartbeat_last_seen_at).toLocaleString()}
+                </Text>
+              ) : (
+                <Text style={[styles.fieldHint, { color: colors.textSecondary, marginTop: 8 }]}>
+                  No heartbeats received yet.
+                </Text>
+              )}
+            </View>
+          ) : null}
+        </View>
+
         {/* Webhook info */}
         {isEditing && existingApp ? (
           <View style={styles.field}>
@@ -513,6 +600,24 @@ const styles = StyleSheet.create({
     height: 22,
     borderRadius: 11,
     backgroundColor: "#FFFFFF",
+  },
+  heartbeatHeader: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: spacing.sm,
+  },
+  heartbeatOptions: {
+    flexDirection: "row",
+    flexWrap: "wrap",
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+  },
+  heartbeatOption: {
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs,
   },
   webhookBox: {
     flexDirection: "row",

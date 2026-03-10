@@ -15,6 +15,9 @@ export interface Dashboard {
   url: string;
   webhook_token: string;
   icon: string | null;
+  heartbeat_interval_minutes: number | null;
+  heartbeat_last_seen_at: string | null;
+  heartbeat_alerted_at: string | null;
 }
 
 export interface NotificationRecord {

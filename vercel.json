@@ -7,6 +7,12 @@
       "includeFiles": "api/_lib/**"
     }
   },
+  "crons": [
+    {
+      "path": "/api/heartbeat-check",
+      "schedule": "* * * * *"
+    }
+  ],
   "rewrites": [
     {
       "source": "/webhook",

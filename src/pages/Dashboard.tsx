@@ -6,6 +6,7 @@ import { ThemeToggle } from "../components/ThemeToggle";
 import { AccountSidebar } from "../features/dashboard/AccountSidebar";
 import { DashboardListSection } from "../features/dashboard/DashboardListSection";
 import { RecentNotificationsPanel } from "../features/dashboard/RecentNotificationsPanel";
+import { OnboardingBanner } from "../features/dashboard/OnboardingBanner";
 import { AddDashboardModal, DeleteAccountModal } from "../features/dashboard/modals";
 import { useDashboardPage } from "../features/dashboard/useDashboardPage";
 
@@ -182,6 +183,12 @@ export default function DashboardPage() {
           />
 
           <div className="md:col-span-2 space-y-6">
+            <OnboardingBanner
+              dashboards={dashboards}
+              notificationsUsed={notificationsUsed}
+              onAddDashboard={() => setShowAddModal(true)}
+              onTestWebhook={handleTestWebhook}
+            />
             <DashboardListSection
               copiedToken={copiedToken}
               dashboards={dashboards}

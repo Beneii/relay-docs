@@ -242,9 +242,6 @@ export default function Docs() {
             {/* Quickstart */}
             <section id="quickstart">
               <AnchorHeading id="quickstart">Get started in 60 seconds</AnchorHeading>
-              <div className="border border-accent/20 bg-accent/5 rounded-2xl p-4 text-sm text-text-muted mb-6">
-                The SDK will be available on npm soon. Until it lands, you can follow the same steps locally or use the REST API directly.
-              </div>
               <div className="space-y-8">
                 <div>
                   <p className="font-semibold mb-2 text-text-main">Step 1: Install</p>

@@ -125,18 +125,19 @@ export default function Pricing() {
   const freePlanFeatures = [
     { label: `${FREE_LIMITS.dashboards} dashboards`, included: true },
     { label: `${FREE_LIMITS.devices} device`, included: true },
-    { label: `${FREE_LIMITS.notificationsPerMonth} notifications / month`, included: true },
+    { label: '500 notifications / month', included: true },
+    { label: '@relayapp/sdk + REST API access', included: true },
     { label: 'Webhook API access', included: true },
     { label: `Up to ${PRO_LIMITS.devices} devices`, included: false },
     { label: 'Notification history', included: false },
     { label: 'Priority support', included: false },
   ];
   const proPlanFeatures = [
-    'Unlimited dashboards',
+    'Unlimited dashboards & projects',
     `Up to ${PRO_LIMITS.devices} devices`,
     `${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications per month`,
-    'Notification history',
-    'Metadata events',
+    'Interactive action buttons + SDK features',
+    'Notification history & metadata events',
     'Priority support',
   ];
 

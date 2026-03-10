@@ -44,19 +44,25 @@ export default function TabLayout() {
   const session = useAuthStore((s) => s.session);
   const { colors } = useTheme();
   const { data: unreadCount } = useUnreadCount();
-  const { pendingAppId, setPendingAppId } = useNavigationStore();
+  const { pendingAppId, pendingPath, setPendingAppId, clearPendingPath } =
+    useNavigationStore();
 
   // Handle cold-start navigation from push notification
   useEffect(() => {
     if (pendingAppId) {
       const id = pendingAppId;
+      const path = pendingPath;
       setPendingAppId(null);
-      // Small delay to let navigation mount
+      clearPendingPath();
       setTimeout(() => {
-        router.push({ pathname: "/app/[id]", params: { id } });
+        if (path) {
+          router.push({ pathname: "/app/[id]", params: { id, path } });
+        } else {
+          router.push({ pathname: "/app/[id]", params: { id } });
+        }
       }, 100);
     }
-  }, [pendingAppId, setPendingAppId]);
+  }, [clearPendingPath, pendingAppId, pendingPath, setPendingAppId]);
 
   if (!session) {
     return <Redirect href="/auth" />;

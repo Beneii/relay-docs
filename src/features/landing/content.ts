@@ -1,6 +1,16 @@
 import { FREE_LIMITS, PRO_LIMITS } from "@shared/product";
 
 export const INTEGRATIONS = {
+  node: {
+    name: "Node.js",
+    code: `import { Relay } from '@relayapp/sdk'
+
+const relay = new Relay({ token: process.env.RELAY_TOKEN })
+await relay.notify({
+  title: 'Build complete',
+  body: 'All tests passed'
+})`,
+  },
   bash: {
     name: "Bash",
     code: `curl -X POST https://relayapp.dev/webhook \\
@@ -33,24 +43,12 @@ requests.post("https://relayapp.dev/webhook", json={
     "body": "Accuracy: 98.5%"
 })`,
   },
-  node: {
-    name: "Node.js",
-    code: `fetch("https://relayapp.dev/webhook", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    token: "YOUR_WEBHOOK_TOKEN",
-    title: "Server Error",
-    body: "Database connection lost"
-  })
-});`,
-  },
 } as const;
 
 export const FAQ_ITEMS = [
   {
     q: "What is Relay?",
-    a: "Relay is a mobile command center for web dashboards. Save any web dashboard as a native app on your phone, send webhooks to receive push notifications, and tap to open your dashboards instantly. It is commonly used to monitor AI agents, automations, servers, and self-hosted systems.",
+    a: "Relay is a mobile runtime for the tools you build. Wrap any URL in a native shell, trigger push notifications with our SDK, and deep link straight into the exact screen when something happens.",
   },
   {
     q: "Do my dashboards need to be public?",
@@ -66,7 +64,7 @@ export const FAQ_ITEMS = [
   },
   {
     q: "Does Relay replace my dashboard?",
-    a: "No. Relay is a mobile companion for dashboards and automation systems. It gives you a native app wrapper and push notifications on top of your existing setup.",
+    a: "No. Relay runs your existing dashboard inside a managed mobile wrapper. You keep hosting and building your UI; Relay handles push, auth, and the native experience.",
   },
   {
     q: "What kinds of systems work with Relay?",
@@ -81,7 +79,7 @@ export const FAQ_ITEMS = [
     a: `Yes. The free plan includes ${FREE_LIMITS.dashboards} dashboards, ${FREE_LIMITS.devices} device, and ${FREE_LIMITS.notificationsPerMonth} notifications per month. Upgrade to Pro for unlimited dashboards, up to ${PRO_LIMITS.devices} devices, and ${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/month.`,
   },
   {
-    q: "Do I need to install an SDK?",
-    a: "No. Relay uses a simple REST API. Just send an HTTP POST request from any language, script, or CI/CD pipeline. No SDKs, no dependencies.",
+    q: "Do I need to use the SDK?",
+    a: "The @relayapp/sdk makes integration a one-liner, but you can also use our REST API directly with a simple curl POST if you prefer. Both work the same way.",
   },
 ] as const;

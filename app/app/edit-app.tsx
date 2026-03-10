@@ -50,6 +50,53 @@ export default function EditAppScreen() {
   const [icon, setIcon] = useState<string>("globe");
   const [accentColor, setAccentColor] = useState<string>(ACCENT_COLORS[0]);
   const [notificationsEnabled, setNotificationsEnabled] = useState(true);
+  const [manifestDetected, setManifestDetected] = useState(false);
+
+  // Auto-fetch relay.json manifest
+  useEffect(() => {
+    setManifestDetected(false);
+    const urlValidation = validateUrl(url);
+    if (!url || !urlValidation.valid || isEditing) return;
+
+    const timer = setTimeout(async () => {
+      try {
+        const normalized = urlValidation.normalized.replace(/\/+$/, "");
+        const controller = new AbortController();
+        const abortTimer = setTimeout(() => controller.abort(), 3000);
+        
+        const res = await fetch(`${normalized}/relay.json`, {
+          signal: controller.signal,
+          headers: { Accept: "application/json" },
+        });
+        clearTimeout(abortTimer);
+        
+        if (!res.ok) return;
+        const contentType = res.headers.get("content-type") || "";
+        if (!contentType.includes("json") && !contentType.includes("text/plain")) return;
+        
+        const text = await res.text();
+        if (text.length > 10000) return;
+        const manifest = JSON.parse(text);
+        
+        if (typeof manifest !== "object" || manifest === null) return;
+        
+        setManifestDetected(true);
+        if (manifest.name && !name) {
+          setName(manifest.name);
+        }
+        if (manifest.theme_color && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(manifest.theme_color)) {
+          setAccentColor(manifest.theme_color);
+        }
+        if (manifest.notifications === false) {
+          setNotificationsEnabled(false);
+        }
+      } catch (err) {
+        // ignore fetch/parse errors
+      }
+    }, 800);
+
+    return () => clearTimeout(timer);
+  }, [url, isEditing, name]);
 
   // Populate form when editing
   useEffect(() => {
@@ -213,6 +260,11 @@ export default function EditAppScreen() {
             keyboardType="url"
             returnKeyType="done"
           />
+          {manifestDetected && (
+            <Text style={[styles.fieldHint, { color: colors.accent, marginTop: 4 }]}>
+              Configured from relay.json
+            </Text>
+          )}
           {url && urlValidation.warning ? (
             <Text
               style={[

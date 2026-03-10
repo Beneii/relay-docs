@@ -1,12 +1,26 @@
 import { createClient } from "jsr:@supabase/supabase-js@2";
 import { FREE_LIMITS, PRO_LIMITS } from "../../../shared/product.ts";
 
+type RelaySeverity = "info" | "warning" | "critical";
+type RelayActionStyle = "default" | "destructive";
+
+interface RelayAction {
+  label: string;
+  url: string;
+  style?: RelayActionStyle;
+}
+
 interface NotifyRequest {
   token: string;
   title: string;
   body?: string;
   eventType?: string;
   metadata?: Record<string, unknown>;
+  actions?: RelayAction[];
+  severity?: RelaySeverity;
+  channel?: string;
+  /** Deep link path within the dashboard to open on tap. e.g. "/trades/latest" */
+  url?: string;
 }
 
 const EXPO_PUSH_URL = "https://exp.host/--/api/v2/push/send";
@@ -17,6 +31,11 @@ const MAX_TITLE_LENGTH = 200;
 const MAX_BODY_LENGTH = 2000;
 const MAX_METADATA_BYTES = 4 * 1024;
 const MAX_METADATA_DEPTH = 5;
+const MAX_ACTIONS = 5;
+const MAX_ACTION_LABEL_LENGTH = 50;
+const MAX_CHANNEL_LENGTH = 32;
+const ALLOWED_SEVERITIES: RelaySeverity[] = ["info", "warning", "critical"];
+const ALLOWED_ACTION_STYLES: RelayActionStyle[] = ["default", "destructive"];
 
 type RateLimitEntry = {
   count: number;
@@ -102,6 +121,106 @@ function getJsonDepth(value: unknown, current = 0): number {
     return Math.max(...entries.map((v) => getJsonDepth(v, current + 1)));
   }
   return current;
+}
+
+function isHttpsUrl(value: string) {
+  try {
+    const url = new URL(value);
+    return url.protocol === "https:";
+  } catch {
+    return false;
+  }
+}
+
+function normalizeSeverity(value: unknown): RelaySeverity {
+  if (value === undefined || value === null) {
+    return "info";
+  }
+  if (typeof value !== "string") {
+    throw new Error("severity must be a string");
+  }
+  const normalized = value.trim().toLowerCase();
+  if (!ALLOWED_SEVERITIES.includes(normalized as RelaySeverity)) {
+    throw new Error("severity must be one of info, warning, or critical");
+  }
+  return normalized as RelaySeverity;
+}
+
+function sanitizeChannel(value: unknown): string | null {
+  if (value === undefined || value === null || value === "") {
+    return null;
+  }
+  if (typeof value !== "string") {
+    throw new Error("channel must be a string");
+  }
+  const normalized = value
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9-]/g, "-")
+    .replace(/-+/g, "-")
+    .replace(/^-|-$/g, "");
+  if (!normalized) {
+    throw new Error("channel must contain alphanumeric characters");
+  }
+  if (normalized.length > MAX_CHANNEL_LENGTH) {
+    throw new Error(`channel must be <= ${MAX_CHANNEL_LENGTH} characters`);
+  }
+  return normalized;
+}
+
+function validateActions(value: unknown): RelayAction[] | null {
+  if (value === undefined || value === null) {
+    return null;
+  }
+  if (!Array.isArray(value)) {
+    throw new Error("actions must be an array");
+  }
+  if (value.length === 0 || value.length > MAX_ACTIONS) {
+    throw new Error(`actions must include between 1 and ${MAX_ACTIONS} entries`);
+  }
+
+  const labels = new Set<string>();
+  return value.map((action, index) => {
+    if (!action || typeof action !== "object" || Array.isArray(action)) {
+      throw new Error(`action at index ${index} must be an object`);
+    }
+
+    const label = typeof action.label === "string" ? action.label.trim() : "";
+    if (!label) {
+      throw new Error(`action label at index ${index} is required`);
+    }
+    if (label.length > MAX_ACTION_LABEL_LENGTH) {
+      throw new Error(`action label at index ${index} exceeds ${MAX_ACTION_LABEL_LENGTH} characters`);
+    }
+
+    const normalizedLabel = label.toLowerCase();
+    if (labels.has(normalizedLabel)) {
+      throw new Error("action labels must be unique");
+    }
+    labels.add(normalizedLabel);
+
+    if (typeof action.url !== "string" || !isHttpsUrl(action.url.trim())) {
+      throw new Error(`action url at index ${index} must be a valid https URL`);
+    }
+
+    let style: RelayActionStyle | undefined;
+    if (action.style !== undefined) {
+      if (typeof action.style !== "string") {
+        throw new Error(`action style at index ${index} must be a string`);
+      }
+      const normalizedStyle = action.style.trim().toLowerCase();
+      if (!ALLOWED_ACTION_STYLES.includes(normalizedStyle as RelayActionStyle)) {
+        throw new Error(`action style at index ${index} must be default or destructive`);
+      }
+      style = normalizedStyle as RelayActionStyle;
+    }
+
+    return {
+      label,
+      url: action.url.trim(),
+      ...(style ? { style } : {}),
+    };
+  });
 }
 
 Deno.serve(async (req) => {
@@ -274,6 +393,30 @@ Deno.serve(async (req) => {
       metadataJson = body.metadata;
     }
 
+    let severity: RelaySeverity;
+    let channelValue: string | null = null;
+    let actions: RelayAction[] | null = null;
+    let deepLinkUrl: string | null = null;
+    try {
+      severity = normalizeSeverity(body.severity);
+      channelValue = sanitizeChannel(body.channel);
+      actions = validateActions(body.actions);
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invalid notification options";
+      return jsonResponse({ error: message }, 400);
+    }
+
+    if (body.url !== undefined && body.url !== null) {
+      if (typeof body.url !== "string") {
+        return jsonResponse({ error: "url must be a string" }, 400);
+      }
+      const trimmed = body.url.trim();
+      if (trimmed.length > 2048) {
+        return jsonResponse({ error: "url exceeds 2048 characters" }, 400);
+      }
+      deepLinkUrl = trimmed;
+    }
+
     // Store notification
     const { data: notification, error: notifError } = await supabase
       .from("notifications")
@@ -284,6 +427,10 @@ Deno.serve(async (req) => {
         body: sanitizedBody,
         event_type: body.eventType || null,
         metadata_json: metadataJson,
+        severity,
+        channel: channelValue,
+        actions_json: actions,
+        deep_link_url: deepLinkUrl,
       })
       .select("id")
       .single();
@@ -319,12 +466,16 @@ Deno.serve(async (req) => {
       to: d.expo_push_token,
       title: sanitizedTitle,
       body: sanitizedBody || undefined,
-      sound: "default",
-      priority: "high",
+      sound: severity === "critical" ? "critical" : "default",
+      priority: severity === "critical" ? "max" : "high",
       data: {
         appId: app.id,
         notificationId: notification.id,
         eventType: body.eventType || null,
+        severity,
+        channel: channelValue,
+        actions: actions,
+        deepLinkUrl,
       },
     }));
 

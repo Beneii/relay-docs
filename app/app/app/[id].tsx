@@ -23,9 +23,13 @@ export default function AppWebViewScreen() {
   const { colors } = useTheme();
 
   if (!session) return <Redirect href="/auth" />;
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id, path } = useLocalSearchParams<{ id: string; path?: string }>();
   const { data: app, isLoading, error } = useApp(id ?? "");
   const updateLastOpened = useUpdateLastOpened();
+  const webviewUrl =
+    path && app?.url
+      ? app.url.replace(/\/+$/, "") + (path.startsWith("/") ? path : `/${path}`)
+      : app?.url;
 
   const webViewRef = useRef<WebView>(null);
   const [isPageLoading, setIsPageLoading] = useState(true);
@@ -37,15 +41,15 @@ export default function AppWebViewScreen() {
 
   // On web, open in a new tab since iframes are blocked by most sites
   useEffect(() => {
-    if (Platform.OS === "web" && app?.url) {
-      window.open(app.url, "_blank", "noopener");
+    if (Platform.OS === "web" && webviewUrl) {
+      window.open(webviewUrl, "_blank", "noopener");
       if (app && !hasUpdatedLastOpened.current) {
         hasUpdatedLastOpened.current = true;
         updateLastOpened.mutate(app.id);
       }
       router.back();
     }
-  }, [app]);
+  }, [app, updateLastOpened, webviewUrl]);
 
   const handleLoadStart = useCallback(() => {
     setIsPageLoading(true);
@@ -70,10 +74,9 @@ export default function AppWebViewScreen() {
       setCanGoBack(navState.canGoBack);
       setCanGoForward(navState.canGoForward);
 
-      // Allow navigation within the same origin; open external links externally
-      if (!app) return;
+      if (!app || !webviewUrl) return;
       try {
-        const appOrigin = new URL(app.url).origin;
+        const appOrigin = new URL(webviewUrl).origin;
         const navOrigin = new URL(navState.url).origin;
         if (navOrigin !== appOrigin && navState.navigationType === "click") {
           webViewRef.current?.stopLoading();
@@ -83,7 +86,7 @@ export default function AppWebViewScreen() {
         // ignore parse errors
       }
     },
-    [app]
+    [app, webviewUrl]
   );
 
   function handleRefresh() {
@@ -93,7 +96,7 @@ export default function AppWebViewScreen() {
 
   function handleOpenExternal() {
     setShowMenu(false);
-    if (app) Linking.openURL(app.url);
+    if (webviewUrl) Linking.openURL(webviewUrl);
   }
 
   function handleEdit() {
@@ -168,7 +171,7 @@ export default function AppWebViewScreen() {
       {/* WebView */}
       <WebView
         ref={webViewRef}
-        source={{ uri: app.url }}
+        source={{ uri: webviewUrl ?? "" }}
         style={[styles.webview, loadError ? styles.hidden : null]}
         onLoadStart={handleLoadStart}
         onLoadEnd={handleLoadEnd}

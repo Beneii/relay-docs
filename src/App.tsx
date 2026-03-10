@@ -35,105 +35,66 @@ interface LandingStep {
 const FEATURE_CARDS: LandingFeatureCard[] = [
   {
     description:
-      'Grafana, Home Assistant, n8n, CI/CD pipelines, or custom internal tools. If it has a URL and renders in a browser, you can save it as a native app in Relay.',
-    icon: <LayoutDashboard className="w-6 h-6 text-accent" />,
-    title: 'Save any dashboard',
-  },
-  {
-    description:
-      'Each saved dashboard gets a unique webhook token. Send a POST request to trigger a secure push notification.',
+      'Stop polling your own terminals. Use our lightweight SDK to trigger instant mobile alerts when your agents finish a task or your trading bot executes a move.',
     icon: <Bell className="w-6 h-6 text-accent" />,
-    title: 'Webhook alerts',
+    title: 'Push Notifications via SDK',
   },
   {
     description:
-      "Tapping a notification doesn't just open the app — it opens the exact dashboard associated with that alert instantly.",
+      "Don't waste time on Swift or Kotlin. Relay wraps your web-based dashboards in a high-performance native shell with support for haptics and deep-linking.",
     icon: <Smartphone className="w-6 h-6 text-accent" />,
-    title: 'Tap to open',
+    title: 'Native Mobile Runtime',
   },
   {
     description:
-      'No complex SDKs to install. Relay works with any system, script, or service that can send a simple HTTP POST request. Bash, Python, Node, GitHub Actions — it all works.',
+      "Skip the complex OAuth setup. Relay handles the mobile login and injects secure identity headers into your webview requests, so your backend always knows it's you.",
+    icon: <Shield className="w-6 h-6 text-accent" />,
+    title: 'Auth-as-a-Header',
+  },
+  {
+    description:
+      'Add action buttons to your notifications. Approve a deployment or kill a runaway agent directly from your lock screen with a single tap.',
     icon: <Server className="w-6 h-6 text-accent" />,
-    title: 'Universal compatibility',
+    title: 'Interactive Webhooks',
   },
 ] as const;
 
 const USE_CASE_CARDS: LandingUseCaseCard[] = [
   {
     description:
-      'Run agent systems like Obelisk, OpenClaw, or other automations and receive instant alerts when tasks complete or fail.',
+      "You're building a custom dashboard with Claude and Cursor and need it on your phone without the App Store headache.",
+    icon: <Terminal className="w-6 h-6 text-accent" />,
+    title: 'The Vibe-Coder',
+  },
+  {
+    description:
+      "You're running autonomous agents and need a reliable way to get an approve signal while you're away from your desk.",
     icon: <Bot className="w-6 h-6 text-accent" />,
-    tags: ['Obelisk', 'OpenClaw', 'Custom Agents'],
-    title: 'Monitor AI Agents',
-    workflow: [
-      'Agent finishes job',
-      'Webhook sent to Relay',
-      'Phone notification',
-      'Tap → open agent dashboard',
-    ],
+    title: 'The AI Agent Builder',
   },
   {
     description:
-      'Relay works with self-hosted dashboards like Grafana, Home Assistant, Kubernetes dashboards, internal tools, and AI agent control panels.',
+      "You've built a custom Home Assistant panel or a private monitoring tool and want it to feel like a first-class citizen on iOS or Android.",
     icon: <Wrench className="w-6 h-6 text-accent" />,
-    note: 'Keep everything private on your network while still receiving alerts on your phone.',
-    tags: ['Grafana', 'Home Assistant', 'Kubernetes', 'Internal Tools', 'AI Panels'],
-    title: 'Self-Hosted Dashboards',
-  },
-  {
-    description:
-      'Ideal for monitoring CI pipelines, server deployments, automation workflows, and background jobs.',
-    icon: <Activity className="w-6 h-6 text-accent" />,
-    tags: ['CI/CD', 'Deployments', 'Cron Jobs', 'n8n'],
-    title: 'Monitor Automations',
-    workflow: ['Deployment finished', 'Webhook → Relay', 'Phone alert'],
-  },
-  {
-    description:
-      'Receive alerts when trades execute, strategies trigger, or errors occur, then jump straight into the relevant dashboard.',
-    icon: <TrendingUp className="w-6 h-6 text-accent" />,
-    tags: ['Trade Alerts', 'Strategy Triggers', 'Error Monitoring', 'Portfolio Bots'],
-    title: 'Trading Bots & Monitoring',
-    workflow: ['Trade executed', 'Strategy triggered', 'Relay alert sent'],
-  },
-  {
-    description:
-      'Relay loads dashboards inside a mobile webview. For the best experience, ask your AI or frontend tool to generate a narrow-screen version.',
-    icon: <MonitorSmartphone className="w-6 h-6 text-accent" />,
-    quote:
-      '"Create a mobile responsive version of this dashboard UI optimized for a narrow phone screen. Use stacked layouts and large touch targets."',
-    title: 'Best Practice for Dashboards',
-  },
-  {
-    description:
-      "Most self-hosted dashboards aren't publicly accessible. Use Tailscale to securely access your internal dashboards from your phone.",
-    icon: <Network className="w-6 h-6 text-accent" />,
-    title: 'Private Network Access',
-    workflow: [
-      'Self-hosted server',
-      'Tailscale network',
-      'Phone running Relay',
-      'Dashboard loads securely',
-    ],
+    title: 'The Home Automator',
   },
 ] as const;
 
 const HOW_IT_WORKS_STEPS: LandingStep[] = [
   {
-    desc: 'Open the Relay app and add your dashboard URL (e.g., your Grafana instance).',
+    desc: "Provide the URL of your dashboard—whether it's a local tunnel, a Vercel deploy, or a self-hosted instance.",
     step: '01',
-    title: 'Add a URL',
+    title: 'Point to your URL',
   },
   {
-    desc: 'Relay generates a unique, secure webhook token for that specific dashboard.',
+    desc: 'Install @relayapp/sdk and add three lines of code to start triggering notifications from your backend or frontend.',
     step: '02',
-    title: 'Get a Token',
+    title: 'Drop in the SDK',
   },
   {
-    desc: 'Your systems POST to the webhook. You get a push notification instantly.',
+    desc: 'Open the Relay mobile app to see your tool wrapped in a native interface with all your notifications synced.',
     step: '03',
-    title: 'Send a POST',
+    title: 'Get the App',
   },
 ] as const;
 
@@ -199,19 +160,19 @@ export default function App() {
               <RelayIcon size={180} className="text-accent" />
             </motion.div>
             <h1 className="text-5xl md:text-7xl font-bold tracking-tight mb-6 leading-[1.08]">
-              Push notifications for your<br />
-              dashboards and scripts.
+              The mobile runtime for<br />
+              tools you build with AI.
             </h1>
             <p className="text-lg md:text-xl text-text-muted max-w-2xl mx-auto mb-10 leading-relaxed font-normal">
-              Bridge the gap between your critical infrastructure and your phone. Trigger instant mobile alerts from any script, server, or internal tool with a simple webhook.
+              Bridge the gap between your custom dashboards and your phone. Add push notifications, mobile wrapping, and secure auth to your vibe-coded tools in 60 seconds.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
               <Link to="/signup" className="h-12 px-6 rounded-lg bg-accent text-white font-medium flex items-center gap-2 hover:bg-emerald-600 transition-all w-full sm:w-auto justify-center cursor-pointer">
                 <ArrowRight className="w-4 h-4" />
                 Get Started Free
               </Link>
-              <Link to="/pricing" className="h-12 px-6 rounded-lg bg-surface text-text-main font-medium border border-border flex items-center gap-2 hover:bg-surface-hover transition-all w-full sm:w-auto justify-center">
-                View Pricing
+              <Link to="/#api" className="h-12 px-6 rounded-lg bg-surface text-text-main font-medium border border-border flex items-center gap-2 hover:bg-surface-hover transition-all w-full sm:w-auto justify-center">
+                View Documentation
               </Link>
             </div>
           </motion.div>
@@ -240,8 +201,9 @@ export default function App() {
                 <p>Running tests...</p>
                 <p className="text-emerald-500">✓ All tests passed</p>
                 <div className="mt-4 pt-4 border-t border-border">
-                  <p className="text-text-main">curl -X POST relayapp.dev/webhook \</p>
-                  <p className="text-text-main">  -d '&#123;"title": "Build passed"&#125;'</p>
+                  <p className="text-text-main">import &#123; Relay &#125; from '@relayapp/sdk'</p>
+                  <p className="text-text-main">const relay = new Relay(&#123; token: process.env.RELAY_TOKEN &#125;)</p>
+                  <p className="text-text-main">await relay.notify(&#123; title: 'Build passed' &#125;)</p>
                   <motion.p
                     initial={{ opacity: 0 }}
                     animate={{ opacity: [0, 1, 1, 0] }}
@@ -304,7 +266,7 @@ export default function App() {
                         <p className="text-text-muted text-[10px]">now</p>
                       </div>
                       <p className="text-text-main text-sm font-medium leading-snug">Build passed</p>
-                      <p className="text-text-muted text-xs mt-0.5 leading-snug">All tests passed. Tap to open Grafana.</p>
+                      <p className="text-text-muted text-xs mt-0.5 leading-snug">All tests passed. Tap to open your dashboard.</p>
                     </div>
                   </div>
                 </motion.div>
@@ -325,8 +287,8 @@ export default function App() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Everything you need.</h2>
-            <p className="text-text-muted max-w-2xl mx-auto text-lg">Relay is designed to be simple, fast, and stay out of your way until you need it.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Everything your personal tool needs.</h2>
+            <p className="text-text-muted max-w-2xl mx-auto text-lg">Ship vibe-coded dashboards with push, auth, and a native wrapper without touching Swift or Kotlin.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-6">
@@ -358,8 +320,8 @@ export default function App() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Built for builders.</h2>
-            <p className="text-text-muted text-lg max-w-2xl mx-auto">Whether you're running AI agents, managing servers, or monitoring automations — Relay keeps you in the loop.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Who it's for.</h2>
+            <p className="text-text-muted text-lg max-w-2xl mx-auto">Built for developers who build their own tools — vibe-coders, agent operators, and self-hosters.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-2 gap-6 items-stretch">
@@ -429,8 +391,8 @@ export default function App() {
             transition={{ duration: 0.5 }}
             className="text-center mb-16"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">How it works</h2>
-            <p className="text-text-muted text-lg">Three simple steps to connect your infrastructure to your phone.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">From idea to mobile app in minutes.</h2>
+            <p className="text-text-muted text-lg">Point Relay at your dashboard, drop in the SDK, and open the native app—done.</p>
           </motion.div>
 
           <div className="grid md:grid-cols-3 gap-8 mb-16">
@@ -462,20 +424,25 @@ export default function App() {
                 <Code className="w-5 h-5 text-accent" />
               </div>
               <div>
-                <h3 className="text-lg font-semibold">Try it now</h3>
-                <p className="text-sm text-text-muted">Send a notification to your phone with a single command.</p>
+                <h3 className="text-lg font-semibold">Integrate in seconds.</h3>
+                <p className="text-sm text-text-muted">Use @relayapp/sdk to send interactive notifications from any script.</p>
               </div>
             </div>
             <div className="bg-bg rounded-xl p-6 overflow-x-auto border border-border">
               <pre className="font-mono text-sm text-text-muted leading-relaxed">
                 <code>
-                  curl -X POST https://relayapp.dev/webhook \<br />
-                  &nbsp;&nbsp;-H "Content-Type: application/json" \<br />
-                  &nbsp;&nbsp;-d '&#123;<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;"token": "YOUR_WEBHOOK_TOKEN",<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;"title": "Hello from Relay",<br />
-                  &nbsp;&nbsp;&nbsp;&nbsp;"body": "It works."<br />
-                  &nbsp;&nbsp;&#125;'
+{`import { Relay } from '@relayapp/sdk'
+
+const relay = new Relay({
+  token: process.env.RELAY_TOKEN
+})
+
+// Trigger a notification with an action button
+await relay.notify({
+  title: 'Agent task complete',
+  body: 'Obelisk finished the codebase audit.',
+  actions: [{ label: 'View Report', url: 'https://yourdomain.com/api/actions/view' }]
+})`}
                 </code>
               </pre>
             </div>
@@ -564,8 +531,8 @@ export default function App() {
             transition={{ duration: 0.5 }}
             className="max-w-2xl mx-auto text-center"
           >
-            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Ready to get started?</h2>
-            <p className="text-text-muted text-lg mb-8">Create a free account and start receiving push notifications from your infrastructure in minutes.</p>
+            <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Ready to ship your mobile tool?</h2>
+            <p className="text-text-muted text-lg mb-8">Join the wave of developers building their own infra. Create a free account and get your first notification today.</p>
             <Link to="/signup" className="inline-flex h-12 px-8 rounded-lg bg-accent text-white font-medium items-center gap-2 hover:bg-emerald-600 transition-all cursor-pointer">
               <ArrowRight className="w-4 h-4" />
               Get Started Free

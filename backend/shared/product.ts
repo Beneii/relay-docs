@@ -3,7 +3,7 @@ export type Plan = "free" | "pro";
 export const FREE_LIMITS = {
   dashboards: 3,
   devices: 1,
-  notificationsPerMonth: 100,
+  notificationsPerMonth: 500,
 } as const;
 
 export const PRO_LIMITS = {

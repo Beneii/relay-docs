@@ -8,6 +8,7 @@ const Login = lazy(() => import('./pages/Login.tsx'));
 const Signup = lazy(() => import('./pages/Signup.tsx'));
 const Dashboard = lazy(() => import('./pages/Dashboard.tsx'));
 const Pricing = lazy(() => import('./pages/Pricing.tsx'));
+const Docs = lazy(() => import('./pages/Docs.tsx'));
 const ResetPassword = lazy(() => import('./pages/ResetPassword.tsx'));
 const Privacy = lazy(() => import('./pages/Privacy.tsx'));
 const Terms = lazy(() => import('./pages/Terms.tsx'));
@@ -31,6 +32,7 @@ createRoot(document.getElementById('root')!).render(
           <Route path="/signup" element={<Signup />} />
           <Route path="/dashboard" element={<Dashboard />} />
           <Route path="/pricing" element={<Pricing />} />
+          <Route path="/docs" element={<Docs />} />
           <Route path="/reset-password" element={<ResetPassword />} />
           <Route path="/privacy" element={<Privacy />} />
           <Route path="/terms" element={<Terms />} />

@@ -80,6 +80,17 @@ export function usePushRegistration() {
           importance: Notifications.AndroidImportance.HIGH,
           vibrationPattern: [0, 250, 250, 250],
         });
+        await Notifications.setNotificationChannelAsync("relay-warning", {
+          name: "Warnings",
+          importance: Notifications.AndroidImportance.HIGH,
+          vibrationPattern: [0, 500, 200, 500],
+        });
+        await Notifications.setNotificationChannelAsync("relay-critical", {
+          name: "Critical Alerts",
+          importance: Notifications.AndroidImportance.MAX,
+          vibrationPattern: [0, 1000, 500, 1000],
+          bypassDnd: true,
+        });
       }
 
       const supabaseUrl =

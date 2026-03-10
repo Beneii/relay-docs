@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import { RelayIcon } from '../components/RelayLogo';
@@ -39,6 +39,9 @@ function getPasswordStrength(pw: string): { label: string; color: string; percen
 }
 
 export default function Signup() {
+  const [searchParams] = useSearchParams();
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -92,7 +95,7 @@ export default function Signup() {
       email: normalizedEmail,
       password,
       options: {
-        emailRedirectTo: `${window.location.origin}/login?confirmed=true`,
+        emailRedirectTo: `${window.location.origin}/login?confirmed=true${redirectTo !== '/dashboard' ? `&redirect=${encodeURIComponent(redirectTo)}` : ''}`,
       },
     });
 

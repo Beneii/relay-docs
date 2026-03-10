@@ -34,6 +34,7 @@ export default function Login() {
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const justConfirmed = searchParams.get('confirmed') === 'true';
+  const redirectTo = searchParams.get('redirect') || '/dashboard';
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -58,7 +59,7 @@ export default function Login() {
       }
       setLoading(false);
     } else {
-      navigate('/dashboard');
+      navigate(redirectTo);
     }
   };
 
@@ -234,7 +235,7 @@ export default function Login() {
           <div className="mt-6 pt-6 border-t border-border text-center">
             <p className="text-sm text-text-muted">
               Don't have an account?{' '}
-              <Link to="/signup" className="text-accent hover:text-emerald-600 font-medium transition-colors">
+              <Link to={redirectTo !== '/dashboard' ? `/signup?redirect=${encodeURIComponent(redirectTo)}` : '/signup'} className="text-accent hover:text-emerald-600 font-medium transition-colors">
                 Sign up
               </Link>
             </p>

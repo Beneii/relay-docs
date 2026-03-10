@@ -54,6 +54,9 @@ export interface Database {
           heartbeat_interval_minutes: number | null;
           heartbeat_last_seen_at: string | null;
           heartbeat_alerted_at: string | null;
+          custom_icon_url: string | null;
+          custom_app_name: string | null;
+          background_color: string | null;
           created_at: string;
           updated_at: string;
           last_opened_at: string | null;
@@ -70,6 +73,9 @@ export interface Database {
           heartbeat_interval_minutes?: number | null;
           heartbeat_last_seen_at?: string | null;
           heartbeat_alerted_at?: string | null;
+          custom_icon_url?: string | null;
+          custom_app_name?: string | null;
+          background_color?: string | null;
           created_at?: string;
           updated_at?: string;
           last_opened_at?: string | null;
@@ -83,6 +89,9 @@ export interface Database {
           heartbeat_interval_minutes?: number | null;
           heartbeat_last_seen_at?: string | null;
           heartbeat_alerted_at?: string | null;
+          custom_icon_url?: string | null;
+          custom_app_name?: string | null;
+          background_color?: string | null;
           updated_at?: string;
           last_opened_at?: string | null;
         };

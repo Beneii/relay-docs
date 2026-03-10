@@ -352,6 +352,64 @@ async function checkQuotaWarning(
   }
 }
 
+async function fireOutboundWebhooks(
+  // deno-lint-ignore no-explicit-any
+  supabase: any,
+  appId: string,
+  notificationId: string,
+  payload: Record<string, unknown>
+): Promise<void> {
+  const { data: hooks } = await supabase
+    .from("outbound_webhooks")
+    .select("url, secret, provider")
+    .eq("app_id", appId)
+    .eq("enabled", true);
+
+  if (!hooks || hooks.length === 0) return;
+
+  const loopId = notificationId;
+  const bodyStr = JSON.stringify(payload);
+
+  await Promise.allSettled(
+    hooks.map(async (hook: { url: string; secret: string | null; provider: string }) => {
+      const headers: Record<string, string> = {
+        "Content-Type": "application/json",
+        "X-Relay-App": appId,
+        "X-Relay-Provider": hook.provider,
+        "X-Relay-Loop-Id": loopId,
+      };
+
+      // HMAC signature if secret is set
+      if (hook.secret) {
+        const key = await crypto.subtle.importKey(
+          "raw",
+          new TextEncoder().encode(hook.secret),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"]
+        );
+        const sig = await crypto.subtle.sign("HMAC", key, new TextEncoder().encode(bodyStr));
+        headers["X-Relay-Signature"] = "sha256=" + Array.from(new Uint8Array(sig))
+          .map((b) => b.toString(16).padStart(2, "0")).join("");
+      }
+
+      try {
+        const res = await fetch(hook.url, { method: "POST", headers, body: bodyStr });
+        const ok = res.status >= 200 && res.status < 300;
+        await supabase.from("outbound_webhooks").update({
+          last_triggered_at: new Date().toISOString(),
+          last_error: ok ? null : `HTTP ${res.status}`,
+        }).eq("app_id", appId).eq("url", hook.url);
+      } catch (err) {
+        await supabase.from("outbound_webhooks").update({
+          last_triggered_at: new Date().toISOString(),
+          last_error: err instanceof Error ? err.message : "Unknown error",
+        }).eq("app_id", appId).eq("url", hook.url);
+      }
+    })
+  );
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -369,6 +427,11 @@ Deno.serve(async (req) => {
         429,
         { "Retry-After": "60" }
       );
+    }
+
+    // Loop detection: reject if this request originated from Relay's own outbound webhooks
+    if (req.headers.get("x-relay-loop-id")) {
+      return jsonResponse({ error: "Loop detected: relay-originated request rejected" }, 400);
     }
 
     const contentLength = req.headers.get("content-length");
@@ -708,6 +771,18 @@ Deno.serve(async (req) => {
         console.error("Failed to store push tickets:", ticketError);
       }
     }
+
+    // Fire outbound webhooks asynchronously (non-blocking)
+    fireOutboundWebhooks(supabase, app.id, notification.id, {
+      app_id: app.id,
+      notification_id: notification.id,
+      title: sanitizedTitle,
+      body: sanitizedBody || null,
+      severity,
+      channel: channelValue || null,
+      actions: actions || [],
+      timestamp: new Date().toISOString(),
+    }).catch(() => {});
 
     return jsonResponse(
       {

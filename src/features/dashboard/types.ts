@@ -16,6 +16,10 @@ export interface Dashboard {
   webhook_token: string;
   user_id: string;
   icon: string | null;
+  accent_color: string | null;
+  custom_icon_url: string | null;
+  custom_app_name: string | null;
+  background_color: string | null;
   heartbeat_interval_minutes: number | null;
   heartbeat_last_seen_at: string | null;
   heartbeat_alerted_at: string | null;

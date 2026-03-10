@@ -64,7 +64,10 @@ await relay.notify({ title: 'Hello from Relay' })`;
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div className="min-w-0 flex-1">
           <div className="flex items-center gap-2 mb-1 flex-wrap">
-            <h3 className="font-semibold text-lg">{dashboard.name}</h3>
+            {dashboard.custom_icon_url && (
+              <img src={dashboard.custom_icon_url} alt="" className="w-6 h-6 rounded object-contain" />
+            )}
+            <h3 className="font-semibold text-lg">{dashboard.custom_app_name || dashboard.name}</h3>
             {!dashboard.is_owner && (
               <span className="text-xs px-2 py-0.5 rounded-full bg-accent/10 text-accent font-medium">Shared</span>
             )}

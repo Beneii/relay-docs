@@ -4,12 +4,16 @@ export const FREE_LIMITS = {
   dashboards: 3,
   devices: 1,
   notificationsPerMonth: 500,
+  customBranding: false,
+  outboundWebhooks: 0,
 } as const;
 
 export const PRO_LIMITS = {
   dashboards: Number.POSITIVE_INFINITY,
   devices: 10,
   notificationsPerMonth: 10_000,
+  customBranding: true,
+  outboundWebhooks: 5,
 } as const;
 
 export const NOTIFICATION_HISTORY_LIMITS = {

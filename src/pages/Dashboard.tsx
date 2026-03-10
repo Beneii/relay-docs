@@ -9,6 +9,7 @@ import { RecentNotificationsPanel } from "../features/dashboard/RecentNotificati
 import { OnboardingBanner } from "../features/dashboard/OnboardingBanner";
 import { ChannelPreferencesSection } from "../features/dashboard/ChannelPreferencesSection";
 import { DevicesSection } from "../features/dashboard/DevicesSection";
+import { ComposeNotificationModal } from "../features/dashboard/ComposeNotificationModal";
 import { AddDashboardModal, DeleteAccountModal } from "../features/dashboard/modals";
 import { useDashboardPage } from "../features/dashboard/useDashboardPage";
 
@@ -47,9 +48,11 @@ export default function DashboardPage() {
     setNewDashName,
     setNewDashUrl,
     setShowAddModal,
+    setShowComposeModal,
     setShowDeleteModal,
     setShowSuccess,
     showAddModal,
+    showComposeModal,
     showDeleteModal,
     showSuccess,
     testResult,
@@ -209,6 +212,7 @@ export default function DashboardPage() {
               onCopyToken={handleCopyToken}
               onDeleteDashboard={handleDeleteDashboard}
               onShowAddModal={() => setShowAddModal(true)}
+              onShowComposeModal={() => setShowComposeModal(true)}
               onTestWebhook={handleTestWebhook}
               testResult={testResult}
               testingId={testingId}
@@ -236,6 +240,13 @@ export default function DashboardPage() {
           onSubmit={handleAddDashboard}
           onUrlChange={setNewDashUrl}
           url={newDashUrl}
+        />
+      ) : null}
+
+      {showComposeModal ? (
+        <ComposeNotificationModal
+          dashboards={dashboards}
+          onClose={() => setShowComposeModal(false)}
         />
       ) : null}
 

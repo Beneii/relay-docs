@@ -256,6 +256,102 @@ async function generateSignature(token: string, payload: string) {
   return `sha256=${signatureHex}`;
 }
 
+async function sendQuotaEmail(
+  to: string,
+  subject: string,
+  heading: string,
+  message: string,
+) {
+  const resendKey = Deno.env.get("RESEND_API_KEY");
+  if (!resendKey) return;
+
+  const html = `<!DOCTYPE html>
+<html><head><meta charset="UTF-8"></head>
+<body style="margin:0;padding:40px 20px;background:#fafafa;font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,sans-serif;">
+<table width="100%" cellpadding="0" cellspacing="0"><tr><td align="center">
+<table width="560" cellpadding="0" cellspacing="0" style="max-width:560px;width:100%;">
+<tr><td style="background:#fff;border:1px solid #e4e4e7;border-radius:12px;padding:40px;">
+<h1 style="margin:0 0 16px;font-size:22px;font-weight:700;color:#18181b;">${heading}</h1>
+<p style="margin:0 0 16px;font-size:15px;color:#71717a;line-height:1.6;">${message}</p>
+<table cellpadding="0" cellspacing="0" style="margin:24px 0;"><tr><td>
+<a href="https://relayapp.dev/pricing" style="display:inline-block;background-color:#10B981;color:#fff;font-size:14px;font-weight:600;text-decoration:none;padding:12px 28px;border-radius:8px;">Upgrade to Pro</a>
+</td></tr></table>
+</td></tr>
+<tr><td align="center" style="padding-top:24px;">
+<p style="margin:0;font-size:13px;color:#a1a1aa;">Relay — Real-time webhook notifications</p>
+</td></tr>
+</table>
+</td></tr></table>
+</body></html>`;
+
+  await fetch("https://api.resend.com/emails", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${resendKey}`,
+    },
+    body: JSON.stringify({
+      from: "Relay <hello@relayapp.dev>",
+      to,
+      subject,
+      html,
+      text: `${heading} — ${message} Upgrade at https://relayapp.dev/pricing`,
+    }),
+  });
+}
+
+// deno-lint-ignore no-explicit-any
+async function checkQuotaWarning(
+  supabase: any,
+  userId: string,
+  used: number,
+  limit: number,
+  plan: string,
+) {
+  if (plan === "pro") return;
+
+  const percent = (used / limit) * 100;
+  if (percent < 80) return;
+
+  const { data: profile } = await supabase
+    .from("profiles")
+    .select("email, quota_warning_80_sent_at, quota_warning_100_sent_at")
+    .eq("id", userId)
+    .single();
+
+  if (!profile?.email) return;
+
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+
+  if (percent >= 100 && !profile.quota_warning_100_sent_at) {
+    await sendQuotaEmail(
+      profile.email,
+      "Relay notification limit reached",
+      "Notification limit reached",
+      `You've reached your ${limit} notifications/month limit. New notifications are paused until next month or until you upgrade.`,
+    );
+    await supabase
+      .from("profiles")
+      .update({ quota_warning_100_sent_at: new Date().toISOString() })
+      .eq("id", userId);
+  } else if (
+    percent >= 80 &&
+    percent < 100 &&
+    (!profile.quota_warning_80_sent_at || profile.quota_warning_80_sent_at < thirtyDaysAgo)
+  ) {
+    await sendQuotaEmail(
+      profile.email,
+      "You've used 80% of your Relay notifications",
+      "You're approaching your limit",
+      `You've sent ${used} of ${limit} notifications this month. Upgrade to Pro for unlimited notifications.`,
+    );
+    await supabase
+      .from("profiles")
+      .update({ quota_warning_80_sent_at: new Date().toISOString() })
+      .eq("id", userId);
+  }
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -512,6 +608,15 @@ Deno.serve(async (req) => {
         500
       );
     }
+
+    // Fire-and-forget quota warning check
+    checkQuotaWarning(
+      supabase,
+      app.user_id,
+      monthlyNotificationCount + 1,
+      monthlyLimit,
+      plan,
+    ).catch(() => {});
 
     if (eligibleDevices.length === 0) {
       const reason = isChannelMuted

@@ -21,6 +21,7 @@ export function useDashboardPage() {
   const [provisioningProfile, setProvisioningProfile] = useState(false);
   const [notificationsUsed, setNotificationsUsed] = useState(0);
   const [showAddModal, setShowAddModal] = useState(false);
+  const [showComposeModal, setShowComposeModal] = useState(false);
   const [showDeleteModal, setShowDeleteModal] = useState(false);
   const [deleting, setDeleting] = useState(false);
   const [deletingDashboardId, setDeletingDashboardId] = useState<string | null>(null);
@@ -464,9 +465,11 @@ export function useDashboardPage() {
     setNewDashName,
     setNewDashUrl,
     setShowAddModal,
+    setShowComposeModal,
     setShowDeleteModal,
     setShowSuccess,
     showAddModal,
+    showComposeModal,
     showDeleteModal,
     showSuccess,
     testResult,

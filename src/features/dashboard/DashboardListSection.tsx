@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, Check, ChevronDown, Copy, ExternalLink, Plus, Trash2, Webhook, Zap } from "lucide-react";
+import { AlertCircle, Check, ChevronDown, Copy, ExternalLink, Plus, Send, Trash2, Webhook, Zap } from "lucide-react";
 
 import type { Dashboard, DashboardTestResult } from "./types";
 
@@ -11,6 +11,7 @@ interface DashboardListSectionProps {
   onCopyToken: (token: string) => Promise<void>;
   onDeleteDashboard: (id: string) => Promise<void>;
   onShowAddModal: () => void;
+  onShowComposeModal: () => void;
   onTestWebhook: (dashboard: Dashboard) => Promise<void>;
   testResult: DashboardTestResult | null;
   testingId: string | null;
@@ -172,6 +173,7 @@ export function DashboardListSection({
   onCopyToken,
   onDeleteDashboard,
   onShowAddModal,
+  onShowComposeModal,
   onTestWebhook,
   testResult,
   testingId,
@@ -180,13 +182,24 @@ export function DashboardListSection({
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Your Dashboards</h1>
-        <button
-          onClick={onShowAddModal}
-          className="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
-        >
-          <Plus className="w-4 h-4" />
-          Add Dashboard
-        </button>
+        <div className="flex items-center gap-2">
+          {dashboards.length > 0 ? (
+            <button
+              onClick={onShowComposeModal}
+              className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border text-sm font-medium text-text-muted hover:text-text-main hover:bg-surface-hover transition-all cursor-pointer"
+            >
+              <Send className="w-4 h-4" />
+              Compose
+            </button>
+          ) : null}
+          <button
+            onClick={onShowAddModal}
+            className="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+          >
+            <Plus className="w-4 h-4" />
+            Add Dashboard
+          </button>
+        </div>
       </div>
 
       {deleteDashboardError ? (

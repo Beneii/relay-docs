@@ -53,6 +53,9 @@ export function LandingNav({
               {item.label}
             </a>
           ))}
+          <Link to="/docs" className="hover:text-text-main transition-colors">
+            Docs
+          </Link>
           <Link to="/pricing" className="hover:text-text-main transition-colors">
             Pricing
           </Link>
@@ -113,6 +116,13 @@ export function LandingNav({
                   {item.label}
                 </a>
               ))}
+              <Link
+                to="/docs"
+                onClick={onCloseMobileMenu}
+                className="block py-2.5 text-sm font-medium text-text-muted hover:text-text-main transition-colors"
+              >
+                Docs
+              </Link>
               <Link
                 to="/pricing"
                 onClick={onCloseMobileMenu}

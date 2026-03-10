@@ -7,7 +7,9 @@ import { NOTIFICATION_HISTORY_LIMITS, getLimits } from "@shared/product";
 import { supabase } from "../../lib/supabase";
 import {
   Dashboard,
+  DashboardMember,
   DashboardTestResult,
+  DashboardWithSharing,
   DeviceRecord,
   NotificationRecord,
   UserData,
@@ -16,7 +18,11 @@ import { generateWebhookToken, sleep } from "./utils";
 
 export function useDashboardPage() {
   const [user, setUser] = useState<UserData | null>(null);
-  const [dashboards, setDashboards] = useState<Dashboard[]>([]);
+  const [dashboards, setDashboards] = useState<DashboardWithSharing[]>([]);
+  const [members, setMembers] = useState<Record<string, DashboardMember[]>>({});
+  const [showMembersModal, setShowMembersModal] = useState<string | null>(null);
+  const [inviting, setInviting] = useState(false);
+  const [inviteError, setInviteError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [provisioningProfile, setProvisioningProfile] = useState(false);
   const [notificationsUsed, setNotificationsUsed] = useState(0);
@@ -145,8 +151,13 @@ export function useDashboardPage() {
 
       const historyLimit = NOTIFICATION_HISTORY_LIMITS[userData.plan];
 
-      const [dashboardsResult, notificationsResult, historyResult, devicesResult] = await Promise.all([
-        supabase.from("apps").select("*").eq("user_id", session.user.id),
+      const [dashboardsResult, sharedMembershipsResult, notificationsResult, historyResult, devicesResult] = await Promise.all([
+        supabase.from("apps").select("*"),
+        supabase
+          .from("dashboard_members")
+          .select("app_id, role")
+          .eq("user_id", session.user.id)
+          .eq("status", "accepted"),
         supabase
           .from("notifications")
           .select("*", { count: "exact", head: true })
@@ -182,7 +193,35 @@ export function useDashboardPage() {
         console.error("Failed to load dashboards:", dashboardsResult.error);
         nextFetchError = "We couldn't load your dashboards. Please try again.";
       } else {
-        setDashboards(dashboardsResult.data || []);
+        const allApps: Dashboard[] = dashboardsResult.data || [];
+        const membershipMap = new Map(
+          (sharedMembershipsResult.data || []).map((m) => [m.app_id, m.role as "viewer" | "editor"])
+        );
+
+        // For non-owned apps, fetch owner emails
+        const nonOwnedOwnerIds = [...new Set(
+          allApps
+            .filter((a) => a.user_id !== session.user.id)
+            .map((a) => a.user_id)
+        )];
+        const ownerEmailMap = new Map<string, string>();
+        if (nonOwnedOwnerIds.length > 0) {
+          const { data: ownerProfiles } = await supabase
+            .from("profiles")
+            .select("id, email")
+            .in("id", nonOwnedOwnerIds);
+          (ownerProfiles || []).forEach((p: { id: string; email: string }) => {
+            ownerEmailMap.set(p.id, p.email);
+          });
+        }
+
+        const enriched: DashboardWithSharing[] = allApps.map((app) => ({
+          ...app,
+          is_owner: app.user_id === session.user.id,
+          owner_email: app.user_id !== session.user.id ? ownerEmailMap.get(app.user_id) : undefined,
+          member_role: membershipMap.get(app.id),
+        }));
+        setDashboards(enriched);
       }
 
       if (notificationsResult.error) {
@@ -377,6 +416,47 @@ export function useDashboardPage() {
     setDevices((prev) => prev.filter((d) => d.id !== id));
   };
 
+  const fetchMembers = async (appId: string) => {
+    const { data } = await supabase
+      .from("dashboard_members")
+      .select("id, email, role, status, created_at")
+      .eq("app_id", appId)
+      .order("created_at", { ascending: true });
+    setMembers((prev) => ({ ...prev, [appId]: (data || []) as DashboardMember[] }));
+  };
+
+  const handleInviteMember = async (appId: string, email: string, role: string) => {
+    setInviting(true);
+    setInviteError(null);
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const res = await fetch("/api/invite-member", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ appId, email, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to send invite");
+      await fetchMembers(appId);
+    } catch (err: unknown) {
+      setInviteError(err instanceof Error ? err.message : "Failed to send invite");
+    } finally {
+      setInviting(false);
+    }
+  };
+
+  const handleRemoveMember = async (memberId: string, appId: string) => {
+    await supabase.from("dashboard_members").delete().eq("id", memberId);
+    setMembers((prev) => ({
+      ...prev,
+      [appId]: (prev[appId] || []).filter((m) => m.id !== memberId),
+    }));
+  };
+
   const handleManageBilling = async () => {
     if (!user?.stripe_customer_id) {
       navigate("/pricing");
@@ -434,6 +514,15 @@ export function useDashboardPage() {
   return {
     copiedToken,
     dashboards,
+    fetchMembers,
+    handleInviteMember,
+    handleRemoveMember,
+    inviteError,
+    inviting,
+    members,
+    setInviteError,
+    setShowMembersModal,
+    showMembersModal,
     deleteAccountError,
     deleteConfirmation,
     deleteDashboardError,

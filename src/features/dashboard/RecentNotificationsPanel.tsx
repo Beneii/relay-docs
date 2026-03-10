@@ -6,7 +6,7 @@ import { NOTIFICATION_HISTORY_LIMITS } from "@shared/product";
 import { timeAgo } from "@shared/time";
 
 import { NotificationFilters } from "./NotificationFilters";
-import type { Dashboard, NotificationRecord, UserData } from "./types";
+import type { DashboardWithSharing as Dashboard, NotificationRecord, UserData } from "./types";
 
 interface RecentNotificationsPanelProps {
   dashboards: Dashboard[];

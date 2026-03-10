@@ -10,6 +10,7 @@ import { OnboardingBanner } from "../features/dashboard/OnboardingBanner";
 import { ChannelPreferencesSection } from "../features/dashboard/ChannelPreferencesSection";
 import { DevicesSection } from "../features/dashboard/DevicesSection";
 import { ComposeNotificationModal } from "../features/dashboard/ComposeNotificationModal";
+import { MembersModal } from "../features/dashboard/MembersModal";
 import { AddDashboardModal, DeleteAccountModal } from "../features/dashboard/modals";
 import { useDashboardPage } from "../features/dashboard/useDashboardPage";
 
@@ -24,17 +25,23 @@ export default function DashboardPage() {
     deletingDashboardId,
     error,
     fetchError,
+    fetchMembers,
     handleAddDashboard,
     handleCopyToken,
     devices,
     handleDeleteAccount,
     handleDeleteDashboard,
+    handleInviteMember,
     handleManageBilling,
     handleRemoveDevice,
+    handleRemoveMember,
     handleRetryFetch,
     handleSignOut,
     handleTestWebhook,
+    inviteError,
+    inviting,
     loading,
+    members,
     newDashName,
     newDashUrl,
     notificationHistoryLimit,
@@ -45,15 +52,18 @@ export default function DashboardPage() {
     recentNotifications,
     setDeleteAccountConfirmation,
     setError,
+    setInviteError,
     setNewDashName,
     setNewDashUrl,
     setShowAddModal,
     setShowComposeModal,
     setShowDeleteModal,
+    setShowMembersModal,
     setShowSuccess,
     showAddModal,
     showComposeModal,
     showDeleteModal,
+    showMembersModal,
     showSuccess,
     testResult,
     testingId,
@@ -213,6 +223,11 @@ export default function DashboardPage() {
               onDeleteDashboard={handleDeleteDashboard}
               onShowAddModal={() => setShowAddModal(true)}
               onShowComposeModal={() => setShowComposeModal(true)}
+              onShowMembersModal={(appId) => {
+                setShowMembersModal(appId);
+                setInviteError(null);
+                fetchMembers(appId);
+              }}
               onTestWebhook={handleTestWebhook}
               testResult={testResult}
               testingId={testingId}
@@ -249,6 +264,25 @@ export default function DashboardPage() {
           onClose={() => setShowComposeModal(false)}
         />
       ) : null}
+
+      {showMembersModal ? (() => {
+        const app = dashboards.find((d) => d.id === showMembersModal);
+        if (!app) return null;
+        return (
+          <MembersModal
+            appId={app.id}
+            appName={app.name}
+            isOwner={app.is_owner}
+            isPro={user.plan === "pro"}
+            members={members[app.id] || []}
+            inviteError={inviteError}
+            inviting={inviting}
+            onInvite={handleInviteMember}
+            onRemove={handleRemoveMember}
+            onClose={() => setShowMembersModal(null)}
+          />
+        );
+      })() : null}
 
       {showDeleteModal ? (
         <DeleteAccountModal

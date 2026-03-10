@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { AlertCircle, Check, Send } from "lucide-react";
 
-import type { Dashboard } from "./types";
+import type { DashboardWithSharing as Dashboard } from "./types";
 
 interface ComposeNotificationModalProps {
   dashboards: Dashboard[];

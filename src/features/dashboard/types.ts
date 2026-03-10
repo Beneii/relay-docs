@@ -14,10 +14,25 @@ export interface Dashboard {
   name: string;
   url: string;
   webhook_token: string;
+  user_id: string;
   icon: string | null;
   heartbeat_interval_minutes: number | null;
   heartbeat_last_seen_at: string | null;
   heartbeat_alerted_at: string | null;
+}
+
+export interface DashboardWithSharing extends Dashboard {
+  is_owner: boolean;
+  owner_email?: string;
+  member_role?: "viewer" | "editor";
+}
+
+export interface DashboardMember {
+  id: string;
+  email: string;
+  role: "viewer" | "editor";
+  status: "pending" | "accepted" | "declined";
+  created_at: string;
 }
 
 export interface NotificationRecord {

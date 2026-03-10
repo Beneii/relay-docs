@@ -1,7 +1,7 @@
 import { useMemo, useState } from "react";
 import { Clipboard, PlusCircle } from "lucide-react";
 
-import type { Dashboard } from "./types";
+import type { DashboardWithSharing as Dashboard } from "./types";
 
 function usePersistentDismissed(key: string) {
   const [dismissed, setDismissed] = useState(() => {

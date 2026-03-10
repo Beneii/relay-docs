@@ -8,6 +8,7 @@ import { supabase } from "../../lib/supabase";
 import {
   Dashboard,
   DashboardTestResult,
+  DeviceRecord,
   NotificationRecord,
   UserData,
 } from "./types";
@@ -36,6 +37,7 @@ export function useDashboardPage() {
   const [testResult, setTestResult] = useState<DashboardTestResult | null>(null);
   const [reloadKey, setReloadKey] = useState(0);
   const [recentNotifications, setRecentNotifications] = useState<NotificationRecord[]>([]);
+  const [devices, setDevices] = useState<DeviceRecord[]>([]);
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -142,7 +144,7 @@ export function useDashboardPage() {
 
       const historyLimit = NOTIFICATION_HISTORY_LIMITS[userData.plan];
 
-      const [dashboardsResult, notificationsResult, historyResult] = await Promise.all([
+      const [dashboardsResult, notificationsResult, historyResult, devicesResult] = await Promise.all([
         supabase.from("apps").select("*").eq("user_id", session.user.id),
         supabase
           .from("notifications")
@@ -162,6 +164,11 @@ export function useDashboardPage() {
           .eq("user_id", session.user.id)
           .order("created_at", { ascending: false })
           .limit(historyLimit),
+        supabase
+          .from("devices")
+          .select("id, platform, created_at, updated_at")
+          .eq("user_id", session.user.id)
+          .order("created_at", { ascending: false }),
       ]);
 
       if (cancelled) {
@@ -189,6 +196,10 @@ export function useDashboardPage() {
         console.error("Failed to load notification history:", historyResult.error);
       } else {
         setRecentNotifications(historyResult.data || []);
+      }
+
+      if (!devicesResult.error) {
+        setDevices(devicesResult.data || []);
       }
 
       setFetchError(nextFetchError);
@@ -360,6 +371,11 @@ export function useDashboardPage() {
     setDeletingDashboardId(null);
   };
 
+  const handleRemoveDevice = async (id: string) => {
+    await supabase.from("devices").delete().eq("id", id);
+    setDevices((prev) => prev.filter((d) => d.id !== id));
+  };
+
   const handleManageBilling = async () => {
     if (!user?.stripe_customer_id) {
       navigate("/pricing");
@@ -429,6 +445,8 @@ export function useDashboardPage() {
     handleDeleteAccount,
     handleDeleteDashboard,
     handleManageBilling,
+    handleRemoveDevice,
+    devices,
     handleRetryFetch,
     handleSignOut,
     handleTestWebhook,

@@ -34,6 +34,13 @@ export interface NotificationRecord {
   actions_json: Array<{ label: string; url: string; style?: string }> | null;
 }
 
+export interface DeviceRecord {
+  id: string;
+  platform: 'ios' | 'android';
+  created_at: string;
+  updated_at: string;
+}
+
 export interface DashboardTestResult {
   id: string;
   status: "success" | "error";

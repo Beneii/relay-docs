@@ -7,6 +7,7 @@ import { AccountSidebar } from "../features/dashboard/AccountSidebar";
 import { DashboardListSection } from "../features/dashboard/DashboardListSection";
 import { RecentNotificationsPanel } from "../features/dashboard/RecentNotificationsPanel";
 import { OnboardingBanner } from "../features/dashboard/OnboardingBanner";
+import { DevicesSection } from "../features/dashboard/DevicesSection";
 import { AddDashboardModal, DeleteAccountModal } from "../features/dashboard/modals";
 import { useDashboardPage } from "../features/dashboard/useDashboardPage";
 
@@ -23,9 +24,11 @@ export default function DashboardPage() {
     fetchError,
     handleAddDashboard,
     handleCopyToken,
+    devices,
     handleDeleteAccount,
     handleDeleteDashboard,
     handleManageBilling,
+    handleRemoveDevice,
     handleRetryFetch,
     handleSignOut,
     handleTestWebhook,
@@ -173,14 +176,21 @@ export default function DashboardPage() {
         ) : null}
 
         <div className="grid md:grid-cols-3 gap-8">
-          <AccountSidebar
-            notificationLimit={notificationLimit}
-            notificationPercent={notificationPercent}
-            notificationsUsed={notificationsUsed}
-            onManageBilling={handleManageBilling}
-            onShowDeleteModal={() => setShowDeleteModal(true)}
-            user={user}
-          />
+          <div className="space-y-6">
+            <AccountSidebar
+              notificationLimit={notificationLimit}
+              notificationPercent={notificationPercent}
+              notificationsUsed={notificationsUsed}
+              onManageBilling={handleManageBilling}
+              onShowDeleteModal={() => setShowDeleteModal(true)}
+              user={user}
+            />
+            <DevicesSection
+              devices={devices}
+              user={user}
+              onRemoveDevice={handleRemoveDevice}
+            />
+          </div>
 
           <div className="md:col-span-2 space-y-6">
             <OnboardingBanner

@@ -1,5 +1,6 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { createClient } from '@supabase/supabase-js';
+import { getIp, rateLimit } from './_lib/rateLimit.js';
 
 function requireEnv(name: string) {
   const value = process.env[name];
@@ -16,6 +17,10 @@ const supabase = createClient(supabaseUrl, supabaseKey);
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return res.status(405).json({ error: 'Method not allowed' });
+  }
+
+  if (!rateLimit(getIp(req), 60, 60_000)) {
+    return res.status(429).json({ error: 'Rate limit exceeded' });
   }
 
   let body = req.body;

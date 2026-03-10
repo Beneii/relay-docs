@@ -1,8 +1,10 @@
+import { useState, useCallback } from "react";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import type { NotificationRow } from "@/types/database";
 
+const PAGE_SIZE = 30;
 const NOTIFICATIONS_KEY = ["notifications"] as const;
 
 export function useNotifications() {
@@ -26,6 +28,66 @@ export function useNotifications() {
     refetchOnMount: "always",
     staleTime: 5_000,
   });
+}
+
+export function usePaginatedNotifications() {
+  const user = useAuthStore((s) => s.user);
+  const [pages, setPages] = useState<NotificationRow[][]>([]);
+  const [cursor, setCursor] = useState<string | null>(null);
+  const [hasMore, setHasMore] = useState(true);
+  const [loading, setLoading] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const fetchPage = useCallback(async (afterCursor: string | null, reset = false) => {
+    if (!user) return;
+    setLoading(true);
+    try {
+      let query = supabase
+        .from("notifications")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false })
+        .limit(PAGE_SIZE);
+
+      if (afterCursor) {
+        query = query.lt("created_at", afterCursor);
+      }
+
+      const { data, error } = await query;
+      if (error) throw error;
+      const rows = (data as NotificationRow[]) ?? [];
+
+      if (reset) {
+        setPages([rows]);
+      } else {
+        setPages((prev) => [...prev, rows]);
+      }
+
+      setHasMore(rows.length === PAGE_SIZE);
+      if (rows.length > 0) {
+        setCursor(rows[rows.length - 1].created_at);
+      }
+    } finally {
+      setLoading(false);
+    }
+  }, [user]);
+
+  const refresh = useCallback(async () => {
+    setRefreshing(true);
+    setCursor(null);
+    await fetchPage(null, true);
+    setRefreshing(false);
+  }, [fetchPage]);
+
+  const loadMore = useCallback(() => {
+    if (!loading && hasMore) {
+      fetchPage(cursor);
+    }
+  }, [cursor, fetchPage, hasMore, loading]);
+
+  const notifications = pages.flat();
+
+  return { notifications, loading, refreshing, hasMore, refresh, loadMore, fetchPage };
 }
 
 export function useUnreadCount() {

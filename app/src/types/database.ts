@@ -51,6 +51,9 @@ export interface Database {
           accent_color: string | null;
           notifications_enabled: boolean;
           webhook_token: string;
+          heartbeat_interval_minutes: number | null;
+          heartbeat_last_seen_at: string | null;
+          heartbeat_alerted_at: string | null;
           created_at: string;
           updated_at: string;
           last_opened_at: string | null;
@@ -64,6 +67,9 @@ export interface Database {
           accent_color?: string | null;
           notifications_enabled?: boolean;
           webhook_token: string;
+          heartbeat_interval_minutes?: number | null;
+          heartbeat_last_seen_at?: string | null;
+          heartbeat_alerted_at?: string | null;
           created_at?: string;
           updated_at?: string;
           last_opened_at?: string | null;
@@ -74,6 +80,9 @@ export interface Database {
           icon?: string | null;
           accent_color?: string | null;
           notifications_enabled?: boolean;
+          heartbeat_interval_minutes?: number | null;
+          heartbeat_last_seen_at?: string | null;
+          heartbeat_alerted_at?: string | null;
           updated_at?: string;
           last_opened_at?: string | null;
         };
@@ -110,6 +119,10 @@ export interface Database {
           body: string | null;
           event_type: string | null;
           metadata_json: Record<string, unknown> | null;
+          severity: "info" | "warning" | "critical" | null;
+          channel: string | null;
+          pushed_count: number | null;
+          actions_json: Array<{ label: string; url: string; style?: string }> | null;
           read_at: string | null;
           created_at: string;
         };
@@ -121,6 +134,10 @@ export interface Database {
           body?: string | null;
           event_type?: string | null;
           metadata_json?: Record<string, unknown> | null;
+          severity?: "info" | "warning" | "critical" | null;
+          channel?: string | null;
+          pushed_count?: number | null;
+          actions_json?: Array<{ label: string; url: string; style?: string }> | null;
           read_at?: string | null;
           created_at?: string;
         };

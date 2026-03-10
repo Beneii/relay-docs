@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import {
   View,
   Text,
@@ -6,14 +6,13 @@ import {
   Pressable,
   StyleSheet,
   RefreshControl,
+  ActivityIndicator,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
-import { router } from "expo-router";
 import {
-  useNotifications,
-  useMarkAsRead,
   useMarkAllAsRead,
   useUnreadCount,
+  usePaginatedNotifications,
 } from "@/hooks/useNotifications";
 import { useApps } from "@/hooks/useApps";
 import { useProfile } from "@/hooks/useProfile";
@@ -26,6 +25,34 @@ import type { NotificationRow } from "@/types/database";
 
 const FREE_VISIBLE_LIMIT = 20;
 
+type Severity = "info" | "warning" | "critical" | null;
+
+function SeverityBadge({ severity }: { severity: Severity }) {
+  if (!severity || severity === "info") return null;
+
+  const { colors } = useTheme();
+  const config =
+    severity === "critical"
+      ? { label: "Critical", bg: colors.danger + "20", text: colors.danger }
+      : { label: "Warning", bg: "#F59E0B20", text: "#F59E0B" };
+
+  return (
+    <View style={[styles.badge, { backgroundColor: config.bg }]}>
+      <Text style={[styles.badgeText, { color: config.text }]}>{config.label}</Text>
+    </View>
+  );
+}
+
+function ChannelTag({ channel }: { channel: string | null }) {
+  const { colors } = useTheme();
+  if (!channel) return null;
+  return (
+    <View style={[styles.badge, { backgroundColor: colors.surfaceElevated, borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border }]}>
+      <Text style={[styles.badgeText, { color: colors.textTertiary }]}>#{channel}</Text>
+    </View>
+  );
+}
+
 function NotificationItem({
   notification,
   appName,
@@ -34,48 +61,31 @@ function NotificationItem({
   appName: string | undefined;
 }) {
   const { colors } = useTheme();
-  const markAsRead = useMarkAsRead();
+  const [expanded, setExpanded] = useState(false);
   const isUnread = !notification.read_at;
-
-  function handlePress() {
-    if (isUnread) {
-      markAsRead.mutate(notification.id);
-    }
-    router.push({
-      pathname: "/app/[id]",
-      params: { id: notification.app_id },
-    });
-  }
 
   return (
     <Pressable
       style={[
         styles.notifCard,
         {
-          backgroundColor: isUnread
-            ? colors.accentSubtle
-            : colors.surfaceElevated,
+          backgroundColor: isUnread ? colors.accentSubtle : colors.surfaceElevated,
           borderColor: colors.border,
         },
       ]}
-      onPress={handlePress}
+      onPress={() => setExpanded((v) => !v)}
     >
       <View style={styles.notifHeader}>
         <View style={styles.notifTitleRow}>
           {isUnread ? (
-            <View
-              style={[styles.unreadDot, { backgroundColor: colors.accent }]}
-            />
+            <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
           ) : null}
           <Text
             style={[
               styles.notifTitle,
-              {
-                color: colors.textPrimary,
-                fontWeight: isUnread ? "600" : "400",
-              },
+              { color: colors.textPrimary, fontWeight: isUnread ? "600" : "400" },
             ]}
-            numberOfLines={1}
+            numberOfLines={expanded ? undefined : 1}
           >
             {notification.title}
           </Text>
@@ -84,31 +94,32 @@ function NotificationItem({
           {timeAgo(notification.created_at)}
         </Text>
       </View>
+
       {notification.body ? (
         <Text
           style={[styles.notifBody, { color: colors.textSecondary }]}
-          numberOfLines={2}
+          numberOfLines={expanded ? undefined : 2}
         >
           {notification.body}
         </Text>
       ) : null}
-      {appName ? (
-        <Text style={[styles.notifApp, { color: colors.textTertiary }]}>
-          {appName}
-        </Text>
-      ) : null}
+
+      {/* Metadata row: app, severity badge, channel tag */}
+      <View style={styles.metaRow}>
+        {appName ? (
+          <Text style={[styles.notifApp, { color: colors.textTertiary }]}>{appName}</Text>
+        ) : null}
+        <SeverityBadge severity={notification.severity} />
+        <ChannelTag channel={notification.channel} />
+      </View>
     </Pressable>
   );
 }
 
 export default function NotificationsScreen() {
   const { colors } = useTheme();
-  const {
-    data: notifications,
-    isLoading,
-    isFetching,
-    refetch,
-  } = useNotifications();
+  const { notifications, loading, refreshing, hasMore, refresh, loadMore, fetchPage } =
+    usePaginatedNotifications();
   const { data: apps } = useApps();
   const { data: profile } = useProfile();
   const { data: unreadCount } = useUnreadCount();
@@ -117,18 +128,21 @@ export default function NotificationsScreen() {
   const isPro = profile?.plan === "pro";
   const appMap = new Map(apps?.map((a) => [a.id, a.name]) ?? []);
 
+  // Initial load
+  useEffect(() => {
+    fetchPage(null, true);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   const visibleNotifications = useMemo(() => {
-    if (!notifications) return [];
     if (isPro) return notifications;
     return notifications.slice(0, FREE_VISIBLE_LIMIT);
   }, [notifications, isPro]);
 
-  const hasMoreForFree =
-    !isPro &&
-    notifications != null &&
-    notifications.length > FREE_VISIBLE_LIMIT;
+  const hasMoreForFree = !isPro && notifications.length > FREE_VISIBLE_LIMIT;
+  const showLoadMore = isPro && hasMore;
 
-  if (isLoading) return <LoadingScreen />;
+  if (loading && notifications.length === 0) return <LoadingScreen />;
 
   return (
     <SafeAreaView
@@ -136,9 +150,7 @@ export default function NotificationsScreen() {
       edges={["top"]}
     >
       <View style={styles.header}>
-        <Text style={[styles.title, { color: colors.textPrimary }]}>
-          Alerts
-        </Text>
+        <Text style={[styles.title, { color: colors.textPrimary }]}>Alerts</Text>
         {(unreadCount ?? 0) > 0 ? (
           <Pressable
             onPress={() => markAllAsRead.mutate()}
@@ -162,7 +174,7 @@ export default function NotificationsScreen() {
         )}
         contentContainerStyle={[
           styles.list,
-          (!notifications || notifications.length === 0) && styles.listEmpty,
+          visibleNotifications.length === 0 && styles.listEmpty,
         ]}
         ListEmptyComponent={
           <EmptyState
@@ -177,12 +189,24 @@ export default function NotificationsScreen() {
               compact
               message="Upgrade to Pro for full notification history"
             />
+          ) : showLoadMore ? (
+            <Pressable onPress={loadMore} style={styles.loadMore}>
+              {loading ? (
+                <ActivityIndicator color={colors.accent} />
+              ) : (
+                <Text style={[styles.loadMoreText, { color: colors.accent }]}>
+                  Load more
+                </Text>
+              )}
+            </Pressable>
           ) : null
         }
+        onEndReached={isPro ? loadMore : undefined}
+        onEndReachedThreshold={0.3}
         refreshControl={
           <RefreshControl
-            refreshing={isFetching}
-            onRefresh={refetch}
+            refreshing={refreshing}
+            onRefresh={refresh}
             tintColor={colors.accent}
           />
         }
@@ -257,5 +281,29 @@ const styles = StyleSheet.create({
   notifApp: {
     fontSize: fontSizes.xs,
     marginTop: 2,
+  },
+  metaRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    gap: 6,
+    flexWrap: "wrap",
+    marginTop: 2,
+  },
+  badge: {
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 4,
+  },
+  badgeText: {
+    fontSize: 10,
+    fontWeight: "600",
+  },
+  loadMore: {
+    alignItems: "center",
+    paddingVertical: spacing.md,
+  },
+  loadMoreText: {
+    fontSize: fontSizes.sm,
+    fontWeight: "500",
   },
 });

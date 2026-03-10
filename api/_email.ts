@@ -268,3 +268,33 @@ export async function sendPaymentFailedEmail(to: string) {
     text: 'We couldn\'t process your latest payment for Relay Pro. Please update your payment method at https://relayapp.dev/dashboard to keep your Pro features.',
   });
 }
+
+export async function sendInviteEmail(
+  to: string,
+  inviterName: string,
+  appName: string,
+  inviteToken: string,
+  hasAccount: boolean,
+) {
+  const acceptUrl = `https://relayapp.dev/invite?token=${inviteToken}`;
+  const accountNote = hasAccount
+    ? ''
+    : paragraph('You\'ll need to create a free Relay account to accept this invitation.');
+
+  const html = layout(`
+    ${heading(`You're invited to "${appName}"`)}
+    ${paragraph(`<strong class="email-strong" style="color:${L.text};">${inviterName}</strong> has invited you to access their dashboard "<strong class="email-strong" style="color:${L.text};">${appName}</strong>" on Relay. Accept to start receiving push notifications for this dashboard.`)}
+    ${accountNote}
+    ${button('Accept Invite', acceptUrl)}
+    ${divider()}
+    ${paragraph('If you didn\'t expect this invitation, you can safely ignore this email.')}
+  `);
+
+  return resend.emails.send({
+    from: FROM_EMAIL,
+    to,
+    subject: `${inviterName} invited you to ${appName} on Relay`,
+    html,
+    text: `${inviterName} invited you to "${appName}" on Relay. Accept the invite: ${acceptUrl}`,
+  });
+}

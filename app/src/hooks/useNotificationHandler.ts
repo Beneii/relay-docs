@@ -1,6 +1,7 @@
 import { useEffect } from "react";
 import { Platform } from "react-native";
 import * as Notifications from "expo-notifications";
+import * as Crypto from "expo-crypto";
 import { router } from "expo-router";
 import { useNavigationStore } from "@/stores/navigationStore";
 
@@ -39,20 +40,35 @@ export function useNotificationHandler() {
         const appId = data?.appId as string | undefined;
         const deepLinkUrl = data?.deepLinkUrl as string | undefined;
         const actions = data?.actions as Array<{ label: string; url: string; style?: string }> | undefined;
+        const callbackToken = data?.callbackToken as string | undefined;
         const actionIdentifier = response.actionIdentifier;
 
         if (actionIdentifier !== Notifications.DEFAULT_ACTION_IDENTIFIER && actions) {
           const actionIndex = parseInt(actionIdentifier.replace("action_", ""), 10);
           const action = !Number.isNaN(actionIndex) ? actions[actionIndex] : undefined;
           if (action?.url) {
+            const payload = {
+              notificationId: data?.notificationId,
+              actionLabel: action.label,
+              actionIndex,
+            };
+            const body = JSON.stringify(payload);
+            const headers: Record<string, string> = { "Content-Type": "application/json" };
+            if (callbackToken) {
+              try {
+                const sig = await Crypto.digestStringAsync(
+                  Crypto.CryptoDigestAlgorithm.SHA256,
+                  callbackToken + body
+                );
+                headers["x-relay-signature"] = `sha256=${sig}`;
+              } catch {
+                // ignore
+              }
+            }
             fetch(action.url, {
               method: "POST",
-              headers: { "Content-Type": "application/json" },
-              body: JSON.stringify({
-                notificationId: data?.notificationId,
-                actionLabel: action.label,
-                actionIndex,
-              }),
+              headers,
+              body,
             }).catch(() => {
               // Ignore failure — action endpoint may be offline
             });

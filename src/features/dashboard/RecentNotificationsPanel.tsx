@@ -1,5 +1,5 @@
 import { Link } from "react-router-dom";
-import { Bell } from "lucide-react";
+import { Bell, Dot } from "lucide-react";
 
 import { NOTIFICATION_HISTORY_LIMITS } from "@shared/product";
 import { timeAgo } from "@shared/time";
@@ -63,7 +63,21 @@ export function RecentNotificationsPanel({
                   </div>
                   <div className="min-w-0 flex-1">
                     <div className="flex items-baseline justify-between gap-3 mb-0.5">
-                      <p className="text-sm font-semibold truncate">{notification.title}</p>
+                      <div className="flex items-center gap-2 min-w-0">
+                        <p className="text-sm font-semibold truncate">{notification.title}</p>
+                        {notification.severity && notification.severity !== "info" ? (
+                          <span
+                            className={`inline-flex items-center gap-1 text-[11px] font-semibold uppercase tracking-wide ${
+                              notification.severity === "critical"
+                                ? "text-red-500"
+                                : "text-amber-500"
+                            }`}
+                          >
+                            <Dot className="w-4 h-4" />
+                            {notification.severity}
+                          </span>
+                        ) : null}
+                      </div>
                       <span className="text-xs text-text-muted shrink-0 tabular-nums">
                         {timeAgo(notification.created_at)}
                       </span>
@@ -73,7 +87,27 @@ export function RecentNotificationsPanel({
                         {truncatedBody}
                       </p>
                     ) : null}
-                    <p className="text-xs text-text-muted mt-1 opacity-70">{appName}</p>
+                    <div className="flex flex-wrap items-center gap-2 mt-1 text-xs text-text-muted opacity-80">
+                      <span>{appName}</span>
+                      {notification.channel ? (
+                        <span className="px-2 py-0.5 border border-border rounded-full text-[11px] uppercase tracking-wide bg-surface-hover">
+                          #{notification.channel}
+                        </span>
+                      ) : null}
+                      {notification.actions_json && notification.actions_json.length > 0 ? (
+                        <span className="px-2 py-0.5 border border-border rounded-full text-[11px] text-text-muted bg-surface-hover">
+                          {notification.actions_json.length} action
+                          {notification.actions_json.length > 1 ? "s" : ""}
+                        </span>
+                      ) : null}
+                    </div>
+                    <p className="text-xs text-text-muted mt-2">
+                      {notification.pushed_count && notification.pushed_count > 0
+                        ? `Pushed to ${notification.pushed_count} device${
+                            notification.pushed_count === 1 ? "" : "s"
+                          }`
+                        : "No devices registered"}
+                    </p>
                   </div>
                 </div>
               );

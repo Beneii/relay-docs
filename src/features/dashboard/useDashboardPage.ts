@@ -156,7 +156,9 @@ export function useDashboardPage() {
           ),
         supabase
           .from("notifications")
-          .select("id, app_id, title, body, created_at, read_at, event_type")
+          .select(
+            "id, app_id, title, body, created_at, read_at, event_type, severity, channel, pushed_count, actions_json"
+          )
           .eq("user_id", session.user.id)
           .order("created_at", { ascending: false })
           .limit(historyLimit),

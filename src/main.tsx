@@ -2,6 +2,7 @@ import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import './index.css';
+import { ErrorBoundary } from './components/ErrorBoundary';
 
 const App = lazy(() => import('./App.tsx'));
 const Login = lazy(() => import('./pages/Login.tsx'));
@@ -24,6 +25,7 @@ function RouteLoader() {
 
 createRoot(document.getElementById('root')!).render(
   <StrictMode>
+    <ErrorBoundary>
     <BrowserRouter>
       <Suspense fallback={<RouteLoader />}>
         <Routes>
@@ -40,5 +42,6 @@ createRoot(document.getElementById('root')!).render(
         </Routes>
       </Suspense>
     </BrowserRouter>
+    </ErrorBoundary>
   </StrictMode>,
 );

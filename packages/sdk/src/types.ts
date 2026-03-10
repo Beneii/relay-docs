@@ -41,4 +41,5 @@ export interface NotifyResponse {
   success: boolean;
   notificationId: string;
   pushed: number;
+  signature?: string;
 }

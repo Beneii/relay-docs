@@ -223,6 +223,22 @@ function validateActions(value: unknown): RelayAction[] | null {
   });
 }
 
+async function generateSignature(token: string, payload: string) {
+  const encoder = new TextEncoder();
+  const key = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(token),
+    { name: "HMAC", hash: "SHA-256" },
+    false,
+    ["sign"]
+  );
+  const signatureBuffer = await crypto.subtle.sign("HMAC", key, encoder.encode(payload));
+  const signatureHex = Array.from(new Uint8Array(signatureBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `sha256=${signatureHex}`;
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { status: 204, headers: corsHeaders });
@@ -417,6 +433,28 @@ Deno.serve(async (req) => {
       deepLinkUrl = trimmed;
     }
 
+    const signature = await generateSignature(webhookToken, rawBody);
+    const { data: devices } = await supabase
+      .from("devices")
+      .select("expo_push_token")
+      .eq("user_id", app.user_id);
+
+    const pushedCount = devices?.length ?? 0;
+    const callbackTokenBytes = await crypto.subtle.sign(
+      "HMAC",
+      await crypto.subtle.importKey(
+        "raw",
+        new TextEncoder().encode(webhookToken),
+        { name: "HMAC", hash: "SHA-256" },
+        false,
+        ["sign"]
+      ),
+      new TextEncoder().encode(notification.id)
+    );
+    const callbackToken = Array.from(new Uint8Array(callbackTokenBytes))
+      .map((b) => b.toString(16).padStart(2, "0"))
+      .join("");
+
     // Store notification
     const { data: notification, error: notifError } = await supabase
       .from("notifications")
@@ -431,6 +469,8 @@ Deno.serve(async (req) => {
         channel: channelValue,
         actions_json: actions,
         deep_link_url: deepLinkUrl,
+        request_signature: signature,
+        pushed_count: pushedCount,
       })
       .select("id")
       .single();
@@ -443,18 +483,13 @@ Deno.serve(async (req) => {
       );
     }
 
-    // Fetch device tokens
-    const { data: devices } = await supabase
-      .from("devices")
-      .select("expo_push_token")
-      .eq("user_id", app.user_id);
-
     if (!devices || devices.length === 0) {
       return jsonResponse(
         {
           success: true,
           notificationId: notification.id,
           pushed: 0,
+          signature,
           message: "Stored but no devices registered",
         },
         200
@@ -476,6 +511,7 @@ Deno.serve(async (req) => {
         channel: channelValue,
         actions: actions,
         deepLinkUrl,
+        callbackToken,
       },
     }));
 
@@ -522,6 +558,7 @@ Deno.serve(async (req) => {
         success: true,
         notificationId: notification.id,
         pushed: devices.length,
+        signature,
       },
       200
     );

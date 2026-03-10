@@ -25,6 +25,10 @@ export interface NotificationRecord {
   created_at: string;
   read_at: string | null;
   event_type: string | null;
+  severity: "info" | "warning" | "critical" | null;
+  channel: string | null;
+  pushed_count: number | null;
+  actions_json: Array<{ label: string; url: string; style?: string }> | null;
 }
 
 export interface DashboardTestResult {

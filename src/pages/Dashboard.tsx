@@ -7,6 +7,7 @@ import { AccountSidebar } from "../features/dashboard/AccountSidebar";
 import { DashboardListSection } from "../features/dashboard/DashboardListSection";
 import { RecentNotificationsPanel } from "../features/dashboard/RecentNotificationsPanel";
 import { OnboardingBanner } from "../features/dashboard/OnboardingBanner";
+import { ChannelPreferencesSection } from "../features/dashboard/ChannelPreferencesSection";
 import { DevicesSection } from "../features/dashboard/DevicesSection";
 import { AddDashboardModal, DeleteAccountModal } from "../features/dashboard/modals";
 import { useDashboardPage } from "../features/dashboard/useDashboardPage";
@@ -190,6 +191,7 @@ export default function DashboardPage() {
               user={user}
               onRemoveDevice={handleRemoveDevice}
             />
+            <ChannelPreferencesSection userId={user.id} />
           </div>
 
           <div className="md:col-span-2 space-y-6">

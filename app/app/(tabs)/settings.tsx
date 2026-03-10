@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from "react";
+import React, { useCallback, useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -79,6 +79,9 @@ export default function SettingsScreen() {
   const { data: profile } = useProfile();
   const { data: apps } = useApps();
   const [notifStatus, setNotifStatus] = useState<string>("checking...");
+  const [quietEnabled, setQuietEnabled] = useState(false);
+  const [quietStart, setQuietStart] = useState("23:00");
+  const [quietEnd, setQuietEnd] = useState("07:00");
 
   const { data: monthlyNotifCount } = useMonthlyNotificationCount();
 
@@ -111,6 +114,74 @@ export default function SettingsScreen() {
       setNotifStatus(status === "granted" ? "Enabled" : "Disabled");
     });
   }, []);
+
+  // Load quiet hours from the current device record
+  useEffect(() => {
+    if (!user || Platform.OS === "web") return;
+    (async () => {
+      try {
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+        if (!projectId || projectId === "YOUR_EAS_PROJECT_ID") return;
+        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        const { data } = await supabase
+          .from("devices")
+          .select("quiet_start, quiet_end")
+          .eq("user_id", user.id)
+          .eq("expo_push_token", tokenData.data)
+          .maybeSingle();
+        if (data) {
+          if (data.quiet_start && data.quiet_end) {
+            setQuietEnabled(true);
+            setQuietStart(data.quiet_start.slice(0, 5));
+            setQuietEnd(data.quiet_end.slice(0, 5));
+          }
+        }
+      } catch (err) {
+        console.error("Failed to load quiet hours:", err);
+      }
+    })();
+  }, [user]);
+
+  const saveQuietHours = useCallback(
+    async (enabled: boolean, start: string, end: string) => {
+      if (!user || Platform.OS === "web") return;
+      try {
+        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+        if (!projectId || projectId === "YOUR_EAS_PROJECT_ID") return;
+        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        await supabase
+          .from("devices")
+          .update({
+            quiet_start: enabled ? start : null,
+            quiet_end: enabled ? end : null,
+          })
+          .eq("user_id", user.id)
+          .eq("expo_push_token", tokenData.data);
+      } catch (err) {
+        console.error("Failed to save quiet hours:", err);
+      }
+    },
+    [user]
+  );
+
+  function handleToggleQuietHours() {
+    const newEnabled = !quietEnabled;
+    setQuietEnabled(newEnabled);
+    saveQuietHours(newEnabled, quietStart, quietEnd);
+  }
+
+  function cycleQuietTime(current: string, field: "start" | "end") {
+    const [h] = current.split(":").map(Number);
+    const nextHour = (h + 1) % 24;
+    const newTime = `${String(nextHour).padStart(2, "0")}:00`;
+    if (field === "start") {
+      setQuietStart(newTime);
+      if (quietEnabled) saveQuietHours(true, newTime, quietEnd);
+    } else {
+      setQuietEnd(newTime);
+      if (quietEnabled) saveQuietHours(true, quietStart, newTime);
+    }
+  }
 
   function handleThemeChange() {
     const currentIndex = THEME_OPTIONS.findIndex((o) => o.value === themeMode);
@@ -322,6 +393,89 @@ export default function SettingsScreen() {
           </View>
         </View>
 
+        {/* Quiet Hours section */}
+        {Platform.OS !== "web" ? (
+          <View style={styles.section}>
+            <Text style={[styles.sectionTitle, { color: colors.textTertiary }]}>
+              Quiet Hours
+            </Text>
+            <View
+              style={[
+                styles.sectionCard,
+                { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
+              ]}
+            >
+              <Pressable
+                style={[styles.row, { borderColor: colors.border }]}
+                onPress={handleToggleQuietHours}
+              >
+                <View style={styles.rowLeft}>
+                  <Feather name="moon" size={18} color={colors.textSecondary} />
+                  <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>
+                    Enable quiet hours
+                  </Text>
+                </View>
+                <View
+                  style={[
+                    styles.toggle,
+                    { backgroundColor: quietEnabled ? colors.accent : colors.border },
+                  ]}
+                >
+                  <View
+                    style={[
+                      styles.toggleKnob,
+                      { transform: [{ translateX: quietEnabled ? 18 : 2 }] },
+                    ]}
+                  />
+                </View>
+              </Pressable>
+              {quietEnabled ? (
+                <>
+                  <Pressable
+                    style={[styles.row, { borderColor: colors.border }]}
+                    onPress={() => cycleQuietTime(quietStart, "start")}
+                  >
+                    <View style={styles.rowLeft}>
+                      <Feather name="sunset" size={18} color={colors.textSecondary} />
+                      <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>
+                        Start
+                      </Text>
+                    </View>
+                    <View style={styles.rowRight}>
+                      <Text style={[styles.rowValue, { color: colors.textSecondary }]}>
+                        {quietStart}
+                      </Text>
+                      <Feather name="chevron-right" size={16} color={colors.textTertiary} />
+                    </View>
+                  </Pressable>
+                  <Pressable
+                    style={[styles.row, { borderColor: colors.border }]}
+                    onPress={() => cycleQuietTime(quietEnd, "end")}
+                  >
+                    <View style={styles.rowLeft}>
+                      <Feather name="sunrise" size={18} color={colors.textSecondary} />
+                      <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>
+                        End
+                      </Text>
+                    </View>
+                    <View style={styles.rowRight}>
+                      <Text style={[styles.rowValue, { color: colors.textSecondary }]}>
+                        {quietEnd}
+                      </Text>
+                      <Feather name="chevron-right" size={16} color={colors.textTertiary} />
+                    </View>
+                  </Pressable>
+                  <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>
+                    <Text style={[{ fontSize: fontSizes.xs, color: colors.textTertiary }]}>
+                      Critical notifications will still break through quiet hours.
+                    </Text>
+                  </View>
+                </>
+              ) : null}
+            </View>
+          </View>
+        ) : null}
+
         <View style={styles.section}>
           <Pressable
             style={[
@@ -492,6 +646,23 @@ const styles = StyleSheet.create({
   signOutText: {
     fontSize: fontSizes.md,
     fontWeight: "600",
+  },
+  toggle: {
+    width: 40,
+    height: 24,
+    borderRadius: 12,
+    justifyContent: "center",
+  },
+  toggleKnob: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    backgroundColor: "#FFFFFF",
+    shadowColor: "#000",
+    shadowOffset: { width: 0, height: 1 },
+    shadowOpacity: 0.15,
+    shadowRadius: 2,
+    elevation: 2,
   },
   version: {
     fontSize: fontSizes.xs,

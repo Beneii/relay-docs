@@ -223,6 +223,17 @@ function validateActions(value: unknown): RelayAction[] | null {
   });
 }
 
+function isInQuietHours(quietStart: string | null, quietEnd: string | null, now: Date): boolean {
+  if (!quietStart || !quietEnd) return false;
+  const [sh, sm] = quietStart.split(":").map(Number);
+  const [eh, em] = quietEnd.split(":").map(Number);
+  const nowMins = now.getUTCHours() * 60 + now.getUTCMinutes();
+  const startMins = sh * 60 + sm;
+  const endMins = eh * 60 + em;
+  if (startMins <= endMins) return nowMins >= startMins && nowMins < endMins;
+  return nowMins >= startMins || nowMins < endMins; // overnight wrap
+}
+
 async function generateSignature(token: string, payload: string) {
   const encoder = new TextEncoder();
   const key = await crypto.subtle.importKey(
@@ -434,12 +445,87 @@ Deno.serve(async (req) => {
     }
 
     const signature = await generateSignature(webhookToken, rawBody);
-    const { data: devices } = await supabase
-      .from("devices")
-      .select("expo_push_token")
-      .eq("user_id", app.user_id);
 
-    const pushedCount = devices?.length ?? 0;
+    // Fetch devices with quiet hours, and channel preferences in parallel
+    const [devicesResult, channelPrefResult] = await Promise.all([
+      supabase
+        .from("devices")
+        .select("expo_push_token, quiet_start, quiet_end")
+        .eq("user_id", app.user_id),
+      channelValue
+        ? supabase
+            .from("channel_preferences")
+            .select("muted")
+            .eq("user_id", app.user_id)
+            .eq("channel", channelValue)
+            .maybeSingle()
+        : Promise.resolve({ data: null, error: null }),
+    ]);
+
+    const devices = devicesResult.data;
+
+    // If the user has muted this channel, still store the notification but skip push
+    const isChannelMuted = channelPrefResult.data?.muted === true;
+
+    // Filter devices by quiet hours (critical bypasses quiet hours)
+    const now = new Date();
+    type DeviceRow = { expo_push_token: string; quiet_start: string | null; quiet_end: string | null };
+    const eligibleDevices: DeviceRow[] = [];
+    if (devices && !isChannelMuted) {
+      for (const d of devices as DeviceRow[]) {
+        if (severity === "critical" || !isInQuietHours(d.quiet_start, d.quiet_end, now)) {
+          eligibleDevices.push(d);
+        }
+      }
+    }
+
+    // Store notification (always, even if no devices will receive push)
+    const { data: notification, error: notifError } = await supabase
+      .from("notifications")
+      .insert({
+        user_id: app.user_id,
+        app_id: app.id,
+        title: sanitizedTitle,
+        body: sanitizedBody,
+        event_type: body.eventType || null,
+        metadata_json: metadataJson,
+        severity,
+        channel: channelValue,
+        actions_json: actions,
+        deep_link_url: deepLinkUrl,
+        request_signature: signature,
+        pushed_count: eligibleDevices.length,
+      })
+      .select("id")
+      .single();
+
+    if (notifError) {
+      console.error("Insert error:", notifError);
+      return jsonResponse(
+        { error: "Failed to store notification" },
+        500
+      );
+    }
+
+    if (eligibleDevices.length === 0) {
+      const reason = isChannelMuted
+        ? "Channel muted by user"
+        : !devices || devices.length === 0
+          ? "No devices registered"
+          : "All devices in quiet hours";
+      return jsonResponse(
+        {
+          success: true,
+          notificationId: notification.id,
+          pushed: 0,
+          signature,
+          message: `Stored but not pushed: ${reason}`,
+        },
+        200
+      );
+    }
+
+    // Generate callback token for HMAC-signed action callbacks
     const callbackTokenBytes = await crypto.subtle.sign(
       "HMAC",
       await crypto.subtle.importKey(
@@ -455,49 +541,8 @@ Deno.serve(async (req) => {
       .map((b) => b.toString(16).padStart(2, "0"))
       .join("");
 
-    // Store notification
-    const { data: notification, error: notifError } = await supabase
-      .from("notifications")
-      .insert({
-        user_id: app.user_id,
-        app_id: app.id,
-        title: sanitizedTitle,
-        body: sanitizedBody,
-        event_type: body.eventType || null,
-        metadata_json: metadataJson,
-        severity,
-        channel: channelValue,
-        actions_json: actions,
-        deep_link_url: deepLinkUrl,
-        request_signature: signature,
-        pushed_count: pushedCount,
-      })
-      .select("id")
-      .single();
-
-    if (notifError) {
-      console.error("Insert error:", notifError);
-      return jsonResponse(
-        { error: "Failed to store notification" },
-        500
-      );
-    }
-
-    if (!devices || devices.length === 0) {
-      return jsonResponse(
-        {
-          success: true,
-          notificationId: notification.id,
-          pushed: 0,
-          signature,
-          message: "Stored but no devices registered",
-        },
-        200
-      );
-    }
-
     // Send push notifications via Expo
-    const messages = devices.map((d: { expo_push_token: string }) => ({
+    const messages = eligibleDevices.map((d) => ({
       to: d.expo_push_token,
       title: sanitizedTitle,
       body: sanitizedBody || undefined,
@@ -535,7 +580,7 @@ Deno.serve(async (req) => {
         if (ticket?.status === "ok" && ticket.id) {
           ticketRows.push({
             notification_id: notification.id,
-            expo_push_token: devices[i].expo_push_token,
+            expo_push_token: eligibleDevices[i].expo_push_token,
             ticket_id: ticket.id,
           });
         }
@@ -557,7 +602,7 @@ Deno.serve(async (req) => {
       {
         success: true,
         notificationId: notification.id,
-        pushed: devices.length,
+        pushed: eligibleDevices.length,
         signature,
       },
       200

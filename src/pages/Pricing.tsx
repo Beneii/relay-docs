@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { CheckCircle2, X } from 'lucide-react';
-import { FREE_LIMITS, PRO_LIMITS } from '@shared/product';
+import { FREE_LIMITS, PRO_FEATURES, PRO_PRICING } from '@shared/product';
 import { LandingFooter } from '../features/landing/LandingFooter';
 import { LandingNav } from '../features/landing/LandingNav';
 import { MobileDownloadSection } from '../features/landing/MobileDownloadSection';
@@ -119,27 +119,20 @@ export default function Pricing() {
     );
   }
 
-  const monthlyPrice = '$7.99';
-  const annualPrice = '$79';
-  const annualMonthly = '$6.58';
+  const monthlyPrice = PRO_PRICING.monthly.label;
+  const annualPrice = PRO_PRICING.annual.label;
+  const annualMonthly = PRO_PRICING.annual.monthlyEquivalent;
   const freePlanFeatures = [
     { label: `${FREE_LIMITS.dashboards} dashboards`, included: true },
     { label: `${FREE_LIMITS.devices} device`, included: true },
-    { label: '500 notifications / month', included: true },
+    { label: `${FREE_LIMITS.notificationsPerMonth} notifications / month`, included: true },
     { label: '@relayapp/sdk + REST API access', included: true },
     { label: 'Webhook API access', included: true },
-    { label: `Up to ${PRO_LIMITS.devices} devices`, included: false },
+    { label: 'Team sharing', included: false },
     { label: 'Notification history', included: false },
     { label: 'Priority support', included: false },
   ];
-  const proPlanFeatures = [
-    'Unlimited dashboards & projects',
-    `Up to ${PRO_LIMITS.devices} devices`,
-    `${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications per month`,
-    'Interactive action buttons + SDK features',
-    'Notification history & metadata events',
-    'Priority support',
-  ];
+  const proPlanFeatures = [...PRO_FEATURES];
 
   return (
     <div className="min-h-screen bg-bg text-text-main font-sans">
@@ -170,7 +163,7 @@ export default function Pricing() {
             </button>
             <span className={`text-sm font-medium ${annual ? 'text-text-main' : 'text-text-muted'}`}>
               Annual
-              <span className="ml-1.5 text-xs font-semibold text-accent">Save 17%</span>
+              <span className="ml-1.5 text-xs font-semibold text-accent">Save {PRO_PRICING.annual.savingsPercent}%</span>
             </span>
           </div>
         </div>

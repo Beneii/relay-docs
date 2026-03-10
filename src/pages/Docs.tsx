@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Clipboard, Check, Hash } from 'lucide-react';
+import { FREE_LIMITS, PRO_LIMITS, PRO_PRICING } from '@shared/product';
 import { LandingFooter } from '../features/landing/LandingFooter';
 import { LandingNav } from '../features/landing/LandingNav';
 import { useMarketingNav } from '../features/landing/useMarketingNav';
@@ -563,12 +564,13 @@ requests.post(
             <section id="limits">
               <AnchorHeading id="limits">Plan limits</AnchorHeading>
               <FieldTable
-                columns={['', 'Free', 'Pro ($7.99/mo)']}
+                columns={['', 'Free', `Pro (${PRO_PRICING.monthly.label}/mo)`]}
                 rows={[
-                  ['Dashboards', '3', 'Unlimited'],
-                  ['Devices', '1', '10'],
-                  ['Notifications / month', '500', '10,000'],
+                  ['Dashboards', `${FREE_LIMITS.dashboards}`, 'Unlimited'],
+                  ['Devices', `${FREE_LIMITS.devices}`, `${PRO_LIMITS.devices}`],
+                  ['Notifications / month', `${FREE_LIMITS.notificationsPerMonth}`, `${PRO_LIMITS.notificationsPerMonth.toLocaleString()}`],
                   ['Notification history', '10 most recent', '50 most recent'],
+                  ['Team sharing', 'No', 'Yes'],
                   ['Actions per notification', '5', '5'],
                   ['SDK + REST API access', 'Yes', 'Yes'],
                   ['Interactive actions', 'Yes', 'Yes'],

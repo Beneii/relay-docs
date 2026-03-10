@@ -13,8 +13,8 @@ describe("FREE_LIMITS", () => {
     expect(FREE_LIMITS.devices).toBe(1);
   });
 
-  it("allows 100 notifications per month", () => {
-    expect(FREE_LIMITS.notificationsPerMonth).toBe(100);
+  it("allows 500 notifications per month", () => {
+    expect(FREE_LIMITS.notificationsPerMonth).toBe(500);
   });
 });
 

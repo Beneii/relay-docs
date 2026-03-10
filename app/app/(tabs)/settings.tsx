@@ -23,7 +23,7 @@ import { useMonthlyNotificationCount } from "@/hooks/useNotifications";
 import { openUpgradeWithSession } from "@/components/UpgradePrompt";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { ThemeMode } from "@/theme";
-import { getLimits } from "@shared/product";
+import { getLimits, PRO_PRICING } from "@shared/product";
 
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: "system", label: "System" },
@@ -346,7 +346,7 @@ export default function SettingsScreen() {
               >
                 <Feather name="zap" size={16} color="#FFFFFF" />
                 <Text style={styles.upgradeButtonText}>
-                  Upgrade to Pro — $7.99/mo
+                  Upgrade to Pro — {PRO_PRICING.monthly.label}/mo
                 </Text>
                 <Feather name="external-link" size={13} color="#FFFFFF" />
               </Pressable>

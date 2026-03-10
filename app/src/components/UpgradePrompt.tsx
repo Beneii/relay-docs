@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, Linking } from "react-native";
 import { Feather } from "@expo/vector-icons";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import { supabase } from "@/lib/supabase";
-import { PRO_LIMITS } from "@shared/product";
+import { PRO_LIMITS, PRO_PRICING } from "@shared/product";
 
 interface UpgradePromptProps {
   title?: string;
@@ -81,7 +81,7 @@ export function UpgradePrompt({
         style={[styles.upgradeButton, { backgroundColor: colors.accent }]}
         onPress={handleUpgrade}
       >
-        <Text style={styles.upgradeButtonText}>Upgrade — $7.99/mo</Text>
+        <Text style={styles.upgradeButtonText}>Upgrade — {PRO_PRICING.monthly.label}/mo</Text>
         <Feather name="external-link" size={14} color="#FFFFFF" />
       </Pressable>
       <Text style={[styles.disclaimer, { color: colors.textTertiary }]}>

@@ -1,25 +1,13 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
 
 import { createBillingPortalHandler } from './_billing.js';
 import { getAuthenticatedUser } from './_auth.js';
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
+import { requireEnv } from './_env.js';
+import { getServiceClient } from './_supabase.js';
 
 const stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY')
-);
+const supabase = getServiceClient();
 
 const handler = createBillingPortalHandler({
   getAuthenticatedUser,

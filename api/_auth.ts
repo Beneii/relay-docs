@@ -1,26 +1,8 @@
 import type { VercelRequest } from '@vercel/node';
-import { createClient, type User } from '@supabase/supabase-js';
+import type { User } from '@supabase/supabase-js';
+import { getServiceClient } from './_supabase.js';
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+const supabase = getServiceClient();
 
 function normalizeHeaderValue(value: string | string[] | undefined): string | null {
   if (!value) {

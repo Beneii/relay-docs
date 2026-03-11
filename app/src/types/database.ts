@@ -102,6 +102,9 @@ export interface Database {
           user_id: string;
           expo_push_token: string;
           platform: string;
+          quiet_start: string | null;
+          quiet_end: string | null;
+          utc_offset_minutes: number | null;
           created_at: string;
           updated_at: string;
         };
@@ -110,12 +113,18 @@ export interface Database {
           user_id: string;
           expo_push_token: string;
           platform: string;
+          quiet_start?: string | null;
+          quiet_end?: string | null;
+          utc_offset_minutes?: number | null;
           created_at?: string;
           updated_at?: string;
         };
         Update: {
           expo_push_token?: string;
           platform?: string;
+          quiet_start?: string | null;
+          quiet_end?: string | null;
+          utc_offset_minutes?: number | null;
           updated_at?: string;
         };
       };

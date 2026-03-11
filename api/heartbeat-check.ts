@@ -1,21 +1,23 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
-
-function requireEnv(name: string) {
-  const value = process.env[name];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-  return value;
-}
+import { getServiceClient } from './_supabase.js';
+import { jsonOk, jsonError } from './_response.js';
+import { requireEnv } from './_env.js';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || requireEnv('SUPABASE_URL');
-const supabaseKey = requireEnv('SUPABASE_SERVICE_ROLE_KEY');
 const cronSecret = requireEnv('CRON_SECRET');
 const notifyUrl = `${supabaseUrl}/functions/v1/notify`;
-const supabase = createClient(supabaseUrl, supabaseKey);
+const supabase = getServiceClient();
 
-function isStale(app: any) {
+type HeartbeatApp = {
+  id: string;
+  name: string | null;
+  webhook_token: string;
+  heartbeat_interval_minutes: number | null;
+  heartbeat_last_seen_at: string | null;
+  heartbeat_alerted_at: string | null;
+};
+
+function isStale(app: HeartbeatApp) {
   if (!app.heartbeat_interval_minutes) return false;
   const intervalMs = app.heartbeat_interval_minutes * 60 * 1000;
   const lastSeen = app.heartbeat_last_seen_at ? new Date(app.heartbeat_last_seen_at).getTime() : 0;
@@ -33,12 +35,12 @@ function isStale(app: any) {
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'GET' && req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return jsonError(res, 405, 'Method not allowed');
   }
 
   const auth = req.headers.authorization;
   if (auth !== `Bearer ${cronSecret}`) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return jsonError(res, 401, 'Unauthorized');
   }
 
   const { data, error } = await supabase
@@ -47,7 +49,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .not('heartbeat_interval_minutes', 'is', null);
 
   if (error) {
-    return res.status(500).json({ error: 'Failed to load apps' });
+    return jsonError(res, 500, 'Failed to load apps');
   }
 
   const staleApps = (data || []).filter(isStale);
@@ -73,5 +75,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     }
   }
 
-  return res.json({ checked: data?.length || 0, alerts: staleApps.length });
+  return jsonOk(res, { checked: data?.length || 0, alerts: staleApps.length });
 }

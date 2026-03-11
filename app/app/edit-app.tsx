@@ -46,14 +46,13 @@ export default function EditAppScreen() {
   const { colors } = useTheme();
   const params = useLocalSearchParams<{ id?: string }>();
   const isEditing = !!params.id;
-
-  if (!session) return <Redirect href="/auth" />;
-
   const { data: existingApp, isLoading: loadingApp } = useApp(params.id ?? "");
   const { data: profile } = useProfile();
   const createApp = useCreateApp();
   const updateApp = useUpdateApp();
   const deleteApp = useDeleteApp();
+
+  if (!session) return <Redirect href="/auth" />;
 
   const isPro = profile?.plan === "pro";
 
@@ -74,28 +73,30 @@ export default function EditAppScreen() {
     const urlValidation = validateUrl(url);
     if (!url || !urlValidation.valid || isEditing) return;
 
+    const controller = new AbortController();
+
     const timer = setTimeout(async () => {
       try {
         const normalized = urlValidation.normalized.replace(/\/+$/, "");
-        const controller = new AbortController();
-        const abortTimer = setTimeout(() => controller.abort(), 3000);
-        
+        const timeoutId = setTimeout(() => controller.abort(), 3000);
+
         const res = await fetch(`${normalized}/relay.json`, {
           signal: controller.signal,
           headers: { Accept: "application/json" },
         });
-        clearTimeout(abortTimer);
-        
-        if (!res.ok) return;
+        clearTimeout(timeoutId);
+
+        if (controller.signal.aborted || !res.ok) return;
         const contentType = res.headers.get("content-type") || "";
         if (!contentType.includes("json") && !contentType.includes("text/plain")) return;
-        
+
         const text = await res.text();
+        if (controller.signal.aborted) return;
         if (text.length > 10000) return;
         const manifest = JSON.parse(text);
-        
+
         if (typeof manifest !== "object" || manifest === null) return;
-        
+
         setManifestDetected(true);
         if (manifest.name && !name) {
           setName(manifest.name);
@@ -107,11 +108,14 @@ export default function EditAppScreen() {
           setNotificationsEnabled(false);
         }
       } catch (err) {
-        // ignore fetch/parse errors
+        // ignore fetch/parse/abort errors
       }
     }, 800);
 
-    return () => clearTimeout(timer);
+    return () => {
+      clearTimeout(timer);
+      controller.abort();
+    };
   }, [url, isEditing, name]);
 
   // Populate form when editing

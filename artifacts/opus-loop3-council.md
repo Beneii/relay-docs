@@ -1,0 +1,15 @@
+# Loop 3 Council: Next Highest-Impact Work
+
+## 1. Rate limiting on Vercel API endpoints + RLS audit
+
+The heartbeat cron endpoint, create-checkout, create-billing-portal, and send-welcome routes have no rate limiting. An unauthenticated attacker can hammer `/api/create-checkout` to generate thousands of Stripe sessions, `/api/send-welcome` to spam welcome emails, or the heartbeat check endpoint to trigger spurious notifications. Meanwhile, Supabase RLS hasn't been audited since the interactive notification columns were added — if `actions_json` or `channel` columns lack proper policies, a user could potentially read or modify another user's notification data. These are production security gaps on a product that handles billing and push credentials. Fix: add a simple in-memory rate limiter (or Vercel's `@vercel/functions` rate limit) to all `/api/*` routes (e.g. 10 requests/minute per IP for checkout/billing, 30/min for send-welcome), and run a systematic RLS check on every table confirming all new columns inherit existing row policies. This is the only item in the backlog where "not doing it" has a nonzero probability of causing real financial or reputational damage.
+
+## 2. Device management UI in the dashboard
+
+Users currently have no visibility into which devices are registered for push notifications. When a notification shows `pushed: 2` but the user only has one phone, they can't tell what the second device is — maybe an old phone, maybe a simulator left over from testing. When notifications don't arrive, they can't tell if it's a device registration issue or a delivery failure. Add a "Devices" section to the account sidebar showing each registered device: platform (iOS/Android), registration date, and a "Remove" button. This is a read/delete UI over the existing `devices` table (trivial query, 50-100 lines of React). It eliminates an entire category of "my notifications aren't working" confusion, reduces support burden, and gives users confidence that the system is working as expected. Small build, outsized trust impact.
+
+## 3. Quiet hours with severity override
+
+This is the stickiness feature that turns Relay from "a thing I set up once" into "a thing I configure to fit my life." A vibe-coder running overnight agent jobs gets woken up by info-level noise at 3am, disables notifications entirely, then misses a critical failure the next night. Quiet hours solve this: set a per-device schedule (e.g. 11pm-7am) where only `critical` severity breaks through. Implementation: add `quiet_start` and `quiet_end` columns to the `devices` table, check the schedule in the notify edge function before sending push (skip devices in quiet hours unless severity is critical), and add a time picker in the mobile app settings screen. This is moderate effort but high retention — it's the difference between a user who turns off notifications after the first noisy night and a user who trusts Relay to be smart about when to alert them. It also makes severity levels actually matter in daily use, which reinforces the value of the interactive notification system.
+
+CONFIDENCE: 0.84

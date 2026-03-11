@@ -10,10 +10,10 @@ MESSAGE="${2:?Usage: ./send.sh <agent> \"<message>\"}"
 
 # Map agent names to tmux pane IDs (stable, not title-based)
 case "$AGENT" in
-  claude-sonnet|claude|sonnet)  PANE="%0" ;;
-  codex)                        PANE="%1" ;;
-  gemini)                       PANE="%2" ;;
-  claude-opus|opus)             PANE="%3" ;;
+  claude-sonnet|claude|sonnet)  PANE="%66" ;;
+  codex)                        PANE="%67" ;;
+  gemini)                       PANE="%68" ;;
+  claude-opus|opus)             PANE="%69" ;;
   *)
     echo "Unknown agent: $AGENT" >&2
     echo "Valid: claude-sonnet, codex, gemini, claude-opus" >&2

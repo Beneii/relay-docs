@@ -21,6 +21,9 @@ export function rateLimit(key: string, limit: number, windowMs: number): boolean
 
 export function getIp(req: import('@vercel/node').VercelRequest): string {
   const forwarded = req.headers['x-forwarded-for'];
-  if (typeof forwarded === 'string') return forwarded.split(',')[0].trim();
-  return 'unknown';
+  if (typeof forwarded === 'string') {
+    const ip = forwarded.split(',')[0]?.trim();
+    if (ip) return ip;
+  }
+  return req.socket.remoteAddress ?? 'unknown';
 }

@@ -65,7 +65,7 @@ export function LandingNav({
           {isSignedIn ? (
             <Link
               to="/dashboard"
-              className="h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center gap-2"
+              className="h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all flex items-center gap-2"
             >
               <User className="w-4 h-4" />
               Dashboard
@@ -80,7 +80,7 @@ export function LandingNav({
               </Link>
               <Link
                 to="/signup"
-                className="hidden md:flex h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all items-center"
+                className="hidden md:flex h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all items-center"
               >
                 Get Started
               </Link>

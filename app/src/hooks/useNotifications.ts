@@ -37,11 +37,13 @@ export function usePaginatedNotifications() {
   const [hasMore, setHasMore] = useState(true);
   const [loading, setLoading] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const fetchPage = useCallback(async (afterCursor: string | null, reset = false) => {
     if (!user) return;
     setLoading(true);
     try {
+      setError(null);
       let query = supabase
         .from("notifications")
         .select("*")
@@ -67,6 +69,8 @@ export function usePaginatedNotifications() {
       if (rows.length > 0) {
         setCursor(rows[rows.length - 1].created_at);
       }
+    } catch (err) {
+      setError(err instanceof Error ? err.message : "Failed to load notifications");
     } finally {
       setLoading(false);
     }
@@ -87,7 +91,7 @@ export function usePaginatedNotifications() {
 
   const notifications = pages.flat();
 
-  return { notifications, loading, refreshing, hasMore, refresh, loadMore, fetchPage };
+  return { notifications, loading, refreshing, hasMore, refresh, loadMore, fetchPage, error };
 }
 
 export function useUnreadCount() {
@@ -114,6 +118,7 @@ export function useUnreadCount() {
 
 export function useMarkAsRead() {
   const queryClient = useQueryClient();
+  const { notifications } = useNotifications();
 
   return useMutation({
     mutationFn: async (id: string) => {
@@ -124,7 +129,22 @@ export function useMarkAsRead() {
 
       if (error) throw error;
     },
-    onSuccess: () => {
+    onMutate: async (id: string) => {
+      await queryClient.cancelQueries({ queryKey: NOTIFICATIONS_KEY });
+      const previous = queryClient.getQueryData<NotificationRow[]>(NOTIFICATIONS_KEY);
+      if (previous) {
+        queryClient.setQueryData<NotificationRow[]>(NOTIFICATIONS_KEY, (old) =>
+          old?.map((n) => (n.id === id ? { ...n, read_at: new Date().toISOString() } : n)) ?? []
+        );
+      }
+      return { previous };
+    },
+    onError: (_err, _id, context) => {
+      if (context?.previous) {
+        queryClient.setQueryData(NOTIFICATIONS_KEY, context.previous);
+      }
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: NOTIFICATIONS_KEY });
     },
   });

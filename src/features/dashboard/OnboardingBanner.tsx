@@ -122,7 +122,7 @@ export function OnboardingBanner({
             <button
               onClick={handleTest}
               disabled={!firstDashboard}
-              className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-accent text-white font-medium text-sm hover:bg-emerald-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-accent text-white font-medium text-sm hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send test
             </button>

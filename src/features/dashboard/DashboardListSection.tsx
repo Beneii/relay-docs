@@ -20,7 +20,7 @@ interface DashboardListSectionProps {
   testingId: string | null;
 }
 
-const WEBHOOK_BASE = 'https://relayapp.dev/webhook';
+const WEBHOOK_BASE = `${window.location.origin}/webhook`;
 const COPY_FEEDBACK_MS = 2000;
 
 function DashboardCard({
@@ -59,7 +59,11 @@ const relay = new Relay({ token: '${dashboard.webhook_token}' })
 await relay.notify({ title: 'Hello from Relay' })`;
 
   async function copySnippet(type: 'curl' | 'sdk', text: string) {
-    await navigator.clipboard.writeText(text);
+    try {
+      await navigator.clipboard.writeText(text);
+    } catch {
+      // Clipboard access denied — silently ignore
+    }
     setCopiedSnippet(type);
     setTimeout(() => setCopiedSnippet(null), COPY_FEEDBACK_MS);
   }
@@ -234,7 +238,7 @@ export function DashboardListSection({
           ) : null}
           <button
             onClick={onShowAddModal}
-            className="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+            className="flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add Dashboard
@@ -293,7 +297,7 @@ export function DashboardListSection({
           </div>
           <button
             onClick={onShowAddModal}
-            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+            className="inline-flex items-center gap-2 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
           >
             <Plus className="w-4 h-4" />
             Add your first app

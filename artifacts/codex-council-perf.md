@@ -1,0 +1,7 @@
+# Codex Performance Review
+
+- **Self assessment:** I delivered the bulk of implementation work (HMAC signing, heartbeat monitoring, onboarding, device management, docs, notification filters) but repeatedly stumbled on follow-up hardening tasks—loop5b implementation suffered from poor tracking and I missed critical validation items. I’m strongest as the hands-on implementer who turns specs into code quickly, but I need tighter attention to cleanup/fixes and should stick to “execution lead” rather than strategist.
+- **Failures / rescues:** Loop5b filters shipped with incomplete artifact documentation and I never circled back on rate-limiting fixes; opus had to clarify direction multiple times. I also left the SDK publish task untouched despite flagging it multiple times.
+- **Gemini assessment:** Reliability: 8/10. Output is usually thorough (security, rate-limiting notes) but occasionally over-indexes on analysis without closing the loop on pragmatic fixes; still dependable for audits.
+- **Opus assessment:** Reliability: 9/10. Architecture specs (docs page, interactive notifications) were clear and actionable, though occasionally optimistic about scope. Output quality consistently high.
+- **Role fit:** I function best as the council’s “implementer/closer”—take approved specs and wire them up end to end. I shouldn’t be primary planner but can sanity-check feasibility and own cross-surface execution.

@@ -1,7 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type Stripe from "stripe";
 
-import { handleOptions, setCorsHeaders } from "./_cors.ts";
+import { handleOptions, setCorsHeaders } from "./_cors.js";
+import { jsonOk, jsonError } from "./_response.js";
 
 type AuthenticatedUser = {
   id: string;
@@ -84,35 +85,35 @@ export function createCheckoutHandler(deps: CheckoutHandlerDeps) {
     setCorsHeaders(req, res, ["POST", "OPTIONS"]);
 
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+      return jsonError(res, 405, "Method not allowed");
     }
 
     const user = await deps.getAuthenticatedUser(req);
 
     if (!user || !user.email) {
-      return res.status(401).json({ error: "Missing or invalid authentication" });
+      return jsonError(res, 401, "Missing or invalid authentication");
     }
 
     const { annual } = req.body || {};
 
     if (typeof annual !== "boolean") {
-      return res.status(400).json({ error: "annual must be a boolean" });
+      return jsonError(res, 400, "annual must be a boolean");
     }
 
     const priceId = annual ? deps.priceIds.annual : deps.priceIds.monthly;
 
     if (!priceId) {
-      return res.status(500).json({ error: "Price configuration missing" });
+      return jsonError(res, 500, "Price configuration missing");
     }
 
     const profile = await deps.getProfile(user.id);
 
     if (!profile) {
-      return res.status(403).json({ error: "Invalid user" });
+      return jsonError(res, 403, "Invalid user");
     }
 
     if (profile.plan === "pro") {
-      return res.status(400).json({ error: "Already on Pro plan" });
+      return jsonError(res, 400, "Already on Pro plan");
     }
 
     try {
@@ -129,7 +130,7 @@ export function createCheckoutHandler(deps: CheckoutHandlerDeps) {
         })
       );
 
-      return res.json({ url: session.url });
+      return jsonOk(res, { url: session.url });
     } catch (error: unknown) {
       const stripeError =
         typeof error === "object" && error !== null
@@ -144,7 +145,7 @@ export function createCheckoutHandler(deps: CheckoutHandlerDeps) {
       logger.error(
         `[checkout] msg=${stripeError.message?.substring(0, 120)} code=${stripeError.code} param=${stripeError.param} type=${stripeError.type}`
       );
-      return res.status(500).json({ error: "Failed to create checkout session" });
+      return jsonError(res, 500, "Failed to create checkout session");
     }
   };
 }
@@ -160,19 +161,19 @@ export function createBillingPortalHandler(deps: BillingPortalHandlerDeps) {
     setCorsHeaders(req, res, ["POST", "OPTIONS"]);
 
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+      return jsonError(res, 405, "Method not allowed");
     }
 
     const user = await deps.getAuthenticatedUser(req);
 
     if (!user) {
-      return res.status(401).json({ error: "Missing or invalid authentication" });
+      return jsonError(res, 401, "Missing or invalid authentication");
     }
 
     const customerId = await deps.getStripeCustomerId(user.id);
 
     if (!customerId) {
-      return res.status(404).json({ error: "No billing account found" });
+      return jsonError(res, 404, "No billing account found");
     }
 
     try {
@@ -181,10 +182,10 @@ export function createBillingPortalHandler(deps: BillingPortalHandlerDeps) {
         return_url: `${getAppBaseUrl(deps.appUrl)}/dashboard`,
       });
 
-      return res.json({ url: session.url });
+      return jsonOk(res, { url: session.url });
     } catch (error: unknown) {
       logger.error("Error creating billing portal session:", error);
-      return res.status(500).json({ error: "Failed to create billing portal session" });
+      return jsonError(res, 500, "Failed to create billing portal session");
     }
   };
 }

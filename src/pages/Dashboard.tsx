@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { AlertCircle, Check, X } from "lucide-react";
 
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { RelayIcon } from "../components/RelayLogo";
 import { ThemeToggle } from "../components/ThemeToggle";
 import { AccountSidebar } from "../features/dashboard/AccountSidebar";
@@ -75,7 +76,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">
         <div className="flex items-center gap-3 text-text-muted">
-          <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <LoadingSpinner />
           Loading your dashboards...
         </div>
       </div>
@@ -86,7 +87,7 @@ export default function DashboardPage() {
     return (
       <div className="min-h-screen bg-bg text-text-main flex items-center justify-center px-6">
         <div className="max-w-md text-center">
-          <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4" />
+          <LoadingSpinner size="lg" className="mx-auto mb-4" />
           <h2 className="text-xl font-semibold mb-2">Setting up your account…</h2>
           <p className="text-sm text-text-muted">
             We&apos;re provisioning your profile after sign-in. This should only take a
@@ -111,7 +112,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-center gap-3">
             <button
               onClick={handleRetryFetch}
-              className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+              className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
             >
               Retry
             </button>

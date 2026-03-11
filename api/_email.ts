@@ -1,15 +1,6 @@
 import { Resend } from 'resend';
 import { FREE_LIMITS, PRO_LIMITS } from '../backend/shared/product.js';
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
+import { requireEnv } from './_env.js';
 
 const resend = new Resend(requireEnv('RESEND_API_KEY'));
 

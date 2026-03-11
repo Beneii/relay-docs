@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate, useSearchParams } from "react-router-dom";
 import { AlertCircle, Check } from "lucide-react";
 
+import { LoadingSpinner } from "../components/LoadingSpinner";
 import { supabase } from "../lib/supabase";
 
 type Status = "loading" | "requiresAuth" | "success" | "error";
@@ -78,7 +79,7 @@ export default function InviteAcceptPage() {
     return (
       <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">
         <div className="flex items-center gap-3 text-text-muted">
-          <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+          <LoadingSpinner />
           Accepting invite...
         </div>
       </div>
@@ -99,7 +100,7 @@ export default function InviteAcceptPage() {
           <div className="flex flex-col gap-3">
             <Link
               to={`/login?redirect=${encodeURIComponent(redirectUrl)}`}
-              className="h-11 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center justify-center"
+              className="h-11 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all flex items-center justify-center"
             >
               Sign in
             </Link>
@@ -129,7 +130,7 @@ export default function InviteAcceptPage() {
           </p>
           <button
             onClick={() => navigate("/dashboard")}
-            className="h-11 px-6 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+            className="h-11 px-6 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
           >
             Go to Dashboard
           </button>
@@ -149,7 +150,7 @@ export default function InviteAcceptPage() {
         <p className="text-sm text-text-muted mb-6">{errorMessage}</p>
         <Link
           to="/dashboard"
-          className="inline-flex h-11 px-6 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all items-center justify-center"
+          className="inline-flex h-11 px-6 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all items-center justify-center"
         >
           Go to Dashboard
         </Link>

@@ -22,8 +22,6 @@ import { useTheme, spacing, fontSizes, radii } from "@/theme";
 export default function AppWebViewScreen() {
   const session = useAuthStore((s) => s.session);
   const { colors } = useTheme();
-
-  if (!session) return <Redirect href="/auth" />;
   const { id, path } = useLocalSearchParams<{ id: string; path?: string }>();
   const { data: app, isLoading, error } = useApp(id ?? "");
   const updateLastOpened = useUpdateLastOpened();
@@ -108,6 +106,8 @@ export default function AppWebViewScreen() {
   function handleExit() {
     router.back();
   }
+
+  if (!session) return <Redirect href="/auth" />;
 
   if (isLoading) return <LoadingScreen />;
 

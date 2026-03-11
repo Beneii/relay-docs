@@ -1,40 +1,36 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
 import { getAuthenticatedUser } from './_auth.js';
 import { handleOptions, setCorsHeaders } from './_cors.js';
+import { jsonOk, jsonError } from './_response.js';
+import { getServiceClient } from './_supabase.js';
+import { assertEnum, assertString, ValidationError } from './_validators.js';
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+const supabase = getServiceClient();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res, ['POST', 'OPTIONS'])) return;
   setCorsHeaders(req, res, ['POST', 'OPTIONS']);
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return jsonError(res, 405, 'Method not allowed');
   }
 
   const user = await getAuthenticatedUser(req);
   if (!user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return jsonError(res, 401, 'Unauthorized');
   }
 
-  const { memberId, role } = req.body || {};
+  const { memberId, role: rawRole } = req.body || {};
 
-  if (!memberId || typeof memberId !== 'string') {
-    return res.status(400).json({ error: 'memberId is required' });
-  }
-  if (!role || !['viewer', 'editor'].includes(role)) {
-    return res.status(400).json({ error: 'role must be viewer or editor' });
+  let role: 'viewer' | 'editor';
+  try {
+    assertString(memberId, 'memberId');
+    role = assertEnum(rawRole, ['viewer', 'editor'] as const, 'role');
+  } catch (e) {
+    if (e instanceof ValidationError) {
+      return jsonError(res, 400, e.message);
+    }
+    throw e;
   }
 
   // Look up the member record to find the app
@@ -45,7 +41,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .single();
 
   if (memberError || !member) {
-    return res.status(404).json({ error: 'Member not found' });
+    return jsonError(res, 404, 'Member not found');
   }
 
   // Verify the requesting user owns the app
@@ -57,11 +53,11 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .single();
 
   if (!app) {
-    return res.status(403).json({ error: 'You do not own this dashboard' });
+    return jsonError(res, 403, 'You do not own this dashboard');
   }
 
   if (member.role === role) {
-    return res.status(200).json({ ok: true, unchanged: true });
+    return jsonOk(res, { unchanged: true });
   }
 
   const { error: updateError } = await supabase
@@ -71,8 +67,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (updateError) {
     console.error('Failed to update member role:', updateError);
-    return res.status(500).json({ error: 'Failed to update role' });
+    return jsonError(res, 500, 'Failed to update role');
   }
 
-  return res.status(200).json({ ok: true });
+  return jsonOk(res);
 }

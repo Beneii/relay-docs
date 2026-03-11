@@ -19,8 +19,8 @@ function jsonResponse(
 
 Deno.serve(async (req) => {
   const origin = req.headers.get("origin");
-  const allowedOrigins = ["https://relayapp.dev", "relay://"];
-  const isAllowedOrigin = origin && allowedOrigins.some(o => origin.startsWith(o));
+  const allowedOrigins = ["https://relayapp.dev", "relay://app"];
+  const isAllowedOrigin = origin && allowedOrigins.includes(origin);
 
   const currentCorsHeaders = {
     ...corsHeaders,

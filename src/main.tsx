@@ -1,8 +1,9 @@
 import { StrictMode, Suspense, lazy } from 'react';
 import { createRoot } from 'react-dom/client';
-import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
+import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import './index.css';
 import { ErrorBoundary } from './components/ErrorBoundary';
+import { LoadingSpinner } from './components/LoadingSpinner';
 
 const App = lazy(() => import('./App.tsx'));
 const Login = lazy(() => import('./pages/Login.tsx'));
@@ -19,7 +20,7 @@ const NotFound = lazy(() => import('./pages/NotFound.tsx'));
 function RouteLoader() {
   return (
     <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">
-      <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin" />
+      <LoadingSpinner />
     </div>
   );
 }

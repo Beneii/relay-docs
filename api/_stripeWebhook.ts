@@ -1,6 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type Stripe from "stripe";
 
+import { jsonOk, jsonError } from "./_response.js";
+
 export const STRIPE_WEBHOOK_BODY_CONFIG = {
   api: {
     bodyParser: false,
@@ -121,6 +123,14 @@ async function sendEmailSafely(
   );
 }
 
+function resolveStripeId(field: unknown): string | null {
+  if (typeof field === "string") return field;
+  if (typeof field === "object" && field !== null && "id" in field) {
+    return (field as { id: string }).id;
+  }
+  return null;
+}
+
 function normalizeSignature(signature: string | string[] | undefined): string | null {
   if (!signature) {
     return null;
@@ -137,7 +147,7 @@ export async function processStripeEvent(
 
   if (event.type === "checkout.session.completed") {
     const session = event.data.object as Stripe.Checkout.Session;
-    const customerId = session.customer as string;
+    const customerId = resolveStripeId(session.customer);
     const userId = session.client_reference_id;
 
     if (userId) {
@@ -210,7 +220,13 @@ export async function processStripeEvent(
     event.type === "customer.subscription.updated"
   ) {
     const subscription = event.data.object as Stripe.Subscription;
-    const customerId = subscription.customer as string;
+    const customerId = resolveStripeId(subscription.customer);
+
+    if (!customerId) {
+      logger.error("subscription event missing customer ID");
+      return;
+    }
+
     const plan =
       subscription.status === "active" || subscription.status === "trialing"
         ? "pro"
@@ -255,7 +271,12 @@ export async function processStripeEvent(
 
   if (event.type === "invoice.paid") {
     const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string;
+    const customerId = resolveStripeId(invoice.customer);
+
+    if (!customerId) {
+      logger.error("invoice.paid event missing customer ID");
+      return;
+    }
     const subscriptionId =
       (invoice.parent?.subscription_details?.subscription as string | null) ?? null;
 
@@ -304,7 +325,12 @@ export async function processStripeEvent(
 
   if (event.type === "customer.subscription.deleted") {
     const subscription = event.data.object as Stripe.Subscription;
-    const customerId = subscription.customer as string;
+    const customerId = resolveStripeId(subscription.customer);
+
+    if (!customerId) {
+      logger.error("subscription.deleted event missing customer ID");
+      return;
+    }
     const email = await deps.store.getEmailByCustomerId(customerId);
 
     const { error } = await deps.store.updateProfilesByCustomerId(customerId, {
@@ -333,7 +359,12 @@ export async function processStripeEvent(
 
   if (event.type === "invoice.payment_failed") {
     const invoice = event.data.object as Stripe.Invoice;
-    const customerId = invoice.customer as string;
+    const customerId = resolveStripeId(invoice.customer);
+
+    if (!customerId) {
+      logger.error("invoice.payment_failed event missing customer ID");
+      return;
+    }
     const email = await deps.store.getEmailByCustomerId(customerId);
 
     if (email) {
@@ -353,7 +384,7 @@ export function createStripeWebhookHandler(deps: StripeWebhookHandlerDeps) {
 
   return async function handler(req: VercelRequest, res: VercelResponse) {
     if (req.method !== "POST") {
-      return res.status(405).json({ error: "Method not allowed" });
+      return jsonError(res, 405, "Method not allowed");
     }
 
     const signature = normalizeSignature(req.headers["stripe-signature"]);
@@ -383,7 +414,7 @@ export function createStripeWebhookHandler(deps: StripeWebhookHandlerDeps) {
 
     if (processed.exists) {
       logger.log(`Event ${event.id} already processed. Skipping.`);
-      return res.json({ received: true, status: "already_processed" });
+      return jsonOk(res, { received: true, status: "already_processed" });
     }
 
     try {
@@ -407,6 +438,6 @@ export function createStripeWebhookHandler(deps: StripeWebhookHandlerDeps) {
       logger.error(`Failed to record Stripe event ${event.id}:`, error);
     }
 
-    return res.json({ received: true });
+    return jsonOk(res, { received: true });
   };
 }

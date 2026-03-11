@@ -2,6 +2,7 @@ import type { VercelRequest, VercelResponse } from '@vercel/node';
 import { readFile } from 'node:fs/promises';
 import { createClient } from '@supabase/supabase-js';
 import { handleOptions, setCorsHeaders } from './_cors.js';
+import { jsonError } from './_response.js';
 
 type HealthResponse = {
   status: 'ok' | 'degraded' | 'error';
@@ -25,7 +26,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(req, res, ['GET', 'OPTIONS']);
 
   if (req.method !== 'GET') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return jsonError(res, 405, 'Method not allowed');
   }
 
   const timestamp = new Date().toISOString();

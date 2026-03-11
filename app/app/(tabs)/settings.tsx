@@ -25,6 +25,14 @@ import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { ThemeMode } from "@/theme";
 import { getLimits, PRO_PRICING } from "@shared/product";
 
+async function getExpoPushToken(): Promise<string | null> {
+  if (Platform.OS === "web") return null;
+  const projectId = Constants.expoConfig?.extra?.eas?.projectId;
+  if (!projectId || projectId === "YOUR_EAS_PROJECT_ID") return null;
+  const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+  return tokenData.data;
+}
+
 const THEME_OPTIONS: { value: ThemeMode; label: string }[] = [
   { value: "system", label: "System" },
   { value: "dark", label: "Dark" },
@@ -120,14 +128,13 @@ export default function SettingsScreen() {
     if (!user || Platform.OS === "web") return;
     (async () => {
       try {
-        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-        if (!projectId || projectId === "YOUR_EAS_PROJECT_ID") return;
-        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        const token = await getExpoPushToken();
+        if (!token) return;
         const { data } = await supabase
           .from("devices")
           .select("quiet_start, quiet_end")
           .eq("user_id", user.id)
-          .eq("expo_push_token", tokenData.data)
+          .eq("expo_push_token", token)
           .maybeSingle();
         if (data) {
           if (data.quiet_start && data.quiet_end) {
@@ -146,9 +153,8 @@ export default function SettingsScreen() {
     async (enabled: boolean, start: string, end: string) => {
       if (!user || Platform.OS === "web") return;
       try {
-        const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-        if (!projectId || projectId === "YOUR_EAS_PROJECT_ID") return;
-        const tokenData = await Notifications.getExpoPushTokenAsync({ projectId });
+        const token = await getExpoPushToken();
+        if (!token) return;
         const utcOffsetMinutes = -new Date().getTimezoneOffset();
         await supabase
           .from("devices")
@@ -158,7 +164,7 @@ export default function SettingsScreen() {
             utc_offset_minutes: utcOffsetMinutes,
           })
           .eq("user_id", user.id)
-          .eq("expo_push_token", tokenData.data);
+          .eq("expo_push_token", token);
       } catch (err) {
         console.error("Failed to save quiet hours:", err);
       }
@@ -198,22 +204,15 @@ export default function SettingsScreen() {
         text: "Sign Out",
         style: "destructive",
         onPress: async () => {
-          if (user && Platform.OS !== "web") {
+          if (user) {
             try {
-              // Get the Expo push token
-              const projectId = Constants.expoConfig?.extra?.eas?.projectId;
-              if (projectId && projectId !== "YOUR_EAS_PROJECT_ID") {
-                const tokenData = await Notifications.getExpoPushTokenAsync({
-                  projectId,
-                });
-                const expoPushToken = tokenData.data;
-
-                // Delete the device row while the session is still valid
+              const token = await getExpoPushToken();
+              if (token) {
                 await supabase
                   .from("devices")
                   .delete()
                   .eq("user_id", user.id)
-                  .eq("expo_push_token", expoPushToken);
+                  .eq("expo_push_token", token);
               }
             } catch (error) {
               console.error("Failed to deregister device:", error);

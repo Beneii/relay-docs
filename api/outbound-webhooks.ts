@@ -1,20 +1,11 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
 import { getAuthenticatedUser } from './_auth.js';
 import { handleOptions, setCorsHeaders } from './_cors.js';
+import { jsonOk, jsonError } from './_response.js';
+import { getServiceClient } from './_supabase.js';
 import { getLimits } from '../backend/shared/product.js';
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+const supabase = getServiceClient();
 
 const ALLOWED_METHODS = ['GET', 'POST', 'DELETE', 'OPTIONS'];
 
@@ -49,17 +40,17 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(req, res, ALLOWED_METHODS);
 
   const user = await getAuthenticatedUser(req);
-  if (!user) return res.status(401).json({ error: 'Unauthorized' });
+  if (!user) return jsonError(res, 401, 'Unauthorized');
 
   // GET — list webhooks for an app
   if (req.method === 'GET') {
     const { appId } = req.query;
     if (!appId || typeof appId !== 'string') {
-      return res.status(400).json({ error: 'appId required' });
+      return jsonError(res, 400, 'appId required');
     }
     // Verify ownership
     const { data: app } = await supabase.from('apps').select('id').eq('id', appId).eq('user_id', user.id).maybeSingle();
-    if (!app) return res.status(403).json({ error: 'App not found or not owned by you' });
+    if (!app) return jsonError(res, 403, 'App not found or not owned by you');
 
     const { data, error } = await supabase
       .from('outbound_webhooks')
@@ -67,28 +58,28 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('app_id', appId)
       .order('created_at', { ascending: true });
 
-    if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json({ webhooks: data || [] });
+    if (error) return jsonError(res, 500, error.message);
+    return jsonOk(res, { webhooks: data || [] });
   }
 
   // POST — create or update webhook
   if (req.method === 'POST') {
     const { appId, url, provider = 'custom', secret, enabled = true } = req.body || {};
 
-    if (!appId || !url) return res.status(400).json({ error: 'appId and url required' });
-    if (!isValidHttpsUrl(url)) return res.status(400).json({ error: 'url must be a valid https URL (no private IPs)' });
-    if (!['custom', 'zapier'].includes(provider)) return res.status(400).json({ error: 'Invalid provider' });
+    if (!appId || !url) return jsonError(res, 400, 'appId and url required');
+    if (!isValidHttpsUrl(url)) return jsonError(res, 400, 'url must be a valid https URL (no private IPs)');
+    if (!['custom', 'zapier'].includes(provider)) return jsonError(res, 400, 'Invalid provider');
 
     // Verify ownership + plan
     const { data: app } = await supabase.from('apps').select('id, user_id').eq('id', appId).eq('user_id', user.id).maybeSingle();
-    if (!app) return res.status(403).json({ error: 'App not found or not owned by you' });
+    if (!app) return jsonError(res, 403, 'App not found or not owned by you');
 
     const { data: profile } = await supabase.from('profiles').select('plan').eq('id', user.id).maybeSingle();
     const plan = (profile?.plan ?? 'free') as 'free' | 'pro';
     const limits = getLimits(plan);
 
     if (limits.outboundWebhooks === 0) {
-      return res.status(403).json({ error: 'Outbound webhooks are a Pro feature. Upgrade at relayapp.dev/pricing' });
+      return jsonError(res, 403, 'Outbound webhooks are a Pro feature. Upgrade at relayapp.dev/pricing');
     }
 
     // Check existing count
@@ -98,7 +89,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('app_id', appId);
 
     if ((count ?? 0) >= limits.outboundWebhooks) {
-      return res.status(403).json({ error: `Pro plan allows up to ${limits.outboundWebhooks} outbound webhooks per app` });
+      return jsonError(res, 403, `Pro plan allows up to ${limits.outboundWebhooks} outbound webhooks per app`);
     }
 
     const { data, error } = await supabase
@@ -114,14 +105,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .select('id, url, provider, enabled, created_at')
       .single();
 
-    if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json({ ok: true, webhook: data });
+    if (error) return jsonError(res, 500, error.message);
+    return jsonOk(res, { webhook: data });
   }
 
   // DELETE — remove webhook by id
   if (req.method === 'DELETE') {
     const { id } = req.query;
-    if (!id || typeof id !== 'string') return res.status(400).json({ error: 'id required' });
+    if (!id || typeof id !== 'string') return jsonError(res, 400, 'id required');
 
     const { error } = await supabase
       .from('outbound_webhooks')
@@ -129,9 +120,9 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
       .eq('id', id)
       .eq('user_id', user.id);
 
-    if (error) return res.status(500).json({ error: error.message });
-    return res.status(200).json({ ok: true });
+    if (error) return jsonError(res, 500, error.message);
+    return jsonOk(res);
   }
 
-  return res.status(405).json({ error: 'Method not allowed' });
+  return jsonError(res, 405, 'Method not allowed');
 }

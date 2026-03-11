@@ -3,7 +3,7 @@ import { useNavigate, Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { Check } from 'lucide-react';
 import { RelayIcon } from '../components/RelayLogo';
-import { GitHubIcon, GoogleIcon } from '../components/OAuthIcons';
+import { OAuthButtons } from '../components/OAuthButtons';
 import { useOAuth } from '../hooks/useOAuth';
 
 export default function Login() {
@@ -121,35 +121,12 @@ export default function Login() {
             </div>
           )}
 
-          {/* OAuth */}
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => handleOAuthClick('google')}
-              disabled={loading || !!oauthLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {oauthLoading === 'google' ? (
-                <div className="w-5 h-5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <GoogleIcon />
-              )}
-              {oauthLoading === 'google' ? 'Connecting...' : 'Continue with Google'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOAuthClick('github')}
-              disabled={loading || !!oauthLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {oauthLoading === 'github' ? (
-                <div className="w-5 h-5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <GitHubIcon />
-              )}
-              {oauthLoading === 'github' ? 'Connecting...' : 'Continue with GitHub'}
-            </button>
-          </div>
+          <OAuthButtons
+            onGoogleClick={() => handleOAuthClick('google')}
+            onGitHubClick={() => handleOAuthClick('github')}
+            loadingProvider={oauthLoading}
+            disabled={loading}
+          />
 
           {/* Divider */}
           <div className="relative my-6">
@@ -203,7 +180,7 @@ export default function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-emerald-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-blue-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
             >
               {loading ? 'Signing in...' : 'Sign in'}
             </button>

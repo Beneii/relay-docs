@@ -1,45 +1,36 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
 import { getAuthenticatedUser } from './_auth.js';
 import { handleOptions, setCorsHeaders } from './_cors.js';
 import { sendInviteEmail } from './_email.js';
+import { jsonOk, jsonError } from './_response.js';
+import { getServiceClient } from './_supabase.js';
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-  if (!value) throw new Error(`Missing required environment variable: ${name}`);
-  return value;
-}
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
-  { auth: { autoRefreshToken: false, persistSession: false } }
-);
+const supabase = getServiceClient();
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res, ['POST', 'OPTIONS'])) return;
   setCorsHeaders(req, res, ['POST', 'OPTIONS']);
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return jsonError(res, 405, 'Method not allowed');
   }
 
   const user = await getAuthenticatedUser(req);
   if (!user) {
-    return res.status(401).json({ error: 'Unauthorized' });
+    return jsonError(res, 401, 'Unauthorized');
   }
 
   const { appId, email, role } = req.body || {};
 
   if (!appId || typeof appId !== 'string') {
-    return res.status(400).json({ error: 'appId is required' });
+    return jsonError(res, 400, 'appId is required');
   }
   const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
   if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim())) {
-    return res.status(400).json({ error: 'Valid email is required' });
+    return jsonError(res, 400, 'Valid email is required');
   }
   if (role && !['viewer', 'editor'].includes(role)) {
-    return res.status(400).json({ error: 'role must be viewer or editor' });
+    return jsonError(res, 400, 'role must be viewer or editor');
   }
 
   const normalizedEmail = email.trim().toLowerCase();
@@ -52,12 +43,12 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .single();
 
   if (!profile || profile.plan !== 'pro') {
-    return res.status(403).json({ error: 'Team sharing requires a Pro plan' });
+    return jsonError(res, 403, 'Team sharing requires a Pro plan');
   }
 
   // Can't invite yourself
-  if (profile.email === normalizedEmail) {
-    return res.status(400).json({ error: 'You cannot invite yourself' });
+  if (profile.email?.toLowerCase() === normalizedEmail) {
+    return jsonError(res, 400, 'You cannot invite yourself');
   }
 
   // Verify app belongs to user
@@ -69,7 +60,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     .single();
 
   if (!app) {
-    return res.status(404).json({ error: 'Dashboard not found' });
+    return jsonError(res, 404, 'Dashboard not found');
   }
 
   // Check if already a member
@@ -82,10 +73,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (existing) {
     if (existing.status === 'accepted') {
-      return res.status(409).json({ error: 'This user is already a member' });
+      return jsonError(res, 409, 'This user is already a member');
     }
     if (existing.status === 'pending') {
-      return res.status(409).json({ error: 'An invite is already pending for this email' });
+      return jsonError(res, 409, 'An invite is already pending for this email');
     }
     // 'declined' — delete the old record and allow re-invite below
     if (existing.status === 'declined') {
@@ -115,7 +106,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   if (insertError) {
     console.error('Failed to create invite:', insertError);
-    return res.status(500).json({ error: 'Failed to create invite' });
+    return jsonError(res, 500, 'Failed to create invite');
   }
 
   // Send invite email
@@ -128,5 +119,5 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     // Non-fatal — invite was created
   }
 
-  return res.status(200).json({ ok: true, inviteId: member.id });
+  return jsonOk(res, { inviteId: member.id });
 }

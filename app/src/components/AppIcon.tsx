@@ -36,26 +36,31 @@ export function AppIcon({
 }: AppIconProps) {
   const bg = backgroundColor ?? (accentColor ? accentColor + "20" : "#10B98120");
   const borderRadius = size * 0.22;
+  const accent = accentColor ?? "#10B981";
+  const [failed, setFailed] = React.useState(false);
 
-  if (customIconUrl) {
+  const fallbackLetter = icon ? icon[0].toUpperCase() : "?";
+
+  if (customIconUrl && !failed) {
     return (
-      <View style={[styles.container, { width: size, height: size, borderRadius, backgroundColor: bg }]}>
+      <View style={[styles.container, { width: size, height: size, borderRadius, backgroundColor: bg }]}> 
         <Image
           source={{ uri: customIconUrl }}
           style={{ width: size * 0.75, height: size * 0.75, borderRadius: borderRadius * 0.5 }}
           resizeMode="contain"
-          // Fallback rendered via onError — show first letter of icon key
+          onError={() => setFailed(true)}
         />
       </View>
     );
   }
-
   const iconName = ((icon && ICON_OPTIONS[icon]) || "globe") as keyof typeof Feather.glyphMap;
-  const accent = accentColor ?? "#10B981";
-
   return (
-    <View style={[styles.container, { width: size, height: size, borderRadius, backgroundColor: bg }]}>
-      <Feather name={iconName} size={size * 0.45} color={accent} />
+    <View style={[styles.container, { width: size, height: size, borderRadius, backgroundColor: bg }]}> 
+      {failed && customIconUrl ? (
+        <Text style={{ color: accent, fontSize: size * 0.45, fontWeight: "700" }}>{fallbackLetter}</Text>
+      ) : (
+        <Feather name={iconName} size={size * 0.45} color={accent} />
+      )}
     </View>
   );
 }

@@ -3,23 +3,9 @@ import { Link, useSearchParams } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { ArrowLeft, Check, X } from 'lucide-react';
 import { RelayIcon } from '../components/RelayLogo';
-import { GitHubIcon, GoogleIcon } from '../components/OAuthIcons';
 import { useOAuth } from '../hooks/useOAuth';
-
-function getPasswordStrength(pw: string): { label: string; color: string; percent: number } {
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (pw.length >= 12) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[0-9]/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-
-  if (score <= 1) return { label: 'Weak', color: 'bg-red-500', percent: 20 };
-  if (score <= 2) return { label: 'Fair', color: 'bg-yellow-500', percent: 40 };
-  if (score <= 3) return { label: 'Good', color: 'bg-blue-500', percent: 60 };
-  if (score <= 4) return { label: 'Strong', color: 'bg-green-500', percent: 80 };
-  return { label: 'Very strong', color: 'bg-green-400', percent: 100 };
-}
+import { OAuthButtons } from '../components/OAuthButtons';
+import { getPasswordStrength } from '../lib/passwordStrength';
 
 export default function Signup() {
   const [searchParams] = useSearchParams();
@@ -144,35 +130,12 @@ export default function Signup() {
             </div>
           )}
 
-          {/* OAuth */}
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={() => handleOAuthClick('google')}
-              disabled={loading || !!oauthLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {oauthLoading === 'google' ? (
-                <div className="w-5 h-5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <GoogleIcon />
-              )}
-              {oauthLoading === 'google' ? 'Connecting...' : 'Continue with Google'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleOAuthClick('github')}
-              disabled={loading || !!oauthLoading}
-              className="flex w-full items-center justify-center gap-3 rounded-lg border border-border bg-bg py-2.5 px-4 text-sm font-medium text-text-main hover:bg-surface-hover transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
-            >
-              {oauthLoading === 'github' ? (
-                <div className="w-5 h-5 border-2 border-text-muted border-t-transparent rounded-full animate-spin" />
-              ) : (
-                <GitHubIcon />
-              )}
-              {oauthLoading === 'github' ? 'Connecting...' : 'Continue with GitHub'}
-            </button>
-          </div>
+          <OAuthButtons
+            onGoogleClick={() => handleOAuthClick('google')}
+            onGitHubClick={() => handleOAuthClick('github')}
+            loadingProvider={oauthLoading}
+            disabled={loading}
+          />
 
           {/* Divider */}
           <div className="relative my-6">
@@ -266,7 +229,7 @@ export default function Signup() {
             <button
               type="submit"
               disabled={loading || !allChecksMet || !passwordsMatch}
-              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-emerald-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
+              className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-blue-600 transition-all disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
             >
               {loading ? 'Creating account...' : 'Create account'}
             </button>

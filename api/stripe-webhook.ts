@@ -1,6 +1,5 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
-import { createClient } from '@supabase/supabase-js';
 
 import {
   STRIPE_WEBHOOK_BODY_CONFIG,
@@ -11,22 +10,11 @@ import {
   sendSubscriptionCancelledEmail,
   sendPaymentFailedEmail,
 } from './_email.js';
-
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
+import { getServiceClient } from './_supabase.js';
+import { requireEnv } from './_env.js';
 
 const stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY')
-);
+const supabase = getServiceClient();
 const stripeWebhookSecret = requireEnv('STRIPE_WEBHOOK_SECRET');
 
 export const config = STRIPE_WEBHOOK_BODY_CONFIG;

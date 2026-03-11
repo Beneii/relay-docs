@@ -76,7 +76,7 @@ export function ComposeNotificationModal({
 
   if (status === "success") {
     return (
-      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
         <div className="bg-surface border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
           <div className="p-8 text-center">
             <div className="w-12 h-12 rounded-full bg-emerald-500/10 flex items-center justify-center mx-auto mb-4">
@@ -89,7 +89,7 @@ export function ComposeNotificationModal({
             <div className="flex justify-center gap-3">
               <button
                 onClick={handleSendAnother}
-                className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+                className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
               >
                 Send another
               </button>
@@ -229,7 +229,7 @@ export function ComposeNotificationModal({
             <button
               onClick={handleSend}
               disabled={!title.trim() || !selectedDashboard || status === "sending"}
-              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="flex items-center gap-2 px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {status === "sending" ? (
                 <>

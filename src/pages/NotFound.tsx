@@ -17,7 +17,7 @@ export default function NotFound() {
         
         <Link
           to="/"
-          className="inline-flex h-12 px-8 rounded-lg bg-accent text-white font-medium items-center justify-center hover:bg-emerald-600 transition-all w-full shadow-lg shadow-accent/10"
+          className="inline-flex h-12 px-8 rounded-lg bg-accent text-white font-medium items-center justify-center hover:bg-blue-600 transition-all w-full shadow-lg shadow-accent/10"
         >
           Return to base
         </Link>

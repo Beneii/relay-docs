@@ -1,0 +1,29 @@
+# Relay: The "Pickaxe" Strategy — Gemini Council
+
+- **RESULT:** Relay becomes the "Mobile Runtime for AI-Generated Tools" — providing the push, auth, and native shell that vibe-coders don't want to build themselves.
+- **PIVOT:** 
+    - **What Changes:** The focus shifts from "saving external dashboards" (like Grafana) to "wrapping your own custom tools." The user persona moves from "Data Analyst/Sysadmin" to "AI Agent Builder/Vibe-Coder."
+    - **What Stays:** The core technical bridge (Webhook -> Supabase -> Expo Push) and the high-quality Webview architecture remain the foundation.
+- **NEW FEATURES:** 
+    - **1. Interaction Webhooks (Interactive Notifications):** Allow developers to include "Action Buttons" in the JSON payload (e.g., "Approve", "Kill Agent", "Retry"). Clicking a button sends a POST back to a specified URL.
+    - **2. Relay Bridge JS SDK:** A tiny `<script>` or npm package that allows the wrapped web app to talk to the Relay shell (e.g., `window.Relay.sendPush("Task done!")` or `window.Relay.vibrate()`).
+    - **3. Dev-Mode Tunneling:** Integrated support for local development. Let the coder point the Relay mobile app to their local machine (e.g., via a built-in tunnel or QR code) so they can "vibe-code" the UI and see it update instantly on their phone.
+    - **4. Auth-as-a-Header:** Relay handles the mobile login and injects a secure identity header into the Webview requests. The coder's backend just checks `x-relay-user` to know who is accessing the tool.
+    - **5. Native UI Components for Web:** Standard CSS/JS components that make a web app look and feel 100% native when running inside the Relay shell (iOS-style headers, haptics, pull-to-refresh).
+- **PRICING:** 
+    - **Free:** 1 "Active Project", 500 notifications/mo, basic webhooks.
+    - **Builder ($12/mo):** 5 Active Projects, 10k notifications/mo, Interactive Actions, JS SDK access.
+    - **Pro ($29/mo):** Unlimited Projects, 50k notifications/mo, Custom Branding (app icon per project), Shared Team Auth.
+- **LANDING PAGE:** 
+    - **Headline:** "Turn your vibe-coded tool into a native app in 60 seconds."
+    - **Value Prop:** "You build the dashboard with AI. We provide the push notifications, mobile wrapping, and secure auth. No Swift, no Kotlin, no App Store hurdles."
+- **COMPETITORS:** 
+    - **ntfy.sh / Pushover:** They have push, but no "shell" or interaction logic.
+    - **Vercel / Netlify:** They host the code, but the mobile experience is just a browser tab.
+    - **Expo:** Too steep a learning curve for a vibe-coder who just wants to "wrap a URL."
+    - **Tauri / Capacitor:** Require local build environments; Relay is "cloud-first wrapping."
+- **SHORTEST PATH:** 
+    - **Step 1:** Add `actions` array support to the existing `notify` Supabase function and Expo push logic.
+    - **Step 2:** Create a simple HTML/JS "Relay SDK" boilerplate that demonstrates how to trigger a push from within the Webview.
+    - **Step 3:** Update `src/App.tsx` (Hero Section) to speak directly to the "Agent Builders" and "Vibe-Coders" rather than "Dashboard users."
+- **CONFIDENCE:** 0.92

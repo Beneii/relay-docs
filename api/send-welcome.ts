@@ -1,32 +1,14 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { createClient } from '@supabase/supabase-js';
 import { sendWelcomeEmail } from './_email.js';
 import { getAuthenticatedUser, getRequestHeader } from './_auth.js';
 import { handleOptions, setCorsHeaders } from './_cors.js';
+import { jsonOk, jsonError } from './_response.js';
+import { getServiceClient } from './_supabase.js';
 
 const WEBHOOK_SECRET_HEADERS = ['x-supabase-webhook-secret', 'x-webhook-secret'];
 const SIGNUP_WINDOW_MS = 5 * 60 * 1000;
 
-function requireEnv(name: string): string {
-  const value = process.env[name];
-
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${name}`);
-  }
-
-  return value;
-}
-
-const supabase = createClient(
-  process.env.VITE_SUPABASE_URL || requireEnv('SUPABASE_URL'),
-  requireEnv('SUPABASE_SERVICE_ROLE_KEY'),
-  {
-    auth: {
-      autoRefreshToken: false,
-      persistSession: false,
-    },
-  }
-);
+const supabase = getServiceClient();
 
 function hasValidWebhookSecret(req: VercelRequest) {
   const expectedSecret = process.env.SUPABASE_WEBHOOK_SECRET || process.env.WEBHOOK_SECRET;
@@ -73,7 +55,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   setCorsHeaders(req, res, ['POST', 'OPTIONS']);
 
   if (req.method !== 'POST') {
-    return res.status(405).json({ error: 'Method not allowed' });
+    return jsonError(res, 405, 'Method not allowed');
   }
 
   const webhookRequest = hasValidWebhookSecret(req);
@@ -88,7 +70,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     const user = await getAuthenticatedUser(req);
 
     if (!user) {
-      return res.status(401).json({ error: 'Missing or invalid authentication' });
+      return jsonError(res, 401, 'Missing or invalid authentication');
     }
 
     email = user.email;
@@ -96,22 +78,18 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   }
 
   if (!email) {
-    return res.status(400).json({ error: 'Missing email' });
+    return jsonError(res, 400, 'Missing email');
   }
 
   const { data: profile, error: profileError } = await getProfile(profileId, email);
 
   if (profileError) {
     console.error('Failed to verify signup window for welcome email:', profileError);
-    return res.status(500).json({ error: 'Failed to verify signup age' });
+    return jsonError(res, 500, 'Failed to verify signup age');
   }
 
   if (profile?.welcome_email_sent) {
-    return res.status(200).json({
-      sent: false,
-      skipped: true,
-      reason: 'already_sent',
-    });
+    return jsonOk(res, { sent: false, skipped: true, reason: 'already_sent' });
   }
 
   const createdAt = profile?.created_at ? new Date(profile.created_at) : null;
@@ -121,27 +99,38 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     Date.now() - createdAt.getTime() <= SIGNUP_WINDOW_MS;
 
   if (!isRecentSignup) {
-    return res.status(200).json({
-      sent: false,
-      skipped: true,
-      reason: 'not_recent_signup',
-    });
+    return jsonOk(res, { sent: false, skipped: true, reason: 'not_recent_signup' });
+  }
+
+  // Atomically claim the send slot to prevent duplicate emails from concurrent requests
+  if (profile?.id) {
+    const { data: claimed } = await supabase
+      .from('profiles')
+      .update({ welcome_email_sent: true })
+      .eq('id', profile.id)
+      .eq('welcome_email_sent', false)
+      .select('id');
+
+    if (!claimed || claimed.length === 0) {
+      return jsonOk(res, { sent: false, skipped: true, reason: 'already_sent' });
+    }
   }
 
   try {
     await sendWelcomeEmail(email);
 
-    // Mark as sent to prevent duplicates
+    return jsonOk(res, { sent: true });
+  } catch (error: unknown) {
+    console.error('Failed to send welcome email:', error);
+
+    // Roll back the flag so a retry can succeed
     if (profile?.id) {
       await supabase
         .from('profiles')
-        .update({ welcome_email_sent: true })
+        .update({ welcome_email_sent: false })
         .eq('id', profile.id);
     }
 
-    res.json({ sent: true });
-  } catch (error: unknown) {
-    console.error('Failed to send welcome email:', error);
-    res.status(500).json({ error: 'Failed to send welcome email' });
+    return jsonError(res, 500, 'Failed to send welcome email');
   }
 }

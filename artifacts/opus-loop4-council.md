@@ -1,0 +1,15 @@
+# Loop 4 Council: Next Highest-Impact Work
+
+## 1. Quiet hours per device with severity override
+
+This is the most impactful daily-experience improvement remaining. Every vibe-coder running overnight agents or 24/7 trading bots faces the same problem: info-level notifications wake them up, so they mute everything, then miss the critical failure at 4am. Quiet hours (per-device, e.g. 11pm-7am, only critical breaks through) solve the core tension between "I want to know everything" and "I need to sleep." It makes severity levels actually matter — right now there's no behavioral difference between info and critical from the user's perspective. Once quiet hours exist, choosing the right severity in your `relay.notify()` call has real consequences, which deepens SDK engagement. Implementation: `quiet_start`/`quiet_end` time columns on `devices`, a check in the notify edge function, and a time picker in mobile settings. This is the feature that turns a one-week trial into a permanent daily tool.
+
+## 2. Channel notification preferences (mute/unmute per channel)
+
+A vibe-coder with 3 dashboards sending notifications across channels like `trades`, `deploys`, `errors`, and `heartbeat` quickly gets overwhelmed. They want `errors` and `heartbeat` always on but `trades` muted during weekdays. Without per-channel preferences, the only option is all-or-nothing — which pushes users toward disabling notifications entirely. Build a channel preferences screen in the mobile app: list all channels the user has received notifications on, with a toggle for each. Store preferences in a `channel_preferences` table (user_id, channel, muted boolean). The notify edge function checks preferences before sending push. This pairs naturally with quiet hours (item 1) — together they give users fine-grained control over their notification experience, which is the #1 thing power users want and the #1 reason they'd pay for Pro.
+
+## 3. Team dashboard sharing (Pro-only)
+
+This is the revenue multiplier. A solo developer adopts Relay for their agent dashboard, loves it, then wants their co-founder or on-call teammate to also receive notifications and access the same dashboards. Today that's impossible — dashboards are per-user, tokens are per-user, there's no sharing. Build the minimal viable team feature: a Pro user can invite others by email to a shared dashboard. Invited users see the dashboard in their Relay app and receive its notifications on their own devices. Implementation: a `dashboard_shares` table (app_id, shared_with_user_id, role), RLS policies for shared access, an "Invite" button on the dashboard detail screen, and an email invitation flow using the existing Resend integration. Each shared user needs their own Relay account (free is fine for viewers), but the sharer must be Pro. This is the feature that turns $7.99/month from one developer into $7.99/month from a team — and once multiple people depend on shared dashboards, churn drops dramatically because switching requires coordinating with everyone.
+
+CONFIDENCE: 0.83

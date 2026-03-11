@@ -1,0 +1,12 @@
+# Loop 8 Council: Team Sharing Frontend — Gemini Council
+
+### Highest-Risk Design Decisions
+1. **Permission-UI Desync:** The most critical risk is rendering management actions (e.g., Delete App, Clear Logs, Regenerate Token) for users with "Viewer" roles. If the frontend doesn't strictly branch the UI based on the `dashboard_members` role, users will encounter frequent, frustrating "RLS Policy Violation" errors when clicking buttons that *look* available but are blocked by the backend.
+2. **The "Shared-With-Me" Hierarchy:** Decisions on how to mix owned apps and shared apps in the main dashboard list are high-risk for UX. If shared apps are just "another row," the user loses the mental model of ownership. We should use distinct sections or heavy badging (e.g., "Owner" vs. "Collaborator") to ensure the user understands their permission level at a glance.
+3. **Pro Gate Enforcement Strategy:** Deciding *who* needs Pro is a business risk. If only the *Owner* needs Pro to invite others, Free users can easily collaborate on a Pro-owned dashboard. However, if the frontend gate is too aggressive (e.g., blocking a Free user from even *seeing* an invite list), it kills the viral growth loop. The UI should allow seeing the "Invite" button but use a high-conversion upgrade modal upon click.
+
+### Edge Cases to Watch
+*   **The "Account Swap" Trap:** A user clicks an invite link in their email while logged into a *different* Relay account in their browser. The `/invite` page must clearly display "You are accepting this as [current-email]" and provide a "Switch Account" option before committing the `accept-invite` call.
+*   **Duplicate Invite Collision:** A user is invited to an app they already own, or re-invited to an app while a previous invite is still "Pending." The UI needs to handle these states gracefully—either by showing "Already a member" or updating the existing invite role rather than creating duplicate entries.
+*   **Subscription Downgrade Fallout:** If a Pro user has shared an app with 5 people and then downgrades to Free, what happens? The frontend should proactively inform the owner that sharing is disabled and potentially hide shared apps from members until the owner re-upgrades, rather than letting the backend return cryptic errors.
+*   **Orphaned Notifications:** If a member is removed from an app while they are viewing that app's logs, the next polling cycle or navigation will fail. The frontend needs a global "Access Revoked" listener or robust error boundary to redirect the user without a hard crash.

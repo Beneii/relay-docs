@@ -36,6 +36,11 @@ const MAX_ACTION_LABEL_LENGTH = 50;
 const MAX_CHANNEL_LENGTH = 32;
 const ALLOWED_SEVERITIES: RelaySeverity[] = ["info", "warning", "critical"];
 const ALLOWED_ACTION_STYLES: RelayActionStyle[] = ["default", "destructive"];
+const QUOTA_WARNING_PERCENT = 80;
+const QUOTA_LIMIT_PERCENT = 100;
+const QUOTA_RESEND_COOLDOWN_DAYS = 30;
+const MAX_URL_LENGTH = 2048;
+const MINUTES_PER_DAY = 1440;
 
 type RateLimitEntry = {
   count: number;
@@ -233,7 +238,7 @@ function isInQuietHours(
   const [sh, sm] = quietStart.split(":").map(Number);
   const [eh, em] = quietEnd.split(":").map(Number);
   // Convert UTC now to device local time
-  const localMins = (now.getUTCHours() * 60 + now.getUTCMinutes() + utcOffsetMinutes + 1440) % 1440;
+  const localMins = (now.getUTCHours() * 60 + now.getUTCMinutes() + utcOffsetMinutes + MINUTES_PER_DAY) % MINUTES_PER_DAY;
   const startMins = sh * 60 + sm;
   const endMins = eh * 60 + em;
   if (startMins <= endMins) return localMins >= startMins && localMins < endMins;
@@ -311,7 +316,7 @@ async function checkQuotaWarning(
   if (plan === "pro") return;
 
   const percent = (used / limit) * 100;
-  if (percent < 80) return;
+  if (percent < QUOTA_WARNING_PERCENT) return;
 
   const { data: profile } = await supabase
     .from("profiles")
@@ -321,9 +326,9 @@ async function checkQuotaWarning(
 
   if (!profile?.email) return;
 
-  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+  const cooldownAgo = new Date(Date.now() - QUOTA_RESEND_COOLDOWN_DAYS * 24 * 60 * 60 * 1000).toISOString();
 
-  if (percent >= 100 && !profile.quota_warning_100_sent_at) {
+  if (percent >= QUOTA_LIMIT_PERCENT && !profile.quota_warning_100_sent_at) {
     await sendQuotaEmail(
       profile.email,
       "Relay notification limit reached",
@@ -335,9 +340,9 @@ async function checkQuotaWarning(
       .update({ quota_warning_100_sent_at: new Date().toISOString() })
       .eq("id", userId);
   } else if (
-    percent >= 80 &&
-    percent < 100 &&
-    (!profile.quota_warning_80_sent_at || profile.quota_warning_80_sent_at < thirtyDaysAgo)
+    percent >= QUOTA_WARNING_PERCENT &&
+    percent < QUOTA_LIMIT_PERCENT &&
+    (!profile.quota_warning_80_sent_at || profile.quota_warning_80_sent_at < cooldownAgo)
   ) {
     await sendQuotaEmail(
       profile.email,
@@ -394,7 +399,7 @@ async function fireOutboundWebhooks(
       }
 
       try {
-        const res = await fetch(hook.url, { method: "POST", headers, body: bodyStr });
+        const res = await fetch(hook.url, { method: "POST", headers, body: bodyStr, signal: AbortSignal.timeout(5000) });
         const ok = res.status >= 200 && res.status < 300;
         await supabase.from("outbound_webhooks").update({
           last_triggered_at: new Date().toISOString(),
@@ -603,8 +608,8 @@ Deno.serve(async (req) => {
         return jsonResponse({ error: "url must be a string" }, 400);
       }
       const trimmed = body.url.trim();
-      if (trimmed.length > 2048) {
-        return jsonResponse({ error: "url exceeds 2048 characters" }, 400);
+      if (trimmed.length > MAX_URL_LENGTH) {
+        return jsonResponse({ error: `url exceeds ${MAX_URL_LENGTH} characters` }, 400);
       }
       deepLinkUrl = trimmed;
     }
@@ -679,7 +684,7 @@ Deno.serve(async (req) => {
       monthlyNotificationCount + 1,
       monthlyLimit,
       plan,
-    ).catch(() => {});
+    ).catch((error) => console.error("Quota warning failed:", error));
 
     if (eligibleDevices.length === 0) {
       const reason = isChannelMuted

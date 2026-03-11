@@ -92,7 +92,7 @@ export function AccountSidebar({
                 </p>
                 <Link
                   to="/pricing"
-                  className="inline-flex items-center justify-center w-full h-8 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-emerald-600 transition-all"
+                  className="inline-flex items-center justify-center w-full h-8 rounded-lg bg-accent text-white text-xs font-semibold hover:bg-blue-600 transition-all"
                 >
                   Upgrade to Pro
                 </Link>

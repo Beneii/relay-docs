@@ -1,0 +1,12 @@
+# Loop 10 Council: Final Polish Pass — Gemini Council
+
+### Top "Embarrassments" & Risks
+1. **Broken Promise: "Auth-as-a-Header":** The landing page explicitly promises that Relay "injects secure identity headers into your webview requests." This is a cornerstone of the "Mobile Runtime for AI Tools" story, yet it is **entirely missing** from the `AppWebViewScreen` implementation. A developer attempting to use this advertised feature to secure their tool would find it simply doesn't work.
+2. **Webhook URL Desync (Mobile vs. Web):** There is a jarring inconsistency between the web dashboard (which shows the `relayapp.dev/webhook` proxy URL) and the mobile "Edit App" screen (which shows the raw Supabase Edge Function URL). This exposes the internal infrastructure, breaks the product abstraction, and would be immediately noticed by any developer setting up their first app.
+3. **Inconsistent "Identity Crisis" (App vs. Dashboard):** The product doesn't know what to call its core entity. The mobile app uses "App" in the count and "Edit App" title, but the header says "Dashboards." The web app header says "Dashboards," but the empty state says "Add your first app." This lack of consistent terminology makes the product feel unpolished and confuses the mental model for new users.
+4. **"Wet Paint" in Documentation:** The SDK guide has a prominent banner stating "The SDK will be available on npm soon," yet the "How It Works" and "Quickstart" sections already use `@relayapp/sdk` in their code snippets. This creates a confusing "is it ready yet?" signal for prospective users.
+5. **Silent Manifest Failures:** The mobile app's `relay.json` auto-fetch logic catches and **silently ignores** all errors (network failure, 404, invalid JSON). A developer who correctly places a manifest but makes a small syntax error gets zero feedback—the app just appears to not have a manifest, leading to a "it's broken" perception.
+6. **Incomplete Sandbox (Compose Modal):** The "Compose Notification" feature in the dashboard is a great "Aha!" moment tool, but it only supports Title and Body. It **cannot test** the product's primary differentiators: Action Buttons, Severity levels, or Deep Links. This forces developers back to `curl` to see the features they actually care about.
+
+### Final Verdict
+Relay has incredible technical substance, but the "final mile" of consistency is currently lacking. The desync between surfaces and the missing "Auth-as-a-Header" implementation are the most critical items to fix before a public launch.

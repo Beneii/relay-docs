@@ -1,5 +1,5 @@
 import { useState } from "react";
-import { AlertCircle, Check, ChevronDown, ExternalLink, Plus, Trash2, Zap } from "lucide-react";
+import { AlertCircle, ChevronDown, ExternalLink, Plus, Trash2, Zap } from "lucide-react";
 
 import { supabase } from "../../lib/supabase";
 

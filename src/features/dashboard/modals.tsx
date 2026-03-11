@@ -21,7 +21,7 @@ export function AddDashboardModal({
   url,
 }: AddDashboardModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-surface border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div className="p-6 border-b border-border">
           <h2 className="text-xl font-semibold">Add Dashboard</h2>
@@ -65,7 +65,7 @@ export function AddDashboardModal({
             </button>
             <button
               type="submit"
-              className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer"
+              className="px-4 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer"
             >
               Save Dashboard
             </button>
@@ -94,7 +94,7 @@ export function DeleteAccountModal({
   onConfirmationChange,
 }: DeleteAccountModalProps) {
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm" onClick={(e) => { if (e.target === e.currentTarget && !deleting) onCancel(); }}>
       <div className="bg-surface border border-border rounded-2xl w-full max-w-md overflow-hidden shadow-2xl">
         <div className="p-6 border-b border-border">
           <h2 className="text-xl font-semibold text-red-500">Delete Account</h2>

@@ -57,7 +57,7 @@ export function MembersModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50" onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}>
       <div className="bg-surface border border-border rounded-2xl w-full max-w-md shadow-xl">
         {/* Header */}
         <div className="flex items-center justify-between p-6 border-b border-border">
@@ -80,7 +80,7 @@ export function MembersModal({
                 <p className="text-xs text-text-muted mb-4">Upgrade to invite teammates to your dashboards.</p>
                 <Link
                   to="/pricing"
-                  className="inline-flex h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all items-center"
+                  className="inline-flex h-9 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all items-center"
                   onClick={onClose}
                 >
                   Upgrade to Pro
@@ -110,7 +110,7 @@ export function MembersModal({
                     <button
                       type="submit"
                       disabled={inviting || !email}
-                      className="flex items-center gap-1.5 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
+                      className="flex items-center gap-1.5 h-10 px-4 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed shrink-0"
                     >
                       {inviting ? (
                         <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />

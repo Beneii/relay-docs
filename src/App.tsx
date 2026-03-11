@@ -1,7 +1,7 @@
 import { motion } from 'motion/react';
 import type { ReactElement } from 'react';
 import { Link } from 'react-router-dom';
-import { Terminal, Smartphone, Bell, LayoutDashboard, Code, ArrowRight, Server, CheckCircle2, Gauge, Wrench, Rocket, Bot, Activity, TrendingUp, Shield, MonitorSmartphone, Network } from 'lucide-react';
+import { Terminal, Smartphone, Bell, Code, ArrowRight, Server, Wrench, Bot, Shield } from 'lucide-react';
 import { RelayIcon } from './components/RelayLogo';
 import { INTEGRATIONS } from './features/landing/content';
 import { FAQSection } from './features/landing/FAQSection';
@@ -167,7 +167,7 @@ export default function App() {
               Bridge the gap between your custom dashboards and your phone. Add push notifications, mobile wrapping, and secure auth to your vibe-coded tools in 60 seconds.
             </p>
             <div className="flex flex-col sm:flex-row items-center justify-center gap-4">
-              <Link to="/signup" className="h-12 px-6 rounded-lg bg-accent text-white font-medium flex items-center gap-2 hover:bg-emerald-600 transition-all w-full sm:w-auto justify-center cursor-pointer">
+              <Link to="/signup" className="h-12 px-6 rounded-lg bg-accent text-white font-medium flex items-center gap-2 hover:bg-blue-600 transition-all w-full sm:w-auto justify-center cursor-pointer">
                 <ArrowRight className="w-4 h-4" />
                 Get Started Free
               </Link>
@@ -533,7 +533,7 @@ await relay.notify({
           >
             <h2 className="text-3xl md:text-4xl font-bold mb-4 tracking-tight">Ready to ship your mobile tool?</h2>
             <p className="text-text-muted text-lg mb-8">Join the wave of developers building their own infra. Create a free account and get your first notification today.</p>
-            <Link to="/signup" className="inline-flex h-12 px-8 rounded-lg bg-accent text-white font-medium items-center gap-2 hover:bg-emerald-600 transition-all cursor-pointer">
+            <Link to="/signup" className="inline-flex h-12 px-8 rounded-lg bg-accent text-white font-medium items-center gap-2 hover:bg-blue-600 transition-all cursor-pointer">
               <ArrowRight className="w-4 h-4" />
               Get Started Free
             </Link>

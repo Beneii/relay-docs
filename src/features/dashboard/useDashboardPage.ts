@@ -6,6 +6,9 @@ import { NOTIFICATION_HISTORY_LIMITS, getLimits } from "@shared/product";
 
 const COPY_FEEDBACK_MS = 2000;
 const TEST_RESULT_CLEAR_MS = 2000;
+const PROFILE_PROVISION_DELAY_MS = 1500;
+const CHECKOUT_POLL_DELAY_MS = 2000;
+const CHECKOUT_MAX_RETRIES = 3;
 
 import { supabase } from "../../lib/supabase";
 import {
@@ -104,7 +107,7 @@ export function useDashboardPage() {
 
         if (allowProfileRetry) {
           setProvisioningProfile(true);
-          await sleep(1500);
+          await sleep(PROFILE_PROVISION_DELAY_MS);
 
           if (cancelled) {
             return;
@@ -120,8 +123,8 @@ export function useDashboardPage() {
       }
 
       if (hasCheckoutSessionRedirect && userData.plan !== "pro") {
-        for (let attempt = 0; attempt < 3; attempt += 1) {
-          await sleep(2000);
+        for (let attempt = 0; attempt < CHECKOUT_MAX_RETRIES; attempt += 1) {
+          await sleep(CHECKOUT_POLL_DELAY_MS);
 
           if (cancelled) {
             return;
@@ -314,7 +317,11 @@ export function useDashboardPage() {
   };
 
   const handleCopyToken = async (token: string) => {
-    await navigator.clipboard.writeText(token);
+    try {
+      await navigator.clipboard.writeText(token);
+    } catch {
+      // Clipboard access denied — silently ignore
+    }
     setCopiedToken(token);
     setTimeout(() => setCopiedToken(null), COPY_FEEDBACK_MS);
   };

@@ -1,23 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Check, X, ArrowLeft } from 'lucide-react';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { supabase } from '../lib/supabase';
 import { RelayIcon } from '../components/RelayLogo';
-
-function getPasswordStrength(pw: string): { label: string; color: string; percent: number } {
-  let score = 0;
-  if (pw.length >= 8) score++;
-  if (pw.length >= 12) score++;
-  if (/[A-Z]/.test(pw)) score++;
-  if (/[0-9]/.test(pw)) score++;
-  if (/[^A-Za-z0-9]/.test(pw)) score++;
-
-  if (score <= 1) return { label: 'Weak', color: 'bg-red-500', percent: 20 };
-  if (score <= 2) return { label: 'Fair', color: 'bg-yellow-500', percent: 40 };
-  if (score <= 3) return { label: 'Good', color: 'bg-blue-500', percent: 60 };
-  if (score <= 4) return { label: 'Strong', color: 'bg-green-500', percent: 80 };
-  return { label: 'Very strong', color: 'bg-green-400', percent: 100 };
-}
+import { getPasswordStrength } from '../lib/passwordStrength';
 
 export default function ResetPassword() {
   const [password, setPassword] = useState('');
@@ -142,7 +129,7 @@ export default function ResetPassword() {
             <RelayIcon size={40} className="text-text-main" />
           </Link>
           <div className="bg-surface rounded-2xl border border-border p-8">
-            <div className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+            <LoadingSpinner size="lg" className="mx-auto mb-4" />
             <p className="text-sm text-text-muted">Checking your reset link...</p>
           </div>
         </div>
@@ -167,7 +154,7 @@ export default function ResetPassword() {
             </p>
             <Link
               to="/login"
-              className="inline-flex items-center justify-center gap-2 h-11 px-8 rounded-lg bg-accent text-white font-medium hover:bg-emerald-600 transition-all w-full shadow-lg shadow-accent/10"
+              className="inline-flex items-center justify-center gap-2 h-11 px-8 rounded-lg bg-accent text-white font-medium hover:bg-blue-600 transition-all w-full shadow-lg shadow-accent/10"
             >
               Go to sign in
             </Link>
@@ -281,7 +268,7 @@ export default function ResetPassword() {
               <button
                 type="submit"
                 disabled={loading || !allChecksMet || !passwordsMatch}
-                className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-emerald-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
+                className="flex w-full justify-center rounded-lg bg-accent py-2.5 px-4 text-sm font-medium text-white hover:bg-blue-600 transition-all disabled:opacity-50 cursor-pointer disabled:cursor-not-allowed"
               >
                 {loading ? 'Updating password...' : 'Set new password'}
               </button>

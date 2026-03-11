@@ -59,7 +59,7 @@ BEGIN
 
   monthly_limit := CASE
     WHEN user_plan = 'pro' THEN 10000
-    ELSE 100
+    ELSE 500
   END;
 
   month_start := date_trunc('month', now());

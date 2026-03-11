@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { LoadingSpinner } from '../components/LoadingSpinner';
 import { supabase } from '../lib/supabase';
 import { CheckCircle2, X } from 'lucide-react';
 import { FREE_LIMITS, PRO_FEATURES, PRO_PRICING } from '@shared/product';
@@ -87,7 +88,7 @@ export default function Pricing() {
     return (
       <div className="min-h-screen bg-bg text-text-main flex items-center justify-center">
         <div className="flex items-center gap-3 text-text-muted">
-          <div className="w-5 h-5 border-2 border-accent border-t-transparent rounded-full animate-spin"></div>
+          <LoadingSpinner />
           Loading...
         </div>
       </div>
@@ -110,7 +111,7 @@ export default function Pricing() {
           </button>
           <Link
             to="/login"
-            className="px-6 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-emerald-600 transition-all flex items-center"
+            className="px-6 py-2.5 rounded-lg bg-accent text-white text-sm font-medium hover:bg-blue-600 transition-all flex items-center"
           >
             Sign in
           </Link>
@@ -234,7 +235,7 @@ export default function Pricing() {
             <button
               onClick={handleUpgrade}
               disabled={user?.plan === 'pro'}
-              className="w-full flex justify-center items-center h-12 rounded-lg bg-accent text-white font-medium hover:bg-emerald-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
+              className="w-full flex justify-center items-center h-12 rounded-lg bg-accent text-white font-medium hover:bg-blue-600 transition-all cursor-pointer disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {user?.plan === 'pro' ? 'Current Plan' : 'Upgrade to Pro'}
             </button>

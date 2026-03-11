@@ -15,8 +15,8 @@
   ],
   "rewrites": [
     {
-      "source": "/webhook",
-      "destination": "https://wvlbdjpllcnmndkujzpy.supabase.co/functions/v1/notify"
+      "source": "/notify/:token",
+      "destination": "https://wvlbdjpllcnmndkujzpy.supabase.co/functions/v1/notify/:token"
     },
     {
       "source": "/auth/callback",

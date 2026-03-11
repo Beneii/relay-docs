@@ -13,6 +13,8 @@ test("shared product limits expose the expected free and pro caps", () => {
     dashboards: 3,
     devices: 1,
     notificationsPerMonth: 500,
+    customBranding: false,
+    outboundWebhooks: 0,
   });
   assert.equal(PRO_LIMITS.devices, 10);
   assert.equal(PRO_LIMITS.notificationsPerMonth, 10_000);

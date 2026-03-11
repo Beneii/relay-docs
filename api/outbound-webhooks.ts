@@ -30,9 +30,13 @@ function isValidHttpsUrl(raw: string): boolean {
       hostname.startsWith('10.') ||
       hostname.startsWith('192.168.') ||
       hostname.startsWith('172.16.') ||
+      hostname.startsWith('169.254.') || // AWS/GCP/Azure instance metadata
       hostname === '0.0.0.0' ||
+      hostname === '::1' ||
+      hostname.startsWith('fd') || // IPv6 ULA (private)
       hostname.endsWith('.internal') ||
-      hostname.endsWith('.local')
+      hostname.endsWith('.local') ||
+      hostname.endsWith('.localhost')
     ) return false;
     return true;
   } catch {

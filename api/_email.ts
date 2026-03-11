@@ -104,6 +104,16 @@ function layout(content: string): string {
 </html>`;
 }
 
+// ── HTML escaping ─────────────────────────────────────────────────
+function escapeHtml(str: string): string {
+  return str
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
 // ── Helpers ───────────────────────────────────────────────────────
 function heading(text: string): string {
   return `<h1 class="email-text" style="margin:0 0 16px;font-size:22px;font-weight:700;color:${L.text};line-height:1.3;">${text}</h1>`;
@@ -276,25 +286,31 @@ export async function sendInviteEmail(
   inviteToken: string,
   hasAccount: boolean,
 ) {
-  const acceptUrl = `https://relayapp.dev/invite?token=${inviteToken}`;
+  const acceptUrl = `https://relayapp.dev/invite?token=${encodeURIComponent(inviteToken)}`;
+  const safeInviterName = escapeHtml(inviterName);
+  const safeAppName = escapeHtml(appName);
   const accountNote = hasAccount
     ? ''
     : paragraph('You\'ll need to create a free Relay account to accept this invitation.');
 
   const html = layout(`
-    ${heading(`You're invited to "${appName}"`)}
-    ${paragraph(`<strong class="email-strong" style="color:${L.text};">${inviterName}</strong> has invited you to access their dashboard "<strong class="email-strong" style="color:${L.text};">${appName}</strong>" on Relay. Accept to start receiving push notifications for this dashboard.`)}
+    ${heading(`You're invited to &ldquo;${safeAppName}&rdquo;`)}
+    ${paragraph(`<strong class="email-strong" style="color:${L.text};">${safeInviterName}</strong> has invited you to access their dashboard &ldquo;<strong class="email-strong" style="color:${L.text};">${safeAppName}</strong>&rdquo; on Relay. Accept to start receiving push notifications for this dashboard.`)}
     ${accountNote}
     ${button('Accept Invite', acceptUrl)}
     ${divider()}
     ${paragraph('If you didn\'t expect this invitation, you can safely ignore this email.')}
   `);
 
+  // Strip HTML tags for plain text subject to prevent header injection
+  const plainInviterName = inviterName.replace(/[\r\n]/g, ' ').slice(0, 100);
+  const plainAppName = appName.replace(/[\r\n]/g, ' ').slice(0, 100);
+
   return resend.emails.send({
     from: FROM_EMAIL,
     to,
-    subject: `${inviterName} invited you to ${appName} on Relay`,
+    subject: `${plainInviterName} invited you to ${plainAppName} on Relay`,
     html,
-    text: `${inviterName} invited you to "${appName}" on Relay. Accept the invite: ${acceptUrl}`,
+    text: `${plainInviterName} invited you to "${plainAppName}" on Relay. Accept the invite: ${acceptUrl}`,
   });
 }

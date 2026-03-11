@@ -361,7 +361,7 @@ async function fireOutboundWebhooks(
 ): Promise<void> {
   const { data: hooks } = await supabase
     .from("outbound_webhooks")
-    .select("url, secret, provider")
+    .select("id, url, secret, provider")
     .eq("app_id", appId)
     .eq("enabled", true);
 
@@ -371,7 +371,7 @@ async function fireOutboundWebhooks(
   const bodyStr = JSON.stringify(payload);
 
   await Promise.allSettled(
-    hooks.map(async (hook: { url: string; secret: string | null; provider: string }) => {
+    hooks.map(async (hook: { id: string; url: string; secret: string | null; provider: string }) => {
       const headers: Record<string, string> = {
         "Content-Type": "application/json",
         "X-Relay-App": appId,
@@ -399,12 +399,12 @@ async function fireOutboundWebhooks(
         await supabase.from("outbound_webhooks").update({
           last_triggered_at: new Date().toISOString(),
           last_error: ok ? null : `HTTP ${res.status}`,
-        }).eq("app_id", appId).eq("url", hook.url);
+        }).eq("id", hook.id);
       } catch (err) {
         await supabase.from("outbound_webhooks").update({
           last_triggered_at: new Date().toISOString(),
           last_error: err instanceof Error ? err.message : "Unknown error",
-        }).eq("app_id", appId).eq("url", hook.url);
+        }).eq("id", hook.id);
       }
     })
   );

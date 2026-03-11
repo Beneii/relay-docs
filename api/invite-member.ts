@@ -34,7 +34,8 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (!appId || typeof appId !== 'string') {
     return res.status(400).json({ error: 'appId is required' });
   }
-  if (!email || typeof email !== 'string' || !email.includes('@')) {
+  const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  if (!email || typeof email !== 'string' || !EMAIL_RE.test(email.trim())) {
     return res.status(400).json({ error: 'Valid email is required' });
   }
   if (role && !['viewer', 'editor'].includes(role)) {

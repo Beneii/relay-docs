@@ -22,6 +22,14 @@ import { validateUrl } from "@/utils/url";
 import { Feather } from "@expo/vector-icons";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 
+function isValidHttpsUrl(value: string): boolean {
+  try {
+    return new URL(value).protocol === 'https:';
+  } catch {
+    return false;
+  }
+}
+
 const ACCENT_COLORS = [
   "#10B981", // emerald
   "#8B5CF6", // violet
@@ -122,9 +130,7 @@ export default function EditAppScreen() {
   }, [existingApp]);
 
   const urlValidation = validateUrl(url);
-  const iconUrlInvalid = customIconUrl.trim().length > 0 && (() => {
-    try { const u = new URL(customIconUrl.trim()); return u.protocol !== 'https:'; } catch { return true; }
-  })();
+  const iconUrlInvalid = customIconUrl.trim().length > 0 && !isValidHttpsUrl(customIconUrl.trim());
   const canSave = name.trim().length > 0 && urlValidation.valid && !iconUrlInvalid;
 
   async function handleSave() {

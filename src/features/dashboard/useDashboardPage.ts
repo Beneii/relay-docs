@@ -4,6 +4,9 @@ import { useNavigate } from "react-router-dom";
 
 import { NOTIFICATION_HISTORY_LIMITS, getLimits } from "@shared/product";
 
+const COPY_FEEDBACK_MS = 2000;
+const TEST_RESULT_CLEAR_MS = 2000;
+
 import { supabase } from "../../lib/supabase";
 import {
   Dashboard,
@@ -313,7 +316,7 @@ export function useDashboardPage() {
   const handleCopyToken = async (token: string) => {
     await navigator.clipboard.writeText(token);
     setCopiedToken(token);
-    setTimeout(() => setCopiedToken(null), 2000);
+    setTimeout(() => setCopiedToken(null), COPY_FEEDBACK_MS);
   };
 
   const handleTestWebhook = async (dashboard: Dashboard) => {
@@ -336,7 +339,7 @@ export function useDashboardPage() {
       setTestResult({ id: dashboard.id, status: "error" });
     } finally {
       setTestingId(null);
-      setTimeout(() => setTestResult(null), 2000);
+      setTimeout(() => setTestResult(null), TEST_RESULT_CLEAR_MS);
     }
   };
 

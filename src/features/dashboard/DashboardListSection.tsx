@@ -21,6 +21,7 @@ interface DashboardListSectionProps {
 }
 
 const WEBHOOK_BASE = 'https://relayapp.dev/webhook';
+const COPY_FEEDBACK_MS = 2000;
 
 function DashboardCard({
   dashboard,
@@ -60,7 +61,7 @@ await relay.notify({ title: 'Hello from Relay' })`;
   async function copySnippet(type: 'curl' | 'sdk', text: string) {
     await navigator.clipboard.writeText(text);
     setCopiedSnippet(type);
-    setTimeout(() => setCopiedSnippet(null), 2000);
+    setTimeout(() => setCopiedSnippet(null), COPY_FEEDBACK_MS);
   }
 
   return (

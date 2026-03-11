@@ -35,6 +35,7 @@ export default function DashboardPage() {
     handleManageBilling,
     handleRemoveDevice,
     handleRemoveMember,
+    handleUpdateMemberRole,
     handleRetryFetch,
     handleSignOut,
     handleTestWebhook,
@@ -280,6 +281,7 @@ export default function DashboardPage() {
             inviting={inviting}
             onInvite={handleInviteMember}
             onRemove={handleRemoveMember}
+            onUpdateRole={handleUpdateMemberRole}
             onClose={() => setShowMembersModal(null)}
           />
         );

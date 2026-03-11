@@ -14,6 +14,7 @@ interface MembersModalProps {
   inviting: boolean;
   onInvite: (appId: string, email: string, role: string) => Promise<void>;
   onRemove: (memberId: string, appId: string) => Promise<void>;
+  onUpdateRole: (memberId: string, appId: string, role: string) => Promise<void>;
   onClose: () => void;
 }
 
@@ -27,6 +28,7 @@ export function MembersModal({
   inviting,
   onInvite,
   onRemove,
+  onUpdateRole,
   onClose,
 }: MembersModalProps) {
   const [email, setEmail] = useState("");
@@ -148,7 +150,18 @@ export function MembersModal({
                     <div className="min-w-0 flex-1">
                       <p className="text-sm font-medium truncate">{member.email}</p>
                       <div className="flex items-center gap-2 mt-1">
-                        <span className="text-xs text-text-muted capitalize">{member.role}</span>
+                        {isOwner && member.status === "accepted" ? (
+                          <select
+                            value={member.role}
+                            onChange={(e) => onUpdateRole(member.id, appId, e.target.value)}
+                            className="text-xs rounded border border-border bg-bg px-1.5 py-0.5 focus:border-accent focus:outline-none transition-colors cursor-pointer"
+                          >
+                            <option value="viewer">Viewer</option>
+                            <option value="editor">Editor</option>
+                          </select>
+                        ) : (
+                          <span className="text-xs text-text-muted capitalize">{member.role}</span>
+                        )}
                         {statusBadge(member.status)}
                       </div>
                     </div>

@@ -450,6 +450,32 @@ export function useDashboardPage() {
     }
   };
 
+  const handleUpdateMemberRole = async (memberId: string, appId: string, role: string) => {
+    try {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error("Not authenticated");
+      const res = await fetch("/api/update-member", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${session.access_token}`,
+        },
+        body: JSON.stringify({ memberId, role }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to update role");
+      // Optimistic update
+      setMembers((prev) => ({
+        ...prev,
+        [appId]: (prev[appId] || []).map((m) =>
+          m.id === memberId ? { ...m, role: role as "viewer" | "editor" } : m
+        ),
+      }));
+    } catch (err) {
+      console.error("Failed to update member role:", err);
+    }
+  };
+
   const handleRemoveMember = async (memberId: string, appId: string) => {
     await supabase.from("dashboard_members").delete().eq("id", memberId);
     setMembers((prev) => ({
@@ -518,6 +544,7 @@ export function useDashboardPage() {
     fetchMembers,
     handleInviteMember,
     handleRemoveMember,
+    handleUpdateMemberRole,
     inviteError,
     inviting,
     members,

@@ -137,7 +137,7 @@ export default function HomeScreen() {
     if (atLimit) {
       Alert.alert(
         "Dashboard limit reached",
-        "Free accounts are limited to 3 dashboards. Upgrade to Pro for unlimited dashboards.",
+        `Free accounts are limited to ${FREE_LIMITS.dashboards} dashboards. Upgrade to Pro for unlimited dashboards.`,
         [
           { text: "Not now", style: "cancel" },
           {

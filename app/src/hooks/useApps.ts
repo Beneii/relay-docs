@@ -125,7 +125,12 @@ export function useDeleteApp() {
   return useMutation({
     mutationFn: async (id: string) => {
       const { error } = await supabase.from("apps").delete().eq("id", id);
-      if (error) throw error;
+      if (error) {
+        if (error.code === "23503") {
+          throw new Error("Cannot delete app while it still has active team members. Remove all members first.");
+        }
+        throw error;
+      }
     },
     onSuccess: (_data, id) => {
       queryClient.invalidateQueries({ queryKey: APPS_KEY });

@@ -61,7 +61,14 @@ function AppCard({ app }: { app: AppRow }) {
               {
                 text: "Delete",
                 style: "destructive",
-                onPress: () => deleteApp.mutate(app.id),
+                onPress: () => {
+                  deleteApp.mutate(app.id, {
+                    onError: (err: unknown) => {
+                      const message = err instanceof Error ? err.message : "Failed to delete app";
+                      Alert.alert("Error", message);
+                    },
+                  });
+                },
               },
             ]
           );

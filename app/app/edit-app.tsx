@@ -122,7 +122,10 @@ export default function EditAppScreen() {
   }, [existingApp]);
 
   const urlValidation = validateUrl(url);
-  const canSave = name.trim().length > 0 && urlValidation.valid;
+  const iconUrlInvalid = customIconUrl.trim().length > 0 && (() => {
+    try { const u = new URL(customIconUrl.trim()); return u.protocol !== 'https:'; } catch { return true; }
+  })();
+  const canSave = name.trim().length > 0 && urlValidation.valid && !iconUrlInvalid;
 
   async function handleSave() {
     if (!canSave) return;
@@ -175,8 +178,13 @@ export default function EditAppScreen() {
         text: "Delete",
         style: "destructive",
         onPress: async () => {
-          await deleteApp.mutateAsync(params.id!);
-          router.back();
+          try {
+            await deleteApp.mutateAsync(params.id!);
+            router.back();
+          } catch (err: unknown) {
+            const message = err instanceof Error ? err.message : "Failed to delete app";
+            Alert.alert("Error", message);
+          }
         },
       },
     ]);
@@ -385,7 +393,7 @@ export default function EditAppScreen() {
             <View style={{ gap: 4 }}>
               <Text style={[styles.fieldHint, { color: colors.textSecondary, paddingHorizontal: 0 }]}>Icon URL</Text>
               <TextInput
-                style={[styles.input, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: colors.border }]}
+                style={[styles.input, { backgroundColor: colors.background, color: colors.textPrimary, borderColor: iconUrlInvalid ? colors.danger : colors.border }]}
                 placeholder="https://example.com/icon.png"
                 placeholderTextColor={colors.textTertiary}
                 value={customIconUrl}
@@ -395,6 +403,9 @@ export default function EditAppScreen() {
                 autoCorrect={false}
                 keyboardType="url"
               />
+              {iconUrlInvalid && (
+                <Text style={[styles.fieldHint, { color: colors.danger, paddingHorizontal: 0 }]}>Must be a valid https:// URL</Text>
+              )}
             </View>
             <View style={{ gap: 4 }}>
               <Text style={[styles.fieldHint, { color: colors.textSecondary, paddingHorizontal: 0 }]}>Background color</Text>

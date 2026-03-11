@@ -51,7 +51,7 @@ export function OutboundWebhooksSection({ appId, isPro }: OutboundWebhooksSectio
   function handleToggle() {
     const next = !expanded;
     setExpanded(next);
-    if (next && !loaded) load();
+    if (next && !loaded && isPro) load();
   }
 
   async function handleAdd() {

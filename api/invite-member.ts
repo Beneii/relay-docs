@@ -87,6 +87,10 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existing.status === 'pending') {
       return res.status(409).json({ error: 'An invite is already pending for this email' });
     }
+    // 'declined' — delete the old record and allow re-invite below
+    if (existing.status === 'declined') {
+      await supabase.from('dashboard_members').delete().eq('id', existing.id);
+    }
   }
 
   // Look up invitee profile

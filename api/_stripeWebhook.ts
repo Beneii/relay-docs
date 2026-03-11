@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type Stripe from "stripe";
 
-import { jsonOk, jsonError } from "./_response.js";
+import { jsonOk, jsonError } from "./_response.ts";
 
 export const STRIPE_WEBHOOK_BODY_CONFIG = {
   api: {

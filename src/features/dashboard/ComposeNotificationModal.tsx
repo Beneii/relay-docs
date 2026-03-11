@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { AlertCircle, Check, Send } from "lucide-react";
 
+import { supabase } from "../../lib/supabase";
 import type { DashboardWithSharing as Dashboard } from "./types";
+import { sendDashboardNotification } from "./utils";
 
 interface ComposeNotificationModalProps {
   dashboards: Dashboard[];
@@ -35,8 +37,8 @@ export function ComposeNotificationModal({
     setErrorMessage("");
 
     try {
-      const webhookUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify/${selectedDashboard.webhook_token}`;
       const payload: Record<string, unknown> = {
+        appId: selectedDashboard.id,
         title: title.trim(),
       };
       if (body.trim()) payload.body = body.trim();
@@ -44,17 +46,15 @@ export function ComposeNotificationModal({
       if (channel.trim()) payload.channel = channel.trim();
       if (url.trim()) payload.url = url.trim();
 
-      const response = await fetch(webhookUrl, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(payload),
-      });
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
 
-      if (!response.ok) {
-        const data = await response.json().catch(() => ({}));
-        throw new Error(data.error || `Request failed (${response.status})`);
+      if (!session) {
+        throw new Error("Not authenticated");
       }
 
+      await sendDashboardNotification(session.access_token, payload);
       setStatus("success");
     } catch (err) {
       setStatus("error");

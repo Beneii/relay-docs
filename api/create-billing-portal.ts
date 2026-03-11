@@ -1,10 +1,10 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
 import Stripe from 'stripe';
 
-import { createBillingPortalHandler } from './_billing.js';
-import { getAuthenticatedUser } from './_auth.js';
-import { requireEnv } from './_env.js';
-import { getServiceClient } from './_supabase.js';
+import { createBillingPortalHandler } from './_billing.ts';
+import { getAuthenticatedUser } from './_auth.ts';
+import { requireEnv } from './_env.ts';
+import { getServiceClient } from './_supabase.ts';
 
 const stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
 const supabase = getServiceClient();

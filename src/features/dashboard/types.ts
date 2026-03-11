@@ -13,7 +13,7 @@ export interface Dashboard {
   id: string;
   name: string;
   url: string;
-  webhook_token: string;
+  webhook_token: string | null;
   user_id: string;
   icon: string | null;
   accent_color: string | null;
@@ -28,7 +28,8 @@ export interface Dashboard {
 export interface DashboardWithSharing extends Dashboard {
   is_owner: boolean;
   owner_email?: string;
-  member_role?: "viewer" | "editor";
+  member_role?: "viewer" | "editor" | null;
+  can_send_notifications: boolean;
 }
 
 export interface DashboardMember {

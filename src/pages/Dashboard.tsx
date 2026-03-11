@@ -1,5 +1,6 @@
 import { Link } from "react-router-dom";
 import { AlertCircle, Check, X } from "lucide-react";
+import { FEATURE_FLAGS } from "@shared/product";
 
 import { LoadingSpinner } from "../components/LoadingSpinner";
 import { RelayIcon } from "../components/RelayLogo";
@@ -263,12 +264,12 @@ export default function DashboardPage() {
 
       {showComposeModal ? (
         <ComposeNotificationModal
-          dashboards={dashboards}
+          dashboards={dashboards.filter((dashboard) => dashboard.can_send_notifications)}
           onClose={() => setShowComposeModal(false)}
         />
       ) : null}
 
-      {showMembersModal ? (() => {
+      {FEATURE_FLAGS.teamSharing && showMembersModal ? (() => {
         const app = dashboards.find((d) => d.id === showMembersModal);
         if (!app) return null;
         return (

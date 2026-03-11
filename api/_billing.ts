@@ -1,8 +1,8 @@
 import type { VercelRequest, VercelResponse } from "@vercel/node";
 import type Stripe from "stripe";
 
-import { handleOptions, setCorsHeaders } from "./_cors.js";
-import { jsonOk, jsonError } from "./_response.js";
+import { handleOptions, setCorsHeaders } from "./_cors.ts";
+import { jsonOk, jsonError } from "./_response.ts";
 
 type AuthenticatedUser = {
   id: string;

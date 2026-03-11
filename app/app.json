@@ -17,29 +17,27 @@
       "bundleIdentifier": "com.relay.app",
       "infoPlist": {
         "NSCameraUsageDescription": "Relay does not use the camera.",
+        "NSLocalNetworkUsageDescription": "Relay uses your local network to open dashboards and tools you host on private or home networks.",
         "UIBackgroundModes": [
-          "remote-notification",
           "remote-notification"
         ],
         "NSAppTransportSecurity": {
-          "NSAllowsArbitraryLoads": true,
-          "NSAllowsLocalNetworking": true,
-          "NSAllowsArbitraryLoadsInWebContent": true
+          "NSAllowsLocalNetworking": true
         },
         "ITSAppUsesNonExemptEncryption": false
       }
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/adaptive-icon.png",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png",
         "backgroundColor": "#09090b"
       },
       "package": "com.relay.app",
       "permissions": [
         "RECEIVE_BOOT_COMPLETED",
         "VIBRATE"
-      ],
-      "googleServicesFile": "./google-services.json"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -47,7 +45,7 @@
       [
         "expo-notifications",
         {
-          "icon": "./assets/notification-icon.png",
+          "icon": "./assets/android-icon-monochrome.png",
           "color": "#10B981"
         }
       ],

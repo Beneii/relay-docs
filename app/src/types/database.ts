@@ -182,3 +182,11 @@ export type AppRow = Tables<"apps">;
 export type NotificationRow = Tables<"notifications">;
 export type DeviceRow = Tables<"devices">;
 export type ProfileRow = Tables<"profiles">;
+
+export interface AccessibleAppRow extends Omit<AppRow, "webhook_token"> {
+  webhook_token: string | null;
+  is_owner: boolean;
+  member_role: "viewer" | "editor" | null;
+  can_send_notifications: boolean;
+  owner_email: string | null;
+}

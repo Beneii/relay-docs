@@ -1,11 +1,8 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthenticatedUser } from './_auth.js';
-import { handleOptions, setCorsHeaders } from './_cors.js';
-import { sendInviteEmail } from './_email.js';
-import { jsonOk, jsonError } from './_response.js';
-import { getServiceClient } from './_supabase.js';
-
-const supabase = getServiceClient();
+import { FEATURE_FLAGS, TEAM_SHARING_DISABLED_MESSAGE } from '../backend/shared/product.ts';
+import { getAuthenticatedUser } from './_auth.ts';
+import { handleOptions, setCorsHeaders } from './_cors.ts';
+import { jsonOk, jsonError } from './_response.ts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res, ['POST', 'OPTIONS'])) return;
@@ -14,6 +11,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return jsonError(res, 405, 'Method not allowed');
   }
+
+  if (!FEATURE_FLAGS.teamSharing) {
+    return jsonError(res, 503, TEAM_SHARING_DISABLED_MESSAGE);
+  }
+
+  const { getServiceClient } = await import('./_supabase.ts');
+  const supabase = getServiceClient();
 
   const user = await getAuthenticatedUser(req);
   if (!user) {
@@ -78,7 +82,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     if (existing.status === 'pending') {
       return jsonError(res, 409, 'An invite is already pending for this email');
     }
-    // 'declined' — delete the old record and allow re-invite below
+    // 'declined' â€” delete the old record and allow re-invite below
     if (existing.status === 'declined') {
       await supabase.from('dashboard_members').delete().eq('id', existing.id);
     }
@@ -111,12 +115,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
   // Send invite email
   try {
+    const { sendInviteEmail } = await import('./_email.ts');
     const inviterName = profile.email || 'A Relay user';
     const hasAccount = !!inviteeProfile;
     await sendInviteEmail(normalizedEmail, inviterName, app.name, member.invite_token, hasAccount);
   } catch (emailErr) {
     console.error('Failed to send invite email:', emailErr);
-    // Non-fatal — invite was created
+    // Non-fatal â€” invite was created
   }
 
   return jsonOk(res, { inviteId: member.id });

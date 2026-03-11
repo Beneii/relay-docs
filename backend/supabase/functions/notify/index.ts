@@ -47,6 +47,18 @@ type RateLimitEntry = {
   windowStartedAt: number;
 };
 
+type DeviceRow = {
+  expo_push_token: string;
+  quiet_start: string | null;
+  quiet_end: string | null;
+  utc_offset_minutes: number | null;
+};
+
+type RecipientDelivery = {
+  notificationId: string;
+  eligibleDevices: DeviceRow[];
+};
+
 const ipRequestCounts = new Map<string, RateLimitEntry>();
 
 const corsHeaders = {
@@ -616,65 +628,108 @@ Deno.serve(async (req) => {
 
     const signature = await generateSignature(webhookToken, rawBody);
 
-    // Fetch devices with quiet hours, and channel preferences in parallel
-    const [devicesResult, channelPrefResult] = await Promise.all([
-      supabase
-        .from("devices")
-        .select("expo_push_token, quiet_start, quiet_end, utc_offset_minutes")
-        .eq("user_id", app.user_id),
-      channelValue
-        ? supabase
-            .from("channel_preferences")
-            .select("muted")
-            .eq("user_id", app.user_id)
-            .eq("channel", channelValue)
-            .maybeSingle()
-        : Promise.resolve({ data: null, error: null }),
-    ]);
-
-    const devices = devicesResult.data;
-
-    // If the user has muted this channel, still store the notification but skip push
-    const isChannelMuted = channelPrefResult.data?.muted === true;
-
-    // Filter devices by quiet hours (critical bypasses quiet hours)
     const now = new Date();
-    type DeviceRow = { expo_push_token: string; quiet_start: string | null; quiet_end: string | null; utc_offset_minutes: number };
-    const eligibleDevices: DeviceRow[] = [];
-    if (devices && !isChannelMuted) {
-      for (const d of devices as DeviceRow[]) {
-        if (severity === "critical" || !isInQuietHours(d.quiet_start, d.quiet_end, d.utc_offset_minutes ?? 0, now)) {
-          eligibleDevices.push(d);
-        }
-      }
+    const { data: acceptedMembers, error: memberError } = await supabase
+      .from("dashboard_members")
+      .select("user_id")
+      .eq("app_id", app.id)
+      .eq("status", "accepted")
+      .not("user_id", "is", null);
+
+    if (memberError) {
+      console.error("Failed to load dashboard members:", memberError);
+      return jsonResponse({ error: "Failed to resolve notification recipients" }, 500);
     }
 
-    // Store notification (always, even if no devices will receive push)
-    const { data: notification, error: notifError } = await supabase
-      .from("notifications")
-      .insert({
-        user_id: app.user_id,
-        app_id: app.id,
-        title: sanitizedTitle,
-        body: sanitizedBody,
-        event_type: body.eventType || null,
-        metadata_json: metadataJson,
-        severity,
-        channel: channelValue,
-        actions_json: actions,
-        deep_link_url: deepLinkUrl,
-        request_signature: signature,
-        pushed_count: eligibleDevices.length,
-      })
-      .select("id")
-      .single();
+    const recipientIds = [...new Set([
+      app.user_id,
+      ...((acceptedMembers ?? [])
+        .map((member) => member.user_id)
+        .filter((memberId): memberId is string => typeof memberId === "string")),
+    ])];
 
-    if (notifError) {
-      console.error("Insert error:", notifError);
-      return jsonResponse(
-        { error: "Failed to store notification" },
-        500
-      );
+    const deliveries = new Map<string, RecipientDelivery>();
+    let ownerNotificationId: string | null = null;
+    let totalPushed = 0;
+
+    for (const recipientId of recipientIds) {
+      const [devicesResult, channelPrefResult] = await Promise.all([
+        supabase
+          .from("devices")
+          .select("expo_push_token, quiet_start, quiet_end, utc_offset_minutes")
+          .eq("user_id", recipientId),
+        channelValue
+          ? supabase
+              .from("channel_preferences")
+              .select("muted")
+              .eq("user_id", recipientId)
+              .eq("channel", channelValue)
+              .maybeSingle()
+          : Promise.resolve({ data: null, error: null }),
+      ]);
+
+      const isChannelMuted = channelPrefResult.data?.muted === true;
+      const recipientDevices = (devicesResult.data as DeviceRow[] | null) ?? [];
+      const eligibleDevices: DeviceRow[] = [];
+
+      if (!isChannelMuted) {
+        for (const device of recipientDevices) {
+          if (
+            severity === "critical" ||
+            !isInQuietHours(
+              device.quiet_start,
+              device.quiet_end,
+              device.utc_offset_minutes ?? 0,
+              now,
+            )
+          ) {
+            eligibleDevices.push(device);
+          }
+        }
+      }
+
+      const { data: notification, error: notifError } = await supabase
+        .from("notifications")
+        .insert({
+          user_id: recipientId,
+          app_id: app.id,
+          title: sanitizedTitle,
+          body: sanitizedBody,
+          event_type: body.eventType || null,
+          metadata_json: metadataJson,
+          severity,
+          channel: channelValue,
+          actions_json: actions,
+          deep_link_url: deepLinkUrl,
+          request_signature: signature,
+          pushed_count: eligibleDevices.length,
+        })
+        .select("id")
+        .single();
+
+      if (notifError) {
+        console.error(`Insert error for recipient ${recipientId}:`, notifError);
+
+        if (recipientId === app.user_id) {
+          return jsonResponse({ error: "Failed to store notification" }, 500);
+        }
+
+        continue;
+      }
+
+      if (recipientId === app.user_id) {
+        ownerNotificationId = notification.id;
+      }
+
+      deliveries.set(recipientId, {
+        notificationId: notification.id,
+        eligibleDevices,
+      });
+      totalPushed += eligibleDevices.length;
+    }
+
+    if (!ownerNotificationId) {
+      return jsonResponse({ error: "Failed to store notification" }, 500);
     }
 
     // Fire-and-forget quota warning check
@@ -686,65 +741,18 @@ Deno.serve(async (req) => {
       plan,
     ).catch((error) => console.error("Quota warning failed:", error));
 
-    if (eligibleDevices.length === 0) {
-      const reason = isChannelMuted
-        ? "Channel muted by user"
-        : !devices || devices.length === 0
-          ? "No devices registered"
-          : "All devices in quiet hours";
+    if (totalPushed === 0) {
       return jsonResponse(
         {
           success: true,
-          notificationId: notification.id,
+          notificationId: ownerNotificationId,
           pushed: 0,
           signature,
-          message: `Stored but not pushed: ${reason}`,
+          message: "Stored but not pushed: no eligible devices",
         },
         200
       );
     }
-
-    // Generate callback token for HMAC-signed action callbacks
-    const callbackTokenBytes = await crypto.subtle.sign(
-      "HMAC",
-      await crypto.subtle.importKey(
-        "raw",
-        new TextEncoder().encode(webhookToken),
-        { name: "HMAC", hash: "SHA-256" },
-        false,
-        ["sign"]
-      ),
-      new TextEncoder().encode(notification.id)
-    );
-    const callbackToken = Array.from(new Uint8Array(callbackTokenBytes))
-      .map((b) => b.toString(16).padStart(2, "0"))
-      .join("");
-
-    // Send push notifications via Expo
-    const messages = eligibleDevices.map((d) => ({
-      to: d.expo_push_token,
-      title: sanitizedTitle,
-      body: sanitizedBody || undefined,
-      sound: severity === "critical" ? "critical" : "default",
-      priority: severity === "critical" ? "max" : "high",
-      data: {
-        appId: app.id,
-        notificationId: notification.id,
-        eventType: body.eventType || null,
-        severity,
-        channel: channelValue,
-        actions: actions,
-        deepLinkUrl,
-        callbackToken,
-      },
-    }));
-
-    const pushRes = await fetch(EXPO_PUSH_URL, {
-      method: "POST",
-      headers: { "Content-Type": "application/json", Accept: "application/json" },
-      body: JSON.stringify(messages),
-    });
-    const pushResult = await pushRes.json();
 
     // Store push tickets for receipt processing
     const ticketRows: {
@@ -753,15 +761,61 @@ Deno.serve(async (req) => {
       ticket_id: string;
     }[] = [];
 
-    if (pushResult?.data && Array.isArray(pushResult.data)) {
-      for (let i = 0; i < pushResult.data.length; i++) {
-        const ticket = pushResult.data[i];
-        if (ticket?.status === "ok" && ticket.id) {
-          ticketRows.push({
-            notification_id: notification.id,
-            expo_push_token: eligibleDevices[i].expo_push_token,
-            ticket_id: ticket.id,
-          });
+    for (const delivery of deliveries.values()) {
+      if (delivery.eligibleDevices.length === 0) {
+        continue;
+      }
+
+      const callbackTokenBytes = await crypto.subtle.sign(
+        "HMAC",
+        await crypto.subtle.importKey(
+          "raw",
+          new TextEncoder().encode(webhookToken),
+          { name: "HMAC", hash: "SHA-256" },
+          false,
+          ["sign"]
+        ),
+        new TextEncoder().encode(delivery.notificationId)
+      );
+      const callbackToken = Array.from(new Uint8Array(callbackTokenBytes))
+        .map((b) => b.toString(16).padStart(2, "0"))
+        .join("");
+
+      const messages = delivery.eligibleDevices.map((device) => ({
+        to: device.expo_push_token,
+        title: sanitizedTitle,
+        body: sanitizedBody || undefined,
+        sound: severity === "critical" ? "critical" : "default",
+        priority: severity === "critical" ? "max" : "high",
+        data: {
+          appId: app.id,
+          notificationId: delivery.notificationId,
+          eventType: body.eventType || null,
+          severity,
+          channel: channelValue,
+          actions,
+          deepLinkUrl,
+          callbackToken,
+        },
+      }));
+
+      const pushRes = await fetch(EXPO_PUSH_URL, {
+        method: "POST",
+        headers: { "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify(messages),
+      });
+      const pushResult = await pushRes.json();
+
+      if (pushResult?.data && Array.isArray(pushResult.data)) {
+        for (let i = 0; i < pushResult.data.length; i++) {
+          const ticket = pushResult.data[i];
+          if (ticket?.status === "ok" && ticket.id) {
+            ticketRows.push({
+              notification_id: delivery.notificationId,
+              expo_push_token: delivery.eligibleDevices[i].expo_push_token,
+              ticket_id: ticket.id,
+            });
+          }
         }
       }
     }
@@ -778,9 +832,9 @@ Deno.serve(async (req) => {
     }
 
     // Fire outbound webhooks asynchronously (non-blocking)
-    fireOutboundWebhooks(supabase, app.id, notification.id, {
+    fireOutboundWebhooks(supabase, app.id, ownerNotificationId, {
       app_id: app.id,
-      notification_id: notification.id,
+      notification_id: ownerNotificationId,
       title: sanitizedTitle,
       body: sanitizedBody || null,
       severity,
@@ -792,8 +846,8 @@ Deno.serve(async (req) => {
     return jsonResponse(
       {
         success: true,
-        notificationId: notification.id,
-        pushed: eligibleDevices.length,
+        notificationId: ownerNotificationId,
+        pushed: totalPushed,
         signature,
       },
       200

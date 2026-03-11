@@ -106,7 +106,7 @@ export function LandingFooter({ anchorBasePath }: LandingFooterProps) {
           <p className="text-sm text-text-muted">
             &copy; {new Date().getFullYear()} Relay. All rights reserved.
           </p>
-          <p className="text-sm text-text-muted">Made for operators, builders, and teams.</p>
+          <p className="text-sm text-text-muted">Made for operators and builders.</p>
         </div>
       </div>
     </footer>

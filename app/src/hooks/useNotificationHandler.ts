@@ -22,6 +22,33 @@ if (Platform.OS !== "web") {
   });
 }
 
+async function signActionBody(callbackToken: string, body: string): Promise<string> {
+  if (globalThis.crypto?.subtle) {
+    const key = await globalThis.crypto.subtle.importKey(
+      "raw",
+      new TextEncoder().encode(callbackToken),
+      { name: "HMAC", hash: "SHA-256" },
+      false,
+      ["sign"]
+    );
+    const signature = await globalThis.crypto.subtle.sign(
+      "HMAC",
+      key,
+      new TextEncoder().encode(body)
+    );
+
+    return `sha256=${Array.from(new Uint8Array(signature))
+      .map((byte) => byte.toString(16).padStart(2, "0"))
+      .join("")}`;
+  }
+
+  const signature = await Crypto.digestStringAsync(
+    Crypto.CryptoDigestAlgorithm.SHA256,
+    callbackToken + body
+  );
+  return `sha256=${signature}`;
+}
+
 /**
  * Handles notification interactions (taps) and routes to the correct app.
  * Also handles cold start from notification via last notification response.
@@ -56,11 +83,7 @@ export function useNotificationHandler() {
             const headers: Record<string, string> = { "Content-Type": "application/json" };
             if (callbackToken) {
               try {
-                const sig = await Crypto.digestStringAsync(
-                  Crypto.CryptoDigestAlgorithm.SHA256,
-                  callbackToken + body
-                );
-                headers["x-relay-signature"] = `sha256=${sig}`;
+                headers["x-relay-signature"] = await signActionBody(callbackToken, body);
               } catch {
                 // ignore
               }

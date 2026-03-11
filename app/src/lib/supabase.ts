@@ -6,33 +6,41 @@ const FALLBACK_URL = "https://placeholder.supabase.co";
 const FALLBACK_KEY =
   "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSJ9.placeholder";
 
-function resolveEnv(
+function isConfiguredString(value: unknown): value is string {
+  return (
+    typeof value === "string" &&
+    value.trim().length > 0 &&
+    !value.includes("YOUR_") &&
+    !value.includes("placeholder")
+  );
+}
+
+function resolveConfigValue(
   configValue: unknown,
   envValue: string | undefined,
   fallback: string
 ): string {
-  // Reject literal placeholder strings from app.json
-  if (typeof configValue === "string" && configValue.startsWith("https://") && !configValue.includes("YOUR_")) {
+  if (isConfiguredString(configValue)) {
     return configValue;
   }
-  if (envValue && !envValue.includes("YOUR_")) {
+  if (isConfiguredString(envValue)) {
     return envValue;
   }
   return fallback;
 }
 
-const supabaseUrl = resolveEnv(
+const supabaseUrl = resolveConfigValue(
   Constants.expoConfig?.extra?.supabaseUrl,
   process.env.EXPO_PUBLIC_SUPABASE_URL,
   FALLBACK_URL
 );
-const supabaseAnonKey = resolveEnv(
+const supabaseAnonKey = resolveConfigValue(
   Constants.expoConfig?.extra?.supabaseAnonKey,
   process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY,
   FALLBACK_KEY
 );
 
-if (supabaseUrl === FALLBACK_URL) {
+if (supabaseUrl === FALLBACK_URL || supabaseAnonKey === FALLBACK_KEY) {
   console.warn(
     "Supabase not configured. Set EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY in your environment."
   );

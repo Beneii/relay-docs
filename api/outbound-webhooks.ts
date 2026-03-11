@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthenticatedUser } from './_auth.js';
-import { handleOptions, setCorsHeaders } from './_cors.js';
-import { jsonOk, jsonError } from './_response.js';
-import { getServiceClient } from './_supabase.js';
-import { getLimits } from '../backend/shared/product.js';
+import { getAuthenticatedUser } from './_auth.ts';
+import { handleOptions, setCorsHeaders } from './_cors.ts';
+import { jsonOk, jsonError } from './_response.ts';
+import { getServiceClient } from './_supabase.ts';
+import { getLimits } from '../backend/shared/product.ts';
 
 const supabase = getServiceClient();
 
@@ -14,17 +14,19 @@ function isValidHttpsUrl(raw: string): boolean {
     const u = new URL(raw);
     if (u.protocol !== 'https:') return false;
     // Block private/loopback IPs (SSRF prevention)
-    const hostname = u.hostname;
+    const hostname = u.hostname.toLowerCase();
     if (
       hostname === 'localhost' ||
       hostname.startsWith('127.') ||
       hostname.startsWith('10.') ||
       hostname.startsWith('192.168.') ||
-      hostname.startsWith('172.16.') ||
+      /^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname) ||
       hostname.startsWith('169.254.') || // AWS/GCP/Azure instance metadata
       hostname === '0.0.0.0' ||
       hostname === '::1' ||
+      hostname === '0:0:0:0:0:0:0:1' ||
       hostname.startsWith('fd') || // IPv6 ULA (private)
+      hostname.startsWith('fc') || // IPv6 ULA (private)
       hostname.endsWith('.internal') ||
       hostname.endsWith('.local') ||
       hostname.endsWith('.localhost')
@@ -42,7 +44,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   const user = await getAuthenticatedUser(req);
   if (!user) return jsonError(res, 401, 'Unauthorized');
 
-  // GET — list webhooks for an app
+  // GET â€” list webhooks for an app
   if (req.method === 'GET') {
     const { appId } = req.query;
     if (!appId || typeof appId !== 'string') {
@@ -62,7 +64,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return jsonOk(res, { webhooks: data || [] });
   }
 
-  // POST — create or update webhook
+  // POST â€” create or update webhook
   if (req.method === 'POST') {
     const { appId, url, provider = 'custom', secret, enabled = true } = req.body || {};
 
@@ -94,14 +96,14 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
 
     const { data, error } = await supabase
       .from('outbound_webhooks')
-      .upsert({
+      .insert({
         user_id: user.id,
         app_id: appId,
         url,
         provider,
         secret: secret || null,
         enabled,
-      }, { onConflict: 'app_id,provider' })
+      })
       .select('id, url, provider, enabled, created_at')
       .single();
 
@@ -109,7 +111,7 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
     return jsonOk(res, { webhook: data });
   }
 
-  // DELETE — remove webhook by id
+  // DELETE â€” remove webhook by id
   if (req.method === 'DELETE') {
     const { id } = req.query;
     if (!id || typeof id !== 'string') return jsonError(res, 400, 'id required');

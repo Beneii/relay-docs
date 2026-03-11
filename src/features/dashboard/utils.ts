@@ -16,3 +16,29 @@ export function generateWebhookToken(): string {
 
   return bytesToHex(bytes);
 }
+
+export async function sendDashboardNotification(
+  accessToken: string,
+  payload: Record<string, unknown>
+) {
+  const response = await fetch("/api/send-notification", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${accessToken}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await response.json().catch(() => ({}));
+
+  if (!response.ok) {
+    throw new Error(
+      typeof data.error === "string"
+        ? data.error
+        : `Request failed (${response.status})`
+    );
+  }
+
+  return data;
+}

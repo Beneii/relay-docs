@@ -1,8 +1,5 @@
 import type { VercelRequest } from '@vercel/node';
 import type { User } from '@supabase/supabase-js';
-import { getServiceClient } from './_supabase.js';
-
-const supabase = getServiceClient();
 
 function normalizeHeaderValue(value: string | string[] | undefined): string | null {
   if (!value) {
@@ -51,6 +48,9 @@ export async function getAuthenticatedUser(
   if (!token) {
     return null;
   }
+
+  const { getServiceClient } = await import('./_supabase.ts');
+  const supabase = getServiceClient();
 
   const {
     data: { user },

@@ -2,9 +2,11 @@ import assert from "node:assert/strict";
 import test from "node:test";
 
 import {
+  FEATURE_FLAGS,
   FREE_LIMITS,
   NOTIFICATION_HISTORY_LIMITS,
   PRO_LIMITS,
+  TEAM_SHARING_DISABLED_MESSAGE,
   getLimits,
 } from "../../backend/shared/product.ts";
 
@@ -30,4 +32,12 @@ test("notification history limits stay aligned with plan tiers", () => {
     free: 10,
     pro: 50,
   });
+});
+
+test("release feature flags default to the safer solo/mobile configuration", () => {
+  assert.deepEqual(FEATURE_FLAGS, {
+    teamSharing: false,
+    mobileExternalBillingLinks: false,
+  });
+  assert.match(TEAM_SHARING_DISABLED_MESSAGE, /temporarily unavailable/i);
 });

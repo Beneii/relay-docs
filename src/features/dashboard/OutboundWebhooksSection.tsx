@@ -70,15 +70,7 @@ export function OutboundWebhooksSection({ appId, isPro }: OutboundWebhooksSectio
       });
       const json = await res.json();
       if (!res.ok) throw new Error(json.error || "Failed to add");
-      setWebhooks((prev) => {
-        const existing = prev.findIndex((w) => w.provider === addProvider);
-        if (existing >= 0) {
-          const updated = [...prev];
-          updated[existing] = json.webhook;
-          return updated;
-        }
-        return [...prev, json.webhook];
-      });
+      setWebhooks((prev) => [...prev, json.webhook]);
       setAddUrl("");
     } catch (e: unknown) {
       setError(e instanceof Error ? e.message : "Failed to add webhook");

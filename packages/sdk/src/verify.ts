@@ -20,6 +20,18 @@ async function computeSignature(token: string, payload: string): Promise<string>
   return `sha256=${signatureHex}`;
 }
 
+async function computeDigest(payload: string): Promise<string> {
+  if (!globalThis.crypto?.subtle) {
+    throw new Error("Web Crypto API is not available in this environment");
+  }
+
+  const digestBuffer = await crypto.subtle.digest("SHA-256", encoder.encode(payload));
+  const digestHex = Array.from(new Uint8Array(digestBuffer))
+    .map((b) => b.toString(16).padStart(2, "0"))
+    .join("");
+  return `sha256=${digestHex}`;
+}
+
 function timingSafeEqual(a: string, b: string): boolean {
   if (a.length !== b.length) {
     return false;
@@ -52,5 +64,10 @@ export async function verifySignature(
   }
   const callbackToken = await computeSignature(webhookToken, notificationId);
   const expected = await computeSignature(callbackToken, body);
-  return timingSafeEqual(signature, expected);
+  if (timingSafeEqual(signature, expected)) {
+    return true;
+  }
+
+  const legacyExpected = await computeDigest(callbackToken + body);
+  return timingSafeEqual(signature, legacyExpected);
 }

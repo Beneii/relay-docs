@@ -1,19 +1,24 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthenticatedUser } from './_auth.js';
-import { handleOptions, setCorsHeaders } from './_cors.js';
-import { jsonOk, jsonError } from './_response.js';
-import { getServiceClient } from './_supabase.js';
-
-const supabase = getServiceClient();
+import { FEATURE_FLAGS, TEAM_SHARING_DISABLED_MESSAGE } from '../backend/shared/product.ts';
+import { getAuthenticatedUser } from './_auth.ts';
+import { handleOptions, setCorsHeaders } from './_cors.ts';
+import { jsonOk, jsonError } from './_response.ts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res, ['POST', 'GET', 'OPTIONS'])) return;
   setCorsHeaders(req, res, ['POST', 'GET', 'OPTIONS']);
 
+  if (!FEATURE_FLAGS.teamSharing) {
+    return jsonError(res, 503, TEAM_SHARING_DISABLED_MESSAGE);
+  }
+
   // Accept token from body (POST) or query (GET)
   const token =
     (req.method === 'POST' ? req.body?.token : null) ||
     (typeof req.query.token === 'string' ? req.query.token : null);
+
+  const { getServiceClient } = await import('./_supabase.ts');
+  const supabase = getServiceClient();
 
   if (!token || typeof token !== 'string') {
     return jsonError(res, 400, 'Missing invite token');

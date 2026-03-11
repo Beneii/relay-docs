@@ -25,6 +25,7 @@ test("billing portal handler creates a portal session for users with Stripe cust
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.jsonBody, {
+    ok: true,
     url: "https://billing.stripe.test/session",
   });
   assert.deepEqual(portalParams, {
@@ -49,5 +50,8 @@ test("billing portal handler returns 404 when no billing account exists", async 
   await handler(req as never, res as never);
 
   assert.equal(res.statusCode, 404);
-  assert.deepEqual(res.jsonBody, { error: "No billing account found" });
+  assert.deepEqual(res.jsonBody, {
+    ok: false,
+    error: "No billing account found",
+  });
 });

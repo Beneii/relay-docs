@@ -1,9 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { sendWelcomeEmail } from './_email.js';
-import { getAuthenticatedUser, getRequestHeader } from './_auth.js';
-import { handleOptions, setCorsHeaders } from './_cors.js';
-import { jsonOk, jsonError } from './_response.js';
-import { getServiceClient } from './_supabase.js';
+import { sendWelcomeEmail } from './_email.ts';
+import { getAuthenticatedUser, getRequestHeader } from './_auth.ts';
+import { handleOptions, setCorsHeaders } from './_cors.ts';
+import { jsonOk, jsonError } from './_response.ts';
+import { getServiceClient } from './_supabase.ts';
 
 const WEBHOOK_SECRET_HEADERS = ['x-supabase-webhook-secret', 'x-webhook-secret'];
 const SIGNUP_WINDOW_MS = 5 * 60 * 1000;

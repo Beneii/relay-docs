@@ -1,5 +1,13 @@
 export type Plan = "free" | "pro";
 
+export const FEATURE_FLAGS = {
+  teamSharing: false,
+  mobileExternalBillingLinks: false,
+} as const;
+
+export const TEAM_SHARING_DISABLED_MESSAGE =
+  "Team sharing is temporarily unavailable while we focus on the solo release.";
+
 export const FREE_LIMITS = {
   dashboards: 3,
   devices: 1,
@@ -50,7 +58,7 @@ export const PRO_FEATURES = [
   `Up to ${PRO_LIMITS.devices} devices`,
   `${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/month`,
   "Interactive action buttons + SDK features",
-  "Team sharing & collaboration",
+  "Custom branding for dashboards",
   "Notification history & metadata events",
   "Priority support",
 ] as const;

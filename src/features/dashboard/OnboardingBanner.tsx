@@ -35,14 +35,18 @@ export function OnboardingBanner({
   onTestWebhook,
 }: OnboardingBannerProps) {
   const { dismissed, dismiss } = usePersistentDismissed("relay_onboarding_dismissed");
-  const showBanner = !dismissed && (dashboards.length === 0 || notificationsUsed === 0);
-
-  const firstDashboard = dashboards[0];
+  const firstOwnedDashboard = dashboards.find(
+    (dashboard) => dashboard.is_owner && dashboard.webhook_token
+  );
+  const showBanner =
+    !dismissed &&
+    (dashboards.length === 0 ||
+      (notificationsUsed === 0 && Boolean(firstOwnedDashboard)));
 
   const tokenSnippet = useMemo(() => {
-    const token = firstDashboard?.webhook_token ?? "YOUR_WEBHOOK_TOKEN";
+    const token = firstOwnedDashboard?.webhook_token ?? "YOUR_WEBHOOK_TOKEN";
     return `import { Relay } from '@relayapp/sdk'\n\nconst relay = new Relay({ token: '${token}' })\n\nawait relay.notify({\n  title: 'Hello from Relay',\n  body: 'Your webhook is alive.',\n})`;
-  }, [firstDashboard]);
+  }, [firstOwnedDashboard]);
 
   if (!showBanner) return null;
 
@@ -55,8 +59,8 @@ export function OnboardingBanner({
   };
 
   const handleTest = () => {
-    if (firstDashboard) {
-      onTestWebhook(firstDashboard);
+    if (firstOwnedDashboard) {
+      onTestWebhook(firstOwnedDashboard);
     }
   };
 
@@ -121,12 +125,12 @@ export function OnboardingBanner({
             </p>
             <button
               onClick={handleTest}
-              disabled={!firstDashboard}
+              disabled={!firstOwnedDashboard}
               className="inline-flex items-center justify-center h-10 px-4 rounded-lg bg-accent text-white font-medium text-sm hover:bg-blue-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               Send test
             </button>
-            {!firstDashboard ? (
+            {!firstOwnedDashboard ? (
               <p className="text-xs text-text-muted mt-2">Add a dashboard to enable this step.</p>
             ) : null}
           </div>

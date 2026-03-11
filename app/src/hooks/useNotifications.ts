@@ -118,7 +118,6 @@ export function useUnreadCount() {
 
 export function useMarkAsRead() {
   const queryClient = useQueryClient();
-  const { notifications } = useNotifications();
 
   return useMutation({
     mutationFn: async (id: string) => {

@@ -1,11 +1,9 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getAuthenticatedUser } from './_auth.js';
-import { handleOptions, setCorsHeaders } from './_cors.js';
-import { jsonOk, jsonError } from './_response.js';
-import { getServiceClient } from './_supabase.js';
-import { assertEnum, assertString, ValidationError } from './_validators.js';
-
-const supabase = getServiceClient();
+import { FEATURE_FLAGS, TEAM_SHARING_DISABLED_MESSAGE } from '../backend/shared/product.ts';
+import { getAuthenticatedUser } from './_auth.ts';
+import { handleOptions, setCorsHeaders } from './_cors.ts';
+import { jsonOk, jsonError } from './_response.ts';
+import { assertEnum, assertString, ValidationError } from './_validators.ts';
 
 export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (handleOptions(req, res, ['POST', 'OPTIONS'])) return;
@@ -14,6 +12,13 @@ export default async function handler(req: VercelRequest, res: VercelResponse) {
   if (req.method !== 'POST') {
     return jsonError(res, 405, 'Method not allowed');
   }
+
+  if (!FEATURE_FLAGS.teamSharing) {
+    return jsonError(res, 503, TEAM_SHARING_DISABLED_MESSAGE);
+  }
+
+  const { getServiceClient } = await import('./_supabase.ts');
+  const supabase = getServiceClient();
 
   const user = await getAuthenticatedUser(req);
   if (!user) {

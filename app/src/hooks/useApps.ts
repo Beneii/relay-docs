@@ -2,7 +2,7 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/lib/supabase";
 import { useAuthStore } from "@/stores/authStore";
 import { generateWebhookToken } from "@/utils/webhook";
-import type { AppRow } from "@/types/database";
+import type { AccessibleAppRow, AppRow } from "@/types/database";
 
 const APPS_KEY = ["apps"] as const;
 
@@ -11,16 +11,16 @@ export function useApps() {
 
   return useQuery({
     queryKey: APPS_KEY,
-    queryFn: async (): Promise<AppRow[]> => {
+    queryFn: async (): Promise<AccessibleAppRow[]> => {
       if (!user) return [];
-      const { data, error } = await supabase
-        .from("apps")
-        .select("*")
-        .eq("user_id", user.id)
-        .order("last_opened_at", { ascending: false, nullsFirst: false });
+      const { data, error } = await supabase.rpc("list_accessible_apps");
 
       if (error) throw error;
-      return (data as AppRow[]) ?? [];
+      return ((data as AccessibleAppRow[]) ?? []).sort((left, right) => {
+        const leftTime = left.last_opened_at ? new Date(left.last_opened_at).getTime() : 0;
+        const rightTime = right.last_opened_at ? new Date(right.last_opened_at).getTime() : 0;
+        return rightTime - leftTime;
+      });
     },
     enabled: !!user,
   });
@@ -31,17 +31,14 @@ export function useApp(id: string) {
 
   return useQuery({
     queryKey: ["apps", id],
-    queryFn: async (): Promise<AppRow | null> => {
+    queryFn: async (): Promise<AccessibleAppRow | null> => {
       if (!user) return null;
       const { data, error } = await supabase
-        .from("apps")
-        .select("*")
-        .eq("id", id)
-        .eq("user_id", user.id)
-        .single();
+        .rpc("get_accessible_app", { p_app_id: id })
+        .maybeSingle();
 
       if (error) throw error;
-      return data as AppRow;
+      return (data as AccessibleAppRow | null) ?? null;
     },
     enabled: !!user && !!id,
   });
@@ -127,7 +124,7 @@ export function useDeleteApp() {
       const { error } = await supabase.from("apps").delete().eq("id", id);
       if (error) {
         if (error.code === "23503") {
-          throw new Error("Cannot delete app while it still has active team members. Remove all members first.");
+          throw new Error("Cannot delete this dashboard until related access records are removed.");
         }
         throw error;
       }

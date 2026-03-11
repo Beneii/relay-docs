@@ -3,7 +3,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { LoadingSpinner } from '../components/LoadingSpinner';
 import { supabase } from '../lib/supabase';
 import { CheckCircle2, X } from 'lucide-react';
-import { FREE_LIMITS, PRO_FEATURES, PRO_PRICING } from '@shared/product';
+import { FEATURE_FLAGS, FREE_LIMITS, PRO_FEATURES, PRO_PRICING } from '@shared/product';
 import { LandingFooter } from '../features/landing/LandingFooter';
 import { LandingNav } from '../features/landing/LandingNav';
 import { MobileDownloadSection } from '../features/landing/MobileDownloadSection';
@@ -129,7 +129,7 @@ export default function Pricing() {
     { label: `${FREE_LIMITS.notificationsPerMonth} notifications / month`, included: true },
     { label: '@relayapp/sdk + REST API access', included: true },
     { label: 'Webhook API access', included: true },
-    { label: 'Team sharing', included: false },
+    ...(FEATURE_FLAGS.teamSharing ? [{ label: 'Team sharing', included: false }] : []),
     { label: 'Notification history', included: false },
     { label: 'Priority support', included: false },
   ];
@@ -216,7 +216,7 @@ export default function Pricing() {
             {!annual && (
               <p className="text-sm text-text-muted mb-6">Billed monthly</p>
             )}
-            <p className="text-text-muted mb-8">For power users and professional teams.</p>
+            <p className="text-text-muted mb-8">For power users who need more scale and polish.</p>
 
             <ul className="space-y-4 mb-8 flex-1">
               {proPlanFeatures.map((feature, i) => (

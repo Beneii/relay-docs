@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { AlertCircle, Check, ChevronDown, Copy, ExternalLink, Plus, Send, Trash2, Users, Webhook, Zap } from "lucide-react";
+import { FEATURE_FLAGS } from "@shared/product";
 
 import type { DashboardTestResult, DashboardWithSharing } from "./types";
 import { OutboundWebhooksSection } from "./OutboundWebhooksSection";
@@ -48,14 +49,16 @@ function DashboardCard({
 }) {
   const [showQuickstart, setShowQuickstart] = useState(false);
   const [copiedSnippet, setCopiedSnippet] = useState<'curl' | 'sdk' | null>(null);
-  const webhookUrl = `${WEBHOOK_BASE}/${dashboard.webhook_token}`;
+  const webhookUrl = dashboard.webhook_token
+    ? `${WEBHOOK_BASE}/${dashboard.webhook_token}`
+    : null;
 
-  const curlSnippet = `curl -X POST ${webhookUrl} \\
+  const curlSnippet = `curl -X POST ${webhookUrl ?? `${WEBHOOK_BASE}/YOUR_WEBHOOK_TOKEN`} \\
   -H "Content-Type: application/json" \\
   -d '{"title": "Hello from Relay"}'`;
 
   const sdkSnippet = `import { Relay } from '@relayapp/sdk'
-const relay = new Relay({ token: '${dashboard.webhook_token}' })
+const relay = new Relay({ token: '${dashboard.webhook_token ?? "YOUR_WEBHOOK_TOKEN"}' })
 await relay.notify({ title: 'Hello from Relay' })`;
 
   async function copySnippet(type: 'curl' | 'sdk', text: string) {
@@ -95,7 +98,7 @@ await relay.notify({ title: 'Hello from Relay' })`;
           </a>
 
           {/* Token + test controls — only for owners */}
-          {dashboard.is_owner && (
+          {dashboard.is_owner && dashboard.webhook_token && (
             <>
               <div className="flex items-center gap-2 mt-2 flex-wrap">
                 <code className="text-xs text-text-muted font-mono bg-bg px-2.5 py-1.5 rounded-lg border border-border truncate max-w-[240px]">
@@ -181,13 +184,15 @@ await relay.notify({ title: 'Hello from Relay' })`;
         </div>
 
         <div className="flex items-start gap-2 shrink-0">
-          <button
-            onClick={() => onShowMembersModal(dashboard.id)}
-            className="p-2 text-text-muted hover:text-accent hover:bg-accent/10 rounded-lg transition-all cursor-pointer"
-            title="Manage team"
-          >
-            <Users className="w-5 h-5" />
-          </button>
+          {FEATURE_FLAGS.teamSharing && dashboard.is_owner && (
+            <button
+              onClick={() => onShowMembersModal(dashboard.id)}
+              className="p-2 text-text-muted hover:text-accent hover:bg-accent/10 rounded-lg transition-all cursor-pointer"
+              title="Manage team"
+            >
+              <Users className="w-5 h-5" />
+            </button>
+          )}
           {dashboard.is_owner && (
             <button
               onClick={() => onDeleteDashboard(dashboard.id)}
@@ -222,12 +227,14 @@ export function DashboardListSection({
   testResult,
   testingId,
 }: DashboardListSectionProps) {
+  const canCompose = dashboards.some((dashboard) => dashboard.can_send_notifications);
+
   return (
     <>
       <div className="flex items-center justify-between">
         <h1 className="text-2xl font-bold tracking-tight">Dashboards</h1>
         <div className="flex items-center gap-2">
-          {dashboards.length > 0 ? (
+          {canCompose ? (
             <button
               onClick={onShowComposeModal}
               className="flex items-center gap-2 h-10 px-4 rounded-lg border border-border text-sm font-medium text-text-muted hover:text-text-main hover:bg-surface-hover transition-all cursor-pointer"

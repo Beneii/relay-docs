@@ -57,6 +57,7 @@ test("stripe webhook handler short-circuits already processed events", async () 
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.jsonBody, {
+    ok: true,
     received: true,
     status: "already_processed",
   });
@@ -127,7 +128,10 @@ test("stripe webhook handler upgrades users from checkout completion events", as
   await handler(req as never, res as never);
 
   assert.equal(res.statusCode, 200);
-  assert.deepEqual(res.jsonBody, { received: true });
+  assert.deepEqual(res.jsonBody, {
+    ok: true,
+    received: true,
+  });
   assert.deepEqual(calls, ["update:pro", "sendUpgradeEmail", "recordProcessed"]);
 });
 

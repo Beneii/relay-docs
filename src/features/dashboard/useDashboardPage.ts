@@ -20,7 +20,11 @@ import {
   NotificationRecord,
   UserData,
 } from "./types";
-import { generateWebhookToken, sleep } from "./utils";
+import {
+  generateWebhookToken,
+  sendDashboardNotification,
+  sleep,
+} from "./utils";
 
 export function useDashboardPage() {
   const [user, setUser] = useState<UserData | null>(null);
@@ -157,13 +161,8 @@ export function useDashboardPage() {
 
       const historyLimit = NOTIFICATION_HISTORY_LIMITS[userData.plan];
 
-      const [dashboardsResult, sharedMembershipsResult, notificationsResult, historyResult, devicesResult] = await Promise.all([
-        supabase.from("apps").select("*"),
-        supabase
-          .from("dashboard_members")
-          .select("app_id, role")
-          .eq("user_id", session.user.id)
-          .eq("status", "accepted"),
+      const [dashboardsResult, notificationsResult, historyResult, devicesResult] = await Promise.all([
+        supabase.rpc("list_accessible_apps"),
         supabase
           .from("notifications")
           .select("*", { count: "exact", head: true })
@@ -199,35 +198,7 @@ export function useDashboardPage() {
         console.error("Failed to load dashboards:", dashboardsResult.error);
         nextFetchError = "We couldn't load your dashboards. Please try again.";
       } else {
-        const allApps: Dashboard[] = dashboardsResult.data || [];
-        const membershipMap = new Map(
-          (sharedMembershipsResult.data || []).map((m) => [m.app_id, m.role as "viewer" | "editor"])
-        );
-
-        // For non-owned apps, fetch owner emails
-        const nonOwnedOwnerIds = [...new Set(
-          allApps
-            .filter((a) => a.user_id !== session.user.id)
-            .map((a) => a.user_id)
-        )];
-        const ownerEmailMap = new Map<string, string>();
-        if (nonOwnedOwnerIds.length > 0) {
-          const { data: ownerProfiles } = await supabase
-            .from("profiles")
-            .select("id, email")
-            .in("id", nonOwnedOwnerIds);
-          (ownerProfiles || []).forEach((p: { id: string; email: string }) => {
-            ownerEmailMap.set(p.id, p.email);
-          });
-        }
-
-        const enriched: DashboardWithSharing[] = allApps.map((app) => ({
-          ...app,
-          is_owner: app.user_id === session.user.id,
-          owner_email: app.user_id !== session.user.id ? ownerEmailMap.get(app.user_id) : undefined,
-          member_role: membershipMap.get(app.id),
-        }));
-        setDashboards(enriched);
+        setDashboards((dashboardsResult.data as DashboardWithSharing[]) || []);
       }
 
       if (notificationsResult.error) {
@@ -330,18 +301,20 @@ export function useDashboardPage() {
     setTestingId(dashboard.id);
     setTestResult(null);
     try {
-      const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/notify/${dashboard.webhook_token}`,
-        {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            title: "Test notification",
-            body: "Your webhook is working!",
-          }),
-        }
-      );
-      setTestResult({ id: dashboard.id, status: response.ok ? "success" : "error" });
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("Not authenticated");
+      }
+
+      await sendDashboardNotification(session.access_token, {
+        appId: dashboard.id,
+        title: "Test notification",
+        body: "Your webhook is working!",
+      });
+      setTestResult({ id: dashboard.id, status: "success" });
     } catch {
       setTestResult({ id: dashboard.id, status: "error" });
     } finally {
@@ -356,7 +329,9 @@ export function useDashboardPage() {
 
     setFetchError(null);
 
-    if (user.plan === "free" && dashboards.length >= getLimits("free").dashboards) {
+    const ownedDashboardCount = dashboards.filter((dashboard) => dashboard.is_owner).length;
+
+    if (user.plan === "free" && ownedDashboardCount >= getLimits("free").dashboards) {
       setError(
         `Free plan is limited to ${getLimits("free").dashboards} dashboards. Please upgrade to add more.`
       );
@@ -392,7 +367,13 @@ export function useDashboardPage() {
     if (insertError) {
       setError(insertError.message);
     } else if (data) {
-      const enriched: DashboardWithSharing = { ...data, is_owner: true };
+      const enriched: DashboardWithSharing = {
+        ...data,
+        is_owner: true,
+        member_role: null,
+        owner_email: undefined,
+        can_send_notifications: true,
+      };
       setDashboards([...dashboards, enriched]);
       setShowAddModal(false);
       setNewDashName("");

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getIp, rateLimit } from './_lib/rateLimit.js';
-import { jsonOk, jsonError } from './_response.js';
-import { getServiceClient } from './_supabase.js';
+import { getIp, rateLimit } from './_lib/rateLimit.ts';
+import { jsonOk, jsonError } from './_response.ts';
+import { getServiceClient } from './_supabase.ts';
 
 const supabase = getServiceClient();
 

@@ -1,7 +1,7 @@
 import type { VercelRequest, VercelResponse } from '@vercel/node';
-import { getServiceClient } from './_supabase.js';
-import { jsonOk, jsonError } from './_response.js';
-import { requireEnv } from './_env.js';
+import { getServiceClient } from './_supabase.ts';
+import { jsonOk, jsonError } from './_response.ts';
+import { requireEnv } from './_env.ts';
 
 const supabaseUrl = process.env.VITE_SUPABASE_URL || process.env.SUPABASE_URL || requireEnv('SUPABASE_URL');
 const cronSecret = requireEnv('CRON_SECRET');

@@ -1,12 +1,12 @@
 import { Resend } from 'resend';
-import { FREE_LIMITS, PRO_LIMITS } from '../backend/shared/product.js';
-import { requireEnv } from './_env.js';
+import { FREE_LIMITS, PRO_LIMITS } from '../backend/shared/product.ts';
+import { requireEnv } from './_env.ts';
 
 const resend = new Resend(requireEnv('RESEND_API_KEY'));
 
 const FROM_EMAIL = process.env.EMAIL_FROM || 'Relay <hello@relayapp.dev>';
 
-// ── Light mode (default) / Dark mode colors ─────────────────────
+// â”€â”€ Light mode (default) / Dark mode colors â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 const L = {
   bg: '#fafafa',
   surface: '#ffffff',
@@ -31,13 +31,13 @@ const D = {
   footerText: '#52525b',
 };
 
-// Relay icon PNGs for emails — dark on light, white on dark
+// Relay icon PNGs for emails â€” dark on light, white on dark
 const LOGO_DARK_URL = 'https://relayapp.dev/logo-dark.png';
 const LOGO_WHITE_URL = 'https://relayapp.dev/logo-white.png';
 const FREE_PLAN_SUMMARY = `${FREE_LIMITS.dashboards} dashboards, ${FREE_LIMITS.devices} device, ${FREE_LIMITS.notificationsPerMonth} notifications/month`;
 const PRO_PLAN_SUMMARY = `unlimited dashboards, up to ${PRO_LIMITS.devices} devices, and ${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/month`;
 
-// ── Layout wrapper with dark mode support ────────────────────────
+// â”€â”€ Layout wrapper with dark mode support â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function layout(content: string): string {
   return `
 <!DOCTYPE html>
@@ -82,7 +82,7 @@ function layout(content: string): string {
         <!-- Footer -->
         <tr><td align="center" style="padding-top:24px;">
           <p class="email-footer" style="margin:0;font-size:13px;color:${L.footerText};line-height:1.5;">
-            <a href="https://relayapp.dev" class="email-footer" style="color:${L.footerText};text-decoration:none;">Relay</a> — Real-time webhook notifications
+            <a href="https://relayapp.dev" class="email-footer" style="color:${L.footerText};text-decoration:none;">Relay</a> - Real-time webhook notifications
           </p>
           <p class="email-footer" style="margin:8px 0 0;font-size:12px;color:${L.footerText};">
             You're receiving this because you have a Relay account.
@@ -95,7 +95,7 @@ function layout(content: string): string {
 </html>`;
 }
 
-// ── HTML escaping ─────────────────────────────────────────────────
+// â”€â”€ HTML escaping â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function escapeHtml(str: string): string {
   return str
     .replace(/&/g, '&amp;')
@@ -105,7 +105,7 @@ function escapeHtml(str: string): string {
     .replace(/'/g, '&#x27;');
 }
 
-// ── Helpers ───────────────────────────────────────────────────────
+// â”€â”€ Helpers â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 function heading(text: string): string {
   return `<h1 class="email-text" style="margin:0 0 16px;font-size:22px;font-weight:700;color:${L.text};line-height:1.3;">${text}</h1>`;
 }
@@ -133,12 +133,12 @@ function planBadge(plan: string): string {
   return `<span style="display:inline-block;background-color:${bg};color:#fff;font-size:12px;font-weight:600;padding:4px 12px;border-radius:99px;text-transform:uppercase;letter-spacing:0.5px;">${plan}</span>`;
 }
 
-// ── Email templates ──────────────────────────────────────────────
+// â”€â”€ Email templates â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€â”€
 
 export async function sendWelcomeEmail(to: string) {
   const html = layout(`
     ${heading('Welcome to Relay')}
-    ${paragraph('Your account is set up and ready to go. Relay delivers real-time webhook notifications straight to your phone — no more checking dashboards.')}
+    ${paragraph('Your account is set up and ready to go. Relay delivers real-time webhook notifications straight to your phone - no more checking dashboards.')}
     ${paragraph("Here's how to get started:")}
     <table cellpadding="0" cellspacing="0" style="margin:0 0 16px;width:100%;">
       <tr>
@@ -180,22 +180,22 @@ export async function sendProUpgradeEmail(to: string) {
     <table cellpadding="0" cellspacing="0" style="margin:0 0 20px;width:100%;">
       <tr>
         <td class="email-check-text" style="padding:8px 0;color:${L.text};font-size:14px;">
-          <span style="color:${L.green};margin-right:8px;">✓</span> Unlimited dashboards
+          <span style="color:${L.green};margin-right:8px;">&#10003;</span> Unlimited dashboards
         </td>
       </tr>
       <tr>
         <td class="email-check-text" style="padding:8px 0;color:${L.text};font-size:14px;">
-          <span style="color:${L.green};margin-right:8px;">✓</span> Unlimited devices
+          <span style="color:${L.green};margin-right:8px;">&#10003;</span> Unlimited devices
         </td>
       </tr>
       <tr>
         <td class="email-check-text" style="padding:8px 0;color:${L.text};font-size:14px;">
-          <span style="color:${L.green};margin-right:8px;">✓</span> ${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/month
+          <span style="color:${L.green};margin-right:8px;">&#10003;</span> ${PRO_LIMITS.notificationsPerMonth.toLocaleString()} notifications/month
         </td>
       </tr>
       <tr>
         <td class="email-check-text" style="padding:8px 0;color:${L.text};font-size:14px;">
-          <span style="color:${L.green};margin-right:8px;">✓</span> Priority support
+          <span style="color:${L.green};margin-right:8px;">&#10003;</span> Priority support
         </td>
       </tr>
     </table>
@@ -223,17 +223,17 @@ export async function sendSubscriptionCancelledEmail(to: string) {
     <table cellpadding="0" cellspacing="0" style="margin:0 0 20px;width:100%;">
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> ${FREE_LIMITS.dashboards} dashboards
+          <span style="margin-right:8px;">&bull;</span> ${FREE_LIMITS.dashboards} dashboards
         </td>
       </tr>
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> ${FREE_LIMITS.devices} device
+          <span style="margin-right:8px;">&bull;</span> ${FREE_LIMITS.devices} device
         </td>
       </tr>
       <tr>
         <td class="email-list-text" style="padding:8px 0;color:${L.muted};font-size:14px;">
-          <span style="margin-right:8px;">•</span> ${FREE_LIMITS.notificationsPerMonth} notifications/month
+          <span style="margin-right:8px;">&bull;</span> ${FREE_LIMITS.notificationsPerMonth} notifications/month
         </td>
       </tr>
     </table>
@@ -253,7 +253,7 @@ export async function sendSubscriptionCancelledEmail(to: string) {
 
 export async function sendPaymentFailedEmail(to: string) {
   const html = layout(`
-    ${heading('Payment failed — action needed')}
+    ${heading('Payment failed - action needed')}
     ${paragraph('We couldn\'t process your latest payment for Relay Pro. This usually happens when a card expires or has insufficient funds.')}
     ${paragraph('Please update your payment method to keep your Pro features active. If we can\'t collect payment after a few retries, your account will be downgraded to Free.')}
     ${button('Update Payment Method', 'https://relayapp.dev/dashboard', L.red)}
@@ -305,3 +305,4 @@ export async function sendInviteEmail(
     text: `${plainInviterName} invited you to "${plainAppName}" on Relay. Accept the invite: ${acceptUrl}`,
   });
 }
+

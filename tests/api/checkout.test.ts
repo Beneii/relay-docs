@@ -36,6 +36,7 @@ test("checkout handler creates a subscription session for free users", async () 
 
   assert.equal(res.statusCode, 200);
   assert.deepEqual(res.jsonBody, {
+    ok: true,
     url: "https://checkout.stripe.test/session",
   });
   assert.equal(createdParams?.customer_email, "user@example.com");
@@ -70,7 +71,10 @@ test("checkout handler rejects users already on pro", async () => {
   await handler(req as never, res as never);
 
   assert.equal(res.statusCode, 400);
-  assert.deepEqual(res.jsonBody, { error: "Already on Pro plan" });
+  assert.deepEqual(res.jsonBody, {
+    ok: false,
+    error: "Already on Pro plan",
+  });
 });
 
 test("checkout handler validates the annual flag", async () => {
@@ -96,5 +100,8 @@ test("checkout handler validates the annual flag", async () => {
   await handler(req as never, res as never);
 
   assert.equal(res.statusCode, 400);
-  assert.deepEqual(res.jsonBody, { error: "annual must be a boolean" });
+  assert.deepEqual(res.jsonBody, {
+    ok: false,
+    error: "annual must be a boolean",
+  });
 });

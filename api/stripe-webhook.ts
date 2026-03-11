@@ -4,14 +4,14 @@ import Stripe from 'stripe';
 import {
   STRIPE_WEBHOOK_BODY_CONFIG,
   createStripeWebhookHandler,
-} from './_stripeWebhook.js';
+} from './_stripeWebhook.ts';
 import {
   sendProUpgradeEmail,
   sendSubscriptionCancelledEmail,
   sendPaymentFailedEmail,
-} from './_email.js';
-import { getServiceClient } from './_supabase.js';
-import { requireEnv } from './_env.js';
+} from './_email.ts';
+import { getServiceClient } from './_supabase.ts';
+import { requireEnv } from './_env.ts';
 
 const stripe = new Stripe(requireEnv('STRIPE_SECRET_KEY'));
 const supabase = getServiceClient();

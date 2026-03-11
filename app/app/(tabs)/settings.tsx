@@ -20,10 +20,9 @@ import { useSettingsStore } from "@/stores/settingsStore";
 import { useProfile } from "@/hooks/useProfile";
 import { useApps } from "@/hooks/useApps";
 import { useMonthlyNotificationCount } from "@/hooks/useNotifications";
-import { openUpgradeWithSession } from "@/components/UpgradePrompt";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { ThemeMode } from "@/theme";
-import { getLimits, PRO_PRICING } from "@shared/product";
+import { getLimits } from "@shared/product";
 
 async function getExpoPushToken(): Promise<string | null> {
   if (Platform.OS === "web") return null;
@@ -110,7 +109,7 @@ export default function SettingsScreen() {
   const plan = profile?.plan ?? "free";
   const isPro = plan === "pro";
   const limits = getLimits(plan);
-  const appCount = apps?.length ?? 0;
+  const appCount = apps?.filter((app) => app.is_owner).length ?? 0;
   const notifCount = monthlyNotifCount ?? 0;
   const devCount = deviceCount ?? 0;
   const cancelAtPeriodEnd = profile?.cancel_at_period_end ?? false;
@@ -229,14 +228,6 @@ export default function SettingsScreen() {
     Linking.openSettings();
   }
 
-  function handleUpgrade() {
-    openUpgradeWithSession("/pricing");
-  }
-
-  function handleManageBilling() {
-    openUpgradeWithSession("/dashboard");
-  }
-
   const appVersion = Constants.expoConfig?.version ?? "1.0.0";
 
   return (
@@ -307,7 +298,7 @@ export default function SettingsScreen() {
                   {appCount}
                 </Text>
                 <Text style={[styles.usageLabel, { color: colors.textTertiary }]}>
-                  / {limits.dashboards === Infinity ? "∞" : limits.dashboards} dashboards
+                  / {limits.dashboards === Infinity ? "Unlimited" : limits.dashboards} dashboards
                 </Text>
               </View>
               <View style={styles.usageStat}>
@@ -328,28 +319,18 @@ export default function SettingsScreen() {
               </View>
             </View>
 
-            {isPro ? (
-              <Pressable
-                style={[styles.manageBillingButton, { borderColor: colors.border }]}
-                onPress={handleManageBilling}
-              >
-                <Text style={[styles.manageBillingText, { color: colors.textSecondary }]}>
-                  Manage billing
-                </Text>
-                <Feather name="external-link" size={13} color={colors.textTertiary} />
-              </Pressable>
-            ) : (
-              <Pressable
-                style={[styles.upgradeButton, { backgroundColor: colors.accent }]}
-                onPress={handleUpgrade}
-              >
-                <Feather name="zap" size={16} color="#FFFFFF" />
-                <Text style={styles.upgradeButtonText}>
-                  Upgrade to Pro — {PRO_PRICING.monthly.label}/mo
-                </Text>
-                <Feather name="external-link" size={13} color="#FFFFFF" />
-              </Pressable>
-            )}
+            <View
+              style={[
+                styles.planNotice,
+                { backgroundColor: colors.surface, borderColor: colors.border },
+              ]}
+            >
+              <Text style={[styles.planNoticeText, { color: colors.textSecondary }]}>
+                {isPro
+                  ? "Billing changes are not available in the mobile app right now."
+                  : "Plan changes are not available in the mobile app right now."}
+              </Text>
+            </View>
           </View>
         </View>
 
@@ -364,7 +345,7 @@ export default function SettingsScreen() {
               { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
             ]}
           >
-            <SettingsRow label="Email" value={user?.email ?? "—"} iconName="mail" />
+            <SettingsRow label="Email" value={user?.email ?? "-"} iconName="mail" />
           </View>
         </View>
 
@@ -586,31 +567,16 @@ const styles = StyleSheet.create({
   usageLabel: {
     fontSize: fontSizes.xs,
   },
-  upgradeButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.sm,
-    height: 42,
-    borderRadius: radii.md,
-  },
-  upgradeButtonText: {
-    color: "#FFFFFF",
-    fontSize: fontSizes.sm,
-    fontWeight: "600",
-  },
-  manageBillingButton: {
-    flexDirection: "row",
-    alignItems: "center",
-    justifyContent: "center",
-    gap: spacing.xs,
-    height: 38,
+  planNotice: {
     borderRadius: radii.md,
     borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm + 2,
   },
-  manageBillingText: {
+  planNoticeText: {
     fontSize: fontSizes.sm,
-    fontWeight: "500",
+    textAlign: "center",
+    lineHeight: 20,
   },
   row: {
     flexDirection: "row",
@@ -670,3 +636,4 @@ const styles = StyleSheet.create({
     textAlign: "center",
   },
 });
+

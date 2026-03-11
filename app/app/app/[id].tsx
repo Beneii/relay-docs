@@ -1,4 +1,4 @@
-import React, { useState, useRef, useCallback, useEffect } from "react";
+import React, { useState, useRef, useCallback } from "react";
 import {
   View,
   Text,
@@ -10,6 +10,7 @@ import {
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { Redirect, router, useLocalSearchParams } from "expo-router";
+import * as Clipboard from "expo-clipboard";
 import { WebView } from "react-native-webview";
 import type { WebViewNavigation } from "react-native-webview";
 import { useAuthStore } from "@/stores/authStore";
@@ -38,18 +39,6 @@ export default function AppWebViewScreen() {
   const [canGoForward, setCanGoForward] = useState(false);
   const hasUpdatedLastOpened = useRef(false);
 
-  // On web, open in a new tab since iframes are blocked by most sites
-  useEffect(() => {
-    if (Platform.OS === "web" && webviewUrl) {
-      window.open(webviewUrl, "_blank", "noopener");
-      if (app && !hasUpdatedLastOpened.current) {
-        hasUpdatedLastOpened.current = true;
-        updateLastOpened.mutate(app.id);
-      }
-      router.back();
-    }
-  }, [app, updateLastOpened, webviewUrl]);
-
   const handleLoadStart = useCallback(() => {
     setIsPageLoading(true);
     setLoadError(null);
@@ -57,7 +46,7 @@ export default function AppWebViewScreen() {
 
   const handleLoadEnd = useCallback(() => {
     setIsPageLoading(false);
-    if (app && !hasUpdatedLastOpened.current) {
+    if (app?.is_owner && !hasUpdatedLastOpened.current) {
       hasUpdatedLastOpened.current = true;
       updateLastOpened.mutate(app.id);
     }
@@ -95,7 +84,13 @@ export default function AppWebViewScreen() {
 
   function handleOpenExternal() {
     setShowMenu(false);
-    if (webviewUrl) Linking.openURL(webviewUrl);
+    if (webviewUrl) {
+      if (app?.is_owner && !hasUpdatedLastOpened.current) {
+        hasUpdatedLastOpened.current = true;
+        updateLastOpened.mutate(app.id);
+      }
+      Linking.openURL(webviewUrl);
+    }
   }
 
   function handleEdit() {
@@ -135,6 +130,152 @@ export default function AppWebViewScreen() {
 
   const accentBg = app.accent_color ?? colors.surface;
   const appDisplayName = app.custom_app_name || app.name;
+
+  async function handleCopyUrl() {
+    if (!webviewUrl) return;
+    await Clipboard.setStringAsync(webviewUrl);
+  }
+
+  if (Platform.OS === "web") {
+    return (
+      <SafeAreaView
+        edges={["top"]}
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <View
+          style={[
+            styles.brandedHeader,
+            {
+              backgroundColor: accentBg + "22",
+              borderBottomColor: accentBg + "44",
+            },
+          ]}
+        >
+          <AppIcon
+            icon={app.icon}
+            accentColor={app.accent_color}
+            customIconUrl={app.custom_icon_url}
+            backgroundColor={app.background_color}
+            size={28}
+          />
+          <Text
+            style={[
+              styles.brandedHeaderTitle,
+              { color: app.accent_color ?? colors.textPrimary },
+            ]}
+            numberOfLines={1}
+          >
+            {appDisplayName}
+          </Text>
+          <Pressable
+            onPress={handleExit}
+            style={styles.brandedHeaderClose}
+            hitSlop={8}
+          >
+            <Feather
+              name="x"
+              size={18}
+              color={app.accent_color ?? colors.textSecondary}
+            />
+          </Pressable>
+        </View>
+
+        <View style={styles.webSummaryContainer}>
+          <View
+            style={[
+              styles.webSummaryCard,
+              { backgroundColor: colors.surface, borderColor: colors.border },
+            ]}
+          >
+            <View style={styles.webSummaryIcon}>
+              <AppIcon
+                icon={app.icon}
+                accentColor={app.accent_color}
+                customIconUrl={app.custom_icon_url}
+                backgroundColor={app.background_color}
+                size={56}
+              />
+            </View>
+            <Text
+              style={[styles.webSummaryTitle, { color: colors.textPrimary }]}
+            >
+              {appDisplayName}
+            </Text>
+            <Text
+              style={[styles.webSummaryBody, { color: colors.textSecondary }]}
+            >
+              The web preview stays inside Relay now. Open the dashboard only when
+              you want to leave the app shell.
+            </Text>
+            <Text
+              style={[styles.webSummaryUrl, { color: colors.textTertiary }]}
+              numberOfLines={2}
+            >
+              {webviewUrl ?? app.url}
+            </Text>
+
+            <View style={styles.webActionRow}>
+              <Pressable
+                style={[
+                  styles.webPrimaryButton,
+                  { backgroundColor: colors.accent },
+                ]}
+                onPress={handleOpenExternal}
+              >
+                <Feather name="external-link" size={16} color="#FFFFFF" />
+                <Text style={styles.webPrimaryButtonText}>Open dashboard</Text>
+              </Pressable>
+
+              <Pressable
+                style={[
+                  styles.webSecondaryButton,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.border,
+                  },
+                ]}
+                onPress={handleCopyUrl}
+              >
+                <Feather name="copy" size={16} color={colors.textPrimary} />
+                <Text
+                  style={[
+                    styles.webSecondaryButtonText,
+                    { color: colors.textPrimary },
+                  ]}
+                >
+                  Copy URL
+                </Text>
+              </Pressable>
+            </View>
+
+            {app.is_owner ? (
+              <Pressable
+                style={[
+                  styles.webSecondaryButton,
+                  {
+                    backgroundColor: colors.surfaceElevated,
+                    borderColor: colors.border,
+                    alignSelf: "stretch",
+                  },
+                ]}
+                onPress={handleEdit}
+              >
+                <Feather name="edit-2" size={16} color={colors.textPrimary} />
+                <Text
+                  style={[
+                    styles.webSecondaryButtonText,
+                    { color: colors.textPrimary },
+                  ]}
+                >
+                  Edit dashboard
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -228,12 +369,14 @@ export default function AppWebViewScreen() {
                   Open in Browser
                 </Text>
               </Pressable>
-              <Pressable style={styles.menuItem} onPress={handleEdit}>
-                <Feather name="edit-2" size={16} color={colors.textSecondary} />
-                <Text style={{ color: colors.textPrimary, fontSize: fontSizes.md }}>
-                  Edit App
-                </Text>
-              </Pressable>
+              {app.is_owner ? (
+                <Pressable style={styles.menuItem} onPress={handleEdit}>
+                  <Feather name="edit-2" size={16} color={colors.textSecondary} />
+                  <Text style={{ color: colors.textPrimary, fontSize: fontSizes.md }}>
+                    Edit App
+                  </Text>
+                </Pressable>
+              ) : null}
             </View>
           </SafeAreaView>
         </Pressable>
@@ -384,5 +527,72 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
     paddingHorizontal: spacing.md,
     paddingVertical: 14,
+  },
+  webSummaryContainer: {
+    flex: 1,
+    justifyContent: "center",
+    alignItems: "center",
+    padding: spacing.lg,
+  },
+  webSummaryCard: {
+    width: "100%",
+    maxWidth: 520,
+    borderRadius: radii.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    padding: spacing.lg,
+    gap: spacing.md,
+  },
+  webSummaryIcon: {
+    alignItems: "center",
+  },
+  webSummaryTitle: {
+    fontSize: fontSizes.xl,
+    fontWeight: "700",
+    textAlign: "center",
+  },
+  webSummaryBody: {
+    fontSize: fontSizes.md,
+    lineHeight: 22,
+    textAlign: "center",
+  },
+  webSummaryUrl: {
+    fontSize: fontSizes.sm,
+    textAlign: "center",
+    lineHeight: 20,
+  },
+  webActionRow: {
+    flexDirection: "row",
+    gap: spacing.sm,
+    flexWrap: "wrap",
+  },
+  webPrimaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    minHeight: 46,
+    borderRadius: radii.md,
+    paddingHorizontal: spacing.md,
+    flex: 1,
+  },
+  webPrimaryButtonText: {
+    color: "#FFFFFF",
+    fontSize: fontSizes.md,
+    fontWeight: "600",
+  },
+  webSecondaryButton: {
+    flexDirection: "row",
+    alignItems: "center",
+    justifyContent: "center",
+    gap: spacing.xs,
+    minHeight: 46,
+    borderRadius: radii.md,
+    borderWidth: StyleSheet.hairlineWidth,
+    paddingHorizontal: spacing.md,
+    flex: 1,
+  },
+  webSecondaryButtonText: {
+    fontSize: fontSizes.md,
+    fontWeight: "600",
   },
 });

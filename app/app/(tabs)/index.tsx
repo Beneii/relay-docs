@@ -7,7 +7,6 @@ import {
   StyleSheet,
   Alert,
   RefreshControl,
-  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -19,30 +18,30 @@ import { useProfile } from "@/hooks/useProfile";
 import { AppIcon } from "@/components/AppIcon";
 import { EmptyState } from "@/components/EmptyState";
 import { LoadingScreen } from "@/components/LoadingScreen";
-import { UpgradePrompt, openUpgradeWithSession } from "@/components/UpgradePrompt";
+import { UpgradePrompt } from "@/components/UpgradePrompt";
 import { extractHostname } from "@/utils/url";
 import { timeAgo } from "@/utils/time";
 import { Feather } from "@expo/vector-icons";
 import { FREE_LIMITS } from "@shared/product";
 import { RelayLogo } from "@/components/RelayLogo";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
-import type { AppRow } from "@/types/database";
+import type { AccessibleAppRow } from "@/types/database";
 
-function AppCard({ app }: { app: AppRow }) {
+function AppCard({ app }: { app: AccessibleAppRow }) {
   const { colors } = useTheme();
   const latestNotifications = useLatestNotificationByApp();
   const deleteApp = useDeleteApp();
   const latestNotification = latestNotifications.get(app.id);
 
   function handlePress() {
-    if (Platform.OS === "web") {
-      window.open(app.url, "_blank", "noopener");
-    } else {
-      router.push({ pathname: "/app/[id]", params: { id: app.id } });
-    }
+    router.push({ pathname: "/app/[id]", params: { id: app.id } });
   }
 
   function handleLongPress() {
+    if (!app.is_owner) {
+      return;
+    }
+
     Alert.alert(app.name, undefined, [
       {
         text: "Edit",
@@ -85,7 +84,7 @@ function AppCard({ app }: { app: AppRow }) {
         { backgroundColor: colors.surface, borderColor: colors.border },
       ]}
       onPress={handlePress}
-      onLongPress={handleLongPress}
+      onLongPress={app.is_owner ? handleLongPress : undefined}
       android_ripple={{ color: colors.accentSubtle }}
     >
       <AppIcon icon={app.icon} accentColor={app.accent_color} customIconUrl={app.custom_icon_url} backgroundColor={app.background_color} size={48} />
@@ -126,10 +125,11 @@ export default function HomeScreen() {
 
   const plan = profile?.plan ?? "free";
   const appCount = apps?.length ?? 0;
-  const atLimit = plan === "free" && appCount >= FREE_LIMITS.dashboards;
+  const ownedAppCount = apps?.filter((app) => app.is_owner).length ?? 0;
+  const atLimit = plan === "free" && ownedAppCount >= FREE_LIMITS.dashboards;
 
   const renderItem = useCallback(
-    ({ item }: { item: AppRow }) => <AppCard app={item} />,
+    ({ item }: { item: AccessibleAppRow }) => <AppCard app={item} />,
     []
   );
 
@@ -137,14 +137,8 @@ export default function HomeScreen() {
     if (atLimit) {
       Alert.alert(
         "Dashboard limit reached",
-        `Free accounts are limited to ${FREE_LIMITS.dashboards} dashboards. Upgrade to Pro for unlimited dashboards.`,
-        [
-          { text: "Not now", style: "cancel" },
-          {
-            text: "Upgrade",
-            onPress: () => openUpgradeWithSession("/pricing"),
-          },
-        ]
+        `Free accounts are limited to ${FREE_LIMITS.dashboards} dashboards in the mobile app right now.`,
+        [{ text: "OK" }]
       );
       return;
     }
@@ -182,7 +176,7 @@ export default function HomeScreen() {
               ·
             </Text>
             <Text style={[styles.planBadgeLimit, { color: colors.textTertiary }]}>
-              {appCount}/{FREE_LIMITS.dashboards} dashboards
+              {ownedAppCount}/{FREE_LIMITS.dashboards} dashboards
             </Text>
           </View>
         </View>
@@ -245,7 +239,7 @@ export default function HomeScreen() {
           atLimit ? (
             <UpgradePrompt
               compact
-              message="Upgrade to add unlimited dashboards"
+              message="Dashboard limit reached on the current plan"
             />
           ) : null
         }
@@ -361,6 +355,7 @@ const styles = StyleSheet.create({
   cardName: {
     fontSize: fontSizes.md,
     fontWeight: "600",
+    flexShrink: 1,
   },
   cardHost: {
     fontSize: fontSizes.xs,

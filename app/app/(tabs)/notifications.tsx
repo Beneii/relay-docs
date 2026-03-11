@@ -131,8 +131,7 @@ export default function NotificationsScreen() {
   // Initial load
   useEffect(() => {
     fetchPage(null, true);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [fetchPage]);
 
   const visibleNotifications = useMemo(() => {
     if (isPro) return notifications;
@@ -187,7 +186,7 @@ export default function NotificationsScreen() {
           hasMoreForFree ? (
             <UpgradePrompt
               compact
-              message="Upgrade to Pro for full notification history"
+              message="Notification history is limited on the current plan"
             />
           ) : showLoadMore ? (
             <Pressable onPress={loadMore} style={styles.loadMore}>

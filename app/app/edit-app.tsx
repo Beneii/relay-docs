@@ -107,7 +107,7 @@ export default function EditAppScreen() {
         if (manifest.notifications === false) {
           setNotificationsEnabled(false);
         }
-      } catch (err) {
+      } catch {
         // ignore fetch/parse/abort errors
       }
     }, 800);
@@ -201,7 +201,10 @@ export default function EditAppScreen() {
   }
 
   async function handleCopyWebhook() {
-    if (!existingApp) return;
+    if (!existingApp?.webhook_token) {
+      Alert.alert("Unavailable", "Only the dashboard owner can view this webhook.");
+      return;
+    }
     const supabaseUrl =
       Constants.expoConfig?.extra?.supabaseUrl ??
       process.env.EXPO_PUBLIC_SUPABASE_URL ??
@@ -214,6 +217,33 @@ export default function EditAppScreen() {
   const isSaving = createApp.isPending || updateApp.isPending;
 
   if (isEditing && loadingApp) return <LoadingScreen />;
+
+  if (isEditing && existingApp && !existingApp.is_owner) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+      >
+        <View style={styles.header}>
+          <Pressable onPress={() => router.back()} style={styles.headerBack}>
+            <Feather name="chevron-left" size={24} color={colors.accent} />
+          </Pressable>
+          <Text style={[styles.headerTitle, { color: colors.textPrimary }]}>
+            Edit App
+          </Text>
+          <View style={styles.headerBack} />
+        </View>
+        <View style={{ flex: 1, alignItems: "center", justifyContent: "center", padding: spacing.lg, gap: spacing.md }}>
+          <Feather name="lock" size={28} color={colors.warning} />
+          <Text style={{ color: colors.textPrimary, fontSize: fontSizes.lg, fontWeight: "600", textAlign: "center" }}>
+            Owners only
+          </Text>
+          <Text style={{ color: colors.textSecondary, fontSize: fontSizes.md, textAlign: "center" }}>
+            This dashboard can be opened here, but only the owner can edit its settings or view the webhook.
+          </Text>
+        </View>
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -498,7 +528,7 @@ export default function EditAppScreen() {
           </View>
           {heartbeatInterval ? (
             <View style={{ marginTop: 16 }}>
-              <Text style={[styles.fieldHint, { color: colors.textSecondary, marginBottom: 10 }]}>
+                <Text style={[styles.fieldHint, { color: colors.textSecondary, marginBottom: 10 }]}>
                 Send a POST request to{" "}
                 <Text style={{ fontFamily: "monospace" }}>https://relayapp.dev/api/heartbeat</Text> with
                 {" "}
@@ -566,7 +596,7 @@ export default function EditAppScreen() {
                 style={[styles.webhookToken, { color: colors.textTertiary }]}
                 numberOfLines={1}
               >
-                POST /functions/v1/notify/{existingApp.webhook_token.slice(0, 12)}...
+                POST /functions/v1/notify/{(existingApp.webhook_token ?? "YOUR_WEBHOOK_TOKEN").slice(0, 12)}...
               </Text>
               <Feather name="copy" size={16} color={colors.accent} />
             </Pressable>

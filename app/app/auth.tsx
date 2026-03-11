@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import {
   View,
   Text,
@@ -11,10 +11,12 @@ import {
   ScrollView,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { router } from "expo-router";
 import { Feather } from "@expo/vector-icons";
 import * as Linking from "expo-linking";
 import * as WebBrowser from "expo-web-browser";
 import { supabase } from "@/lib/supabase";
+import { useAuthStore } from "@/stores/authStore";
 import { RelayLogo } from "@/components/RelayLogo";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 
@@ -22,6 +24,8 @@ type AuthMode = "login" | "signup";
 
 export default function AuthScreen() {
   const { colors } = useTheme();
+  const session = useAuthStore((s) => s.session);
+  const setSession = useAuthStore((s) => s.setSession);
   const [mode, setMode] = useState<AuthMode>("login");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -31,7 +35,16 @@ export default function AuthScreen() {
   const [error, setError] = useState("");
   const [resetMessage, setResetMessage] = useState("");
   const [showConfirmation, setShowConfirmation] = useState(false);
-  const authCallbackUrl = Linking.createURL("auth-callback");
+  const authCallbackUrl =
+    Platform.OS === "web" && typeof window !== "undefined"
+      ? `${window.location.origin}/auth-callback`
+      : Linking.createURL("auth-callback");
+
+  useEffect(() => {
+    if (!session) return;
+    setLoading(false);
+    router.replace("/(tabs)");
+  }, [session]);
 
   const isValidEmail = /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email.trim());
   const isValidPassword = password.length >= 8;
@@ -51,7 +64,7 @@ export default function AuthScreen() {
     const trimmedEmail = email.trim().toLowerCase();
 
     if (mode === "login") {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email: trimmedEmail,
         password,
       });
@@ -62,9 +75,18 @@ export default function AuthScreen() {
           setError(error.message);
         }
         setLoading(false);
+        return;
       }
+
+      if (data.session) {
+        setSession(data.session);
+        router.replace("/(tabs)");
+        return;
+      }
+
+      setLoading(false);
     } else {
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email: trimmedEmail,
         password,
         options: {
@@ -75,6 +97,11 @@ export default function AuthScreen() {
         setError(error.message);
         setLoading(false);
       } else {
+        if (data.session) {
+          setSession(data.session);
+          router.replace("/(tabs)");
+          return;
+        }
         setShowConfirmation(true);
         setLoading(false);
       }
@@ -84,10 +111,7 @@ export default function AuthScreen() {
   async function handleOAuth(provider: "github" | "google") {
     setError("");
     setResetMessage("");
-    const redirectTo = Platform.select({
-      web: typeof window !== "undefined" ? window.location.origin : "",
-      default: Linking.createURL("auth-callback"),
-    });
+    const redirectTo = authCallbackUrl;
 
     const { data, error } = await supabase.auth.signInWithOAuth({
       provider,

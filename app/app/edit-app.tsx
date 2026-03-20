@@ -21,6 +21,8 @@ import { LoadingScreen } from "@/components/LoadingScreen";
 import { validateUrl } from "@/utils/url";
 import { Feather } from "@expo/vector-icons";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
+import { AnimatedToggle } from "@/components/AnimatedToggle";
+import { PressableScale } from "@/components/PressableScale";
 
 function isValidHttpsUrl(value: string): boolean {
   try {
@@ -31,7 +33,7 @@ function isValidHttpsUrl(value: string): boolean {
 }
 
 const ACCENT_COLORS = [
-  "#10B981", // emerald
+  "#10B981", // emerald (default — matches brand)
   "#8B5CF6", // violet
   "#EC4899", // pink
   "#EF4444", // red
@@ -463,38 +465,20 @@ export default function EditAppScreen() {
         </View>
 
         {/* Notifications toggle */}
-        <Pressable
+        <View
           style={[
             styles.toggleRow,
             { backgroundColor: colors.surface, borderColor: colors.border },
           ]}
-          onPress={() => setNotificationsEnabled(!notificationsEnabled)}
         >
           <Text style={[styles.toggleLabel, { color: colors.textPrimary }]}>
             Notifications
           </Text>
-          <View
-            style={[
-              styles.toggle,
-              {
-                backgroundColor: notificationsEnabled
-                  ? colors.accent
-                  : colors.textTertiary,
-              },
-            ]}
-          >
-            <View
-              style={[
-                styles.toggleKnob,
-                {
-                  transform: [
-                    { translateX: notificationsEnabled ? 18 : 2 },
-                  ],
-                },
-              ]}
-            />
-          </View>
-        </Pressable>
+          <AnimatedToggle
+            value={notificationsEnabled}
+            onToggle={() => setNotificationsEnabled(!notificationsEnabled)}
+          />
+        </View>
 
         {/* Heartbeat monitoring */}
         <View style={[styles.field, { backgroundColor: colors.surface, borderColor: colors.border, paddingVertical: 16 }]}>
@@ -505,26 +489,12 @@ export default function EditAppScreen() {
                 Get alerted if your agent or cron job stops pinging Relay.
               </Text>
             </View>
-            <Pressable
-              onPress={() =>
+            <AnimatedToggle
+              value={!!heartbeatInterval}
+              onToggle={() =>
                 setHeartbeatInterval((current) => (current ? null : 15))
               }
-              style={[
-                styles.toggle,
-                {
-                  backgroundColor: heartbeatInterval ? colors.accent : colors.textTertiary,
-                },
-              ]}
-            >
-              <View
-                style={[
-                  styles.toggleKnob,
-                  {
-                    transform: [{ translateX: heartbeatInterval ? 18 : 2 }],
-                  },
-                ]}
-              />
-            </Pressable>
+            />
           </View>
           {heartbeatInterval ? (
             <View style={{ marginTop: 16 }}>
@@ -615,7 +585,8 @@ export default function EditAppScreen() {
 
         {/* Delete (edit mode only) */}
         {isEditing ? (
-          <Pressable
+          <PressableScale
+            activeScale={0.97}
             style={[
               styles.deleteButton,
               { backgroundColor: colors.dangerSubtle },
@@ -625,7 +596,7 @@ export default function EditAppScreen() {
             <Text style={[styles.deleteText, { color: colors.danger }]}>
               Delete App
             </Text>
-          </Pressable>
+          </PressableScale>
         ) : null}
       </ScrollView>
     </SafeAreaView>
@@ -716,18 +687,6 @@ const styles = StyleSheet.create({
   },
   toggleLabel: {
     fontSize: fontSizes.md,
-  },
-  toggle: {
-    width: 44,
-    height: 26,
-    borderRadius: 13,
-    justifyContent: "center",
-  },
-  toggleKnob: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: "#FFFFFF",
   },
   heartbeatHeader: {
     flexDirection: "row",

@@ -1,4 +1,4 @@
-import React, { useCallback } from "react";
+import React, { useCallback, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,7 @@ import {
   StyleSheet,
   Alert,
   RefreshControl,
+  Animated,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { router } from "expo-router";
@@ -17,8 +18,9 @@ import {
 import { useProfile } from "@/hooks/useProfile";
 import { AppIcon } from "@/components/AppIcon";
 import { EmptyState } from "@/components/EmptyState";
-import { LoadingScreen } from "@/components/LoadingScreen";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { DashboardSkeletonList } from "@/components/Skeleton";
+import { PressableScale } from "@/components/PressableScale";
 import { extractHostname } from "@/utils/url";
 import { timeAgo } from "@/utils/time";
 import { Feather } from "@expo/vector-icons";
@@ -27,11 +29,31 @@ import { RelayLogo } from "@/components/RelayLogo";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { AccessibleAppRow } from "@/types/database";
 
-function AppCard({ app }: { app: AccessibleAppRow }) {
+function AppCard({ app, index }: { app: AccessibleAppRow; index: number }) {
   const { colors } = useTheme();
   const latestNotifications = useLatestNotificationByApp();
   const deleteApp = useDeleteApp();
   const latestNotification = latestNotifications.get(app.id);
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(20)).current;
+
+  useEffect(() => {
+    const delay = Math.min(index * 60, 300);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 350,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 350,
+        delay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, slideAnim, index]);
 
   function handlePress() {
     router.push({ pathname: "/app/[id]", params: { id: app.id } });
@@ -78,43 +100,45 @@ function AppCard({ app }: { app: AccessibleAppRow }) {
   }
 
   return (
-    <Pressable
-      style={[
-        styles.card,
-        { backgroundColor: colors.surface, borderColor: colors.border },
-      ]}
-      onPress={handlePress}
-      onLongPress={app.is_owner ? handleLongPress : undefined}
-      android_ripple={{ color: colors.accentSubtle }}
-    >
-      <AppIcon icon={app.icon} accentColor={app.accent_color} customIconUrl={app.custom_icon_url} backgroundColor={app.background_color} size={48} />
-      <View style={styles.cardContent}>
-        <Text
-          style={[styles.cardName, { color: colors.textPrimary }]}
-          numberOfLines={1}
-        >
-          {app.custom_app_name || app.name}
-        </Text>
-        <Text
-          style={[styles.cardHost, { color: colors.textTertiary }]}
-          numberOfLines={1}
-        >
-          {extractHostname(app.url)}
-        </Text>
-        {latestNotification ? (
-          <View style={styles.notifRow}>
-            <View style={[styles.notifDot, { backgroundColor: colors.accent }]} />
-            <Text
-              style={[styles.cardNotif, { color: colors.textSecondary }]}
-              numberOfLines={1}
-            >
-              {latestNotification.title} · {timeAgo(latestNotification.created_at)}
-            </Text>
-          </View>
-        ) : null}
-      </View>
-      <Feather name="chevron-right" size={16} color={colors.textTertiary} />
-    </Pressable>
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+      <PressableScale
+        style={[
+          styles.card,
+          { backgroundColor: colors.surface, borderColor: colors.border },
+        ]}
+        onPress={handlePress}
+        onLongPress={app.is_owner ? handleLongPress : undefined}
+        android_ripple={{ color: colors.accentSubtle }}
+      >
+        <AppIcon icon={app.icon} accentColor={app.accent_color} customIconUrl={app.custom_icon_url} backgroundColor={app.background_color} size={48} />
+        <View style={styles.cardContent}>
+          <Text
+            style={[styles.cardName, { color: colors.textPrimary }]}
+            numberOfLines={1}
+          >
+            {app.custom_app_name || app.name}
+          </Text>
+          <Text
+            style={[styles.cardHost, { color: colors.textTertiary }]}
+            numberOfLines={1}
+          >
+            {extractHostname(app.url)}
+          </Text>
+          {latestNotification ? (
+            <View style={styles.notifRow}>
+              <View style={[styles.notifDot, { backgroundColor: colors.accent }]} />
+              <Text
+                style={[styles.cardNotif, { color: colors.textSecondary }]}
+                numberOfLines={1}
+              >
+                {latestNotification.title} · {timeAgo(latestNotification.created_at)}
+              </Text>
+            </View>
+          ) : null}
+        </View>
+        <Feather name="chevron-right" size={16} color={colors.textTertiary} />
+      </PressableScale>
+    </Animated.View>
   );
 }
 
@@ -129,7 +153,9 @@ export default function HomeScreen() {
   const atLimit = plan === "free" && ownedAppCount >= FREE_LIMITS.dashboards;
 
   const renderItem = useCallback(
-    ({ item }: { item: AccessibleAppRow }) => <AppCard app={item} />,
+    ({ item, index }: { item: AccessibleAppRow; index: number }) => (
+      <AppCard app={item} index={index} />
+    ),
     []
   );
 
@@ -145,7 +171,29 @@ export default function HomeScreen() {
     router.push("/edit-app");
   }
 
-  if (isLoading) return <LoadingScreen />;
+  if (isLoading) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={["top"]}
+      >
+        <View style={styles.brandHeader}>
+          <RelayLogo size={28} color={colors.textPrimary} />
+          <Text style={[styles.brandName, { color: colors.textPrimary }]}>
+            Relay
+          </Text>
+        </View>
+        <View style={styles.sectionHeader}>
+          <View>
+            <Text style={[styles.sectionTitle, { color: colors.textPrimary }]}>
+              Dashboards
+            </Text>
+          </View>
+        </View>
+        <DashboardSkeletonList />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -192,7 +240,8 @@ export default function HomeScreen() {
             {appCount} {appCount === 1 ? "app" : "apps"}
           </Text>
         </View>
-        <Pressable
+        <PressableScale
+          activeScale={0.93}
           style={[
             styles.addButton,
             {
@@ -216,7 +265,7 @@ export default function HomeScreen() {
           >
             {atLimit ? "Limit" : "Add"}
           </Text>
-        </Pressable>
+        </PressableScale>
       </View>
 
       {error ? (

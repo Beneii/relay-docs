@@ -41,10 +41,13 @@ export function validateUrl(input: string): UrlValidation {
     };
   }
 
-  // Add protocol if missing
+  // Add protocol if missing — default to http:// for private/local addresses, https:// for public
   let withProtocol = trimmed;
   if (!/^https?:\/\//i.test(withProtocol)) {
-    withProtocol = `https://${withProtocol}`;
+    // Peek at the hostname to decide the default protocol
+    const hostPeek = withProtocol.split("/")[0].split(":")[0];
+    const looksPrivate = isPrivateHostname(hostPeek);
+    withProtocol = `${looksPrivate ? "http" : "https"}://${withProtocol}`;
   }
 
   let parsed: URL;

@@ -21,6 +21,8 @@ import { useProfile } from "@/hooks/useProfile";
 import { useApps } from "@/hooks/useApps";
 import { useMonthlyNotificationCount } from "@/hooks/useNotifications";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
+import { AnimatedToggle } from "@/components/AnimatedToggle";
+import { PressableScale } from "@/components/PressableScale";
 import type { ThemeMode } from "@/theme";
 import { getLimits } from "@shared/product";
 
@@ -51,12 +53,8 @@ function SettingsRow({
 }) {
   const { colors } = useTheme();
 
-  return (
-    <Pressable
-      style={[styles.row, { borderColor: colors.border }]}
-      onPress={onPress}
-      disabled={!onPress}
-    >
+  const content = (
+    <>
       <View style={styles.rowLeft}>
         {iconName ? (
           <Feather name={iconName} size={18} color={colors.textSecondary} />
@@ -75,7 +73,25 @@ function SettingsRow({
           <Feather name="chevron-right" size={16} color={colors.textTertiary} />
         ) : null}
       </View>
-    </Pressable>
+    </>
+  );
+
+  if (onPress) {
+    return (
+      <PressableScale
+        activeScale={0.98}
+        style={[styles.row, { borderColor: colors.border }]}
+        onPress={onPress}
+      >
+        {content}
+      </PressableScale>
+    );
+  }
+
+  return (
+    <View style={[styles.row, { borderColor: colors.border }]}>
+      {content}
+    </View>
   );
 }
 
@@ -387,33 +403,22 @@ export default function SettingsScreen() {
                 { backgroundColor: colors.surfaceElevated, borderColor: colors.border },
               ]}
             >
-              <Pressable
-                style={[styles.row, { borderColor: colors.border }]}
-                onPress={handleToggleQuietHours}
-              >
+              <View style={[styles.row, { borderColor: colors.border }]}>
                 <View style={styles.rowLeft}>
                   <Feather name="moon" size={18} color={colors.textSecondary} />
                   <Text style={[styles.rowLabel, { color: colors.textPrimary }]}>
                     Enable quiet hours
                   </Text>
                 </View>
-                <View
-                  style={[
-                    styles.toggle,
-                    { backgroundColor: quietEnabled ? colors.accent : colors.border },
-                  ]}
-                >
-                  <View
-                    style={[
-                      styles.toggleKnob,
-                      { transform: [{ translateX: quietEnabled ? 18 : 2 }] },
-                    ]}
-                  />
-                </View>
-              </Pressable>
+                <AnimatedToggle
+                  value={quietEnabled}
+                  onToggle={handleToggleQuietHours}
+                />
+              </View>
               {quietEnabled ? (
                 <>
-                  <Pressable
+                  <PressableScale
+                    activeScale={0.98}
                     style={[styles.row, { borderColor: colors.border }]}
                     onPress={() => cycleQuietTime(quietStart, "start")}
                   >
@@ -429,8 +434,9 @@ export default function SettingsScreen() {
                       </Text>
                       <Feather name="chevron-right" size={16} color={colors.textTertiary} />
                     </View>
-                  </Pressable>
-                  <Pressable
+                  </PressableScale>
+                  <PressableScale
+                    activeScale={0.98}
                     style={[styles.row, { borderColor: colors.border }]}
                     onPress={() => cycleQuietTime(quietEnd, "end")}
                   >
@@ -446,7 +452,7 @@ export default function SettingsScreen() {
                       </Text>
                       <Feather name="chevron-right" size={16} color={colors.textTertiary} />
                     </View>
-                  </Pressable>
+                  </PressableScale>
                   <View style={{ paddingHorizontal: spacing.md, paddingVertical: spacing.sm }}>
                     <Text style={[{ fontSize: fontSizes.xs, color: colors.textTertiary }]}>
                       Critical notifications will still break through quiet hours.
@@ -459,7 +465,8 @@ export default function SettingsScreen() {
         ) : null}
 
         <View style={styles.section}>
-          <Pressable
+          <PressableScale
+            activeScale={0.97}
             style={[
               styles.signOutButton,
               { backgroundColor: colors.dangerSubtle },
@@ -470,7 +477,7 @@ export default function SettingsScreen() {
             <Text style={[styles.signOutText, { color: colors.danger }]}>
               Sign Out
             </Text>
-          </Pressable>
+          </PressableScale>
         </View>
 
         <Text style={[styles.version, { color: colors.textTertiary }]}>
@@ -614,26 +621,8 @@ const styles = StyleSheet.create({
     fontSize: fontSizes.md,
     fontWeight: "600",
   },
-  toggle: {
-    width: 40,
-    height: 24,
-    borderRadius: 12,
-    justifyContent: "center",
-  },
-  toggleKnob: {
-    width: 20,
-    height: 20,
-    borderRadius: 10,
-    backgroundColor: "#FFFFFF",
-    shadowColor: "#000",
-    shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.15,
-    shadowRadius: 2,
-    elevation: 2,
-  },
   version: {
     fontSize: fontSizes.xs,
     textAlign: "center",
   },
 });
-

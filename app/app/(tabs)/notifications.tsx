@@ -1,4 +1,4 @@
-import React, { useMemo, useState, useEffect } from "react";
+import React, { useMemo, useState, useEffect, useRef } from "react";
 import {
   View,
   Text,
@@ -7,6 +7,10 @@ import {
   StyleSheet,
   RefreshControl,
   ActivityIndicator,
+  Animated,
+  LayoutAnimation,
+  Platform,
+  UIManager,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import {
@@ -17,11 +21,16 @@ import {
 import { useApps } from "@/hooks/useApps";
 import { useProfile } from "@/hooks/useProfile";
 import { EmptyState } from "@/components/EmptyState";
-import { LoadingScreen } from "@/components/LoadingScreen";
+import { NotificationSkeletonList } from "@/components/Skeleton";
 import { UpgradePrompt } from "@/components/UpgradePrompt";
+import { PressableScale } from "@/components/PressableScale";
 import { timeAgo } from "@/utils/time";
 import { useTheme, spacing, fontSizes, radii } from "@/theme";
 import type { NotificationRow } from "@/types/database";
+
+if (Platform.OS === "android" && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
 
 const FREE_VISIBLE_LIMIT = 20;
 
@@ -56,63 +65,93 @@ function ChannelTag({ channel }: { channel: string | null }) {
 function NotificationItem({
   notification,
   appName,
+  index,
 }: {
   notification: NotificationRow;
   appName: string | undefined;
+  index: number;
 }) {
   const { colors } = useTheme();
   const [expanded, setExpanded] = useState(false);
   const isUnread = !notification.read_at;
+  const fadeAnim = useRef(new Animated.Value(0)).current;
+  const slideAnim = useRef(new Animated.Value(12)).current;
+
+  useEffect(() => {
+    const delay = Math.min(index * 40, 200);
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: 300,
+        delay,
+        useNativeDriver: true,
+      }),
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        delay,
+        useNativeDriver: true,
+      }),
+    ]).start();
+  }, [fadeAnim, slideAnim, index]);
+
+  function handleToggle() {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setExpanded((v) => !v);
+  }
 
   return (
-    <Pressable
-      style={[
-        styles.notifCard,
-        {
-          backgroundColor: isUnread ? colors.accentSubtle : colors.surfaceElevated,
-          borderColor: colors.border,
-        },
-      ]}
-      onPress={() => setExpanded((v) => !v)}
-    >
-      <View style={styles.notifHeader}>
-        <View style={styles.notifTitleRow}>
-          {isUnread ? (
-            <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
-          ) : null}
-          <Text
-            style={[
-              styles.notifTitle,
-              { color: colors.textPrimary, fontWeight: isUnread ? "600" : "400" },
-            ]}
-            numberOfLines={expanded ? undefined : 1}
-          >
-            {notification.title}
+    <Animated.View style={{ opacity: fadeAnim, transform: [{ translateY: slideAnim }] }}>
+      <PressableScale
+        activeScale={0.98}
+        style={[
+          styles.notifCard,
+          {
+            backgroundColor: isUnread ? colors.accentSubtle : colors.surfaceElevated,
+            borderColor: colors.border,
+          },
+        ]}
+        onPress={handleToggle}
+      >
+        <View style={styles.notifHeader}>
+          <View style={styles.notifTitleRow}>
+            {isUnread ? (
+              <View style={[styles.unreadDot, { backgroundColor: colors.accent }]} />
+            ) : null}
+            <Text
+              style={[
+                styles.notifTitle,
+                { color: colors.textPrimary, fontWeight: isUnread ? "600" : "400" },
+              ]}
+              numberOfLines={expanded ? undefined : 1}
+            >
+              {notification.title}
+            </Text>
+          </View>
+          <Text style={[styles.notifTime, { color: colors.textTertiary }]}>
+            {timeAgo(notification.created_at)}
           </Text>
         </View>
-        <Text style={[styles.notifTime, { color: colors.textTertiary }]}>
-          {timeAgo(notification.created_at)}
-        </Text>
-      </View>
 
-      {notification.body ? (
-        <Text
-          style={[styles.notifBody, { color: colors.textSecondary }]}
-          numberOfLines={expanded ? undefined : 2}
-        >
-          {notification.body}
-        </Text>
-      ) : null}
-
-      {/* Metadata row: app, severity badge, channel tag */}
-      <View style={styles.metaRow}>
-        {appName ? (
-          <Text style={[styles.notifApp, { color: colors.textTertiary }]}>{appName}</Text>
+        {notification.body ? (
+          <Text
+            style={[styles.notifBody, { color: colors.textSecondary }]}
+            numberOfLines={expanded ? undefined : 2}
+          >
+            {notification.body}
+          </Text>
         ) : null}
-        <SeverityBadge severity={notification.severity} />
-        <ChannelTag channel={notification.channel} />
-      </View>
-    </Pressable>
+
+        {/* Metadata row: app, severity badge, channel tag */}
+        <View style={styles.metaRow}>
+          {appName ? (
+            <Text style={[styles.notifApp, { color: colors.textTertiary }]}>{appName}</Text>
+          ) : null}
+          <SeverityBadge severity={notification.severity} />
+          <ChannelTag channel={notification.channel} />
+        </View>
+      </PressableScale>
+    </Animated.View>
   );
 }
 
@@ -141,7 +180,19 @@ export default function NotificationsScreen() {
   const hasMoreForFree = !isPro && notifications.length > FREE_VISIBLE_LIMIT;
   const showLoadMore = isPro && hasMore;
 
-  if (loading && notifications.length === 0) return <LoadingScreen />;
+  if (loading && notifications.length === 0) {
+    return (
+      <SafeAreaView
+        style={[styles.container, { backgroundColor: colors.background }]}
+        edges={["top"]}
+      >
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.textPrimary }]}>Alerts</Text>
+        </View>
+        <NotificationSkeletonList />
+      </SafeAreaView>
+    );
+  }
 
   return (
     <SafeAreaView
@@ -165,10 +216,11 @@ export default function NotificationsScreen() {
       <FlatList
         data={visibleNotifications}
         keyExtractor={(item) => item.id}
-        renderItem={({ item }) => (
+        renderItem={({ item, index }) => (
           <NotificationItem
             notification={item}
             appName={appMap.get(item.app_id)}
+            index={index}
           />
         )}
         contentContainerStyle={[
